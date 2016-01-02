@@ -40,9 +40,11 @@ my $has_rage            = 1;
 my $has_malice          = 0;
 my $has_deathbringer    = 1;
 my $has_golden_bow      = 0;
-my $has_soul_eater      = 1;
-my $has_warrior_tabi    = 0;
-my $has_ninja_tabi      = 1;
+my $has_devs_gloves     = 1;
+my $has_soul_eater      = 0;
+my $has_warrior_tabi    = 1;
+my $has_ninja_tabi      = 0;
+my $has_ichaival	= 0;
 my $has_executioner     = 1;
 my $has_titans_bane     = 0;
 my $has_brawlers        = 0;
@@ -50,6 +52,8 @@ my $has_asi             = 0;
 my $has_transcendence   = 0;
 my $has_qins            = 1;
 my $has_jotunns         = 0;
+
+my %warnings_to_print;
 
 my $attack_rate = $base_attack_rate + 20 * $attack_rate_level_scaling * $base_attack_rate;
 my $mana = $base_mana + 20 * $mana_level_scaling;
@@ -62,6 +66,7 @@ my $num_attacks = 0;
 my $total_attacks = 0;
 
 my $physical_power = 0;
+my $lifesteal = 0;
 
 my $their_protection = 18 + 60 + 20 + 60 + 40 + 55; # bellona with full passive, Mystical, MoR, and Runeforged
 #my $their_protection = 9 + (20*2.6) + 40; # Sol with MoR
@@ -130,10 +135,25 @@ if ($has_executioner) {
 my $executioner_stacks = 0;
 my $executioner_end = 0;
 
+# ichaival
+if ($has_ichaival) {
+    $attack_rate += $base_attack_rate * 0.3;
+    $flat_pen += 10;
+}
+my $ichaival_stacks = 0;
+my $ichaival_end = 0;
+
+# dev's gloves
+if ($has_devs_gloves) {
+    $physical_power += 55;
+    $lifesteal += 0.25;
+}
+
 # soul eater
 if ($has_soul_eater) {
     $attack_rate += $base_attack_rate * 0.15;
     $physical_power += 15;
+    $lifesteal += 0.2;
 }
 
 # golden bow
@@ -190,7 +210,7 @@ my $attack_duration = int(1000 / $attack_rate);
 
 my $iteration = 0;
 my $max_iterations = 1000;
-my $max_time = 3000;
+my $max_time = 5000;
 
 my $feather_step_cooldown = 0;
 
@@ -273,6 +293,8 @@ while ( $iteration < $max_iterations ) {
 
         if ( $time == $next_attack ) {
 
+	    my $effective_base_damage = $base_damage + 10 * $ichaival_stacks;
+
             my $total_crit_chance = $base_crit_chance;
 
             if ($has_still_target) {
@@ -292,9 +314,9 @@ while ( $iteration < $max_iterations ) {
             my $rng = rand();
             if ( $rng < $total_crit_chance ) {
                 # critical hit
-                $pre_prot_damage += $base_damage * 2;
+                $pre_prot_damage += $effective_base_damage * 2;
                 if ($has_deathbringer) {
-                    $pre_prot_damage += $base_damage * 0.4;
+                    $pre_prot_damage += $effective_base_damage * 0.4;
                 }
                 $crits++;
 
@@ -310,7 +332,7 @@ while ( $iteration < $max_iterations ) {
             }
             else
             {
-                $pre_prot_damage += $base_damage;
+                $pre_prot_damage += $effective_base_damage;
 
                 # handle rage
                 if ( $rage_stacks < 5 ) {
@@ -320,6 +342,14 @@ while ( $iteration < $max_iterations ) {
 
             if ($has_qins) {
                 $pre_prot_damage += 0.04 * $their_health;
+            }
+
+            if ($has_ichaival) {
+                $ichaival_stacks += 1;
+                if ($ichaival_stacks > 3) {
+                    $ichaival_stacks = 3;
+                }
+                $ichaival_end = $time + 3000;
             }
 
             if ($has_executioner) {
@@ -353,11 +383,10 @@ while ( $iteration < $max_iterations ) {
 
             if ($viper_shots_left > 0) {
                 $viper_shots_left--;
-                my $pre_prot_damage = 90 + $base_damage * 0.3;
+                my $pre_prot_damage = 90 + $effective_base_damage * 0.3;
                 $damage += calc_mitigated_damage( $pre_prot_damage );
                 my $viper_attack_rate = $attack_rate + $base_attack_rate * 0.8;
                 if ($viper_attack_rate > 2.5) {
-                    #print "overcapping viper attack rate\n";
                     $viper_attack_rate = 2.5;
                 }
                 my $viper_attack_duration = int(1000 / $viper_attack_rate);
@@ -371,7 +400,7 @@ while ( $iteration < $max_iterations ) {
             $viper_shots_left = 3;
             my $viper_attack_rate = $attack_rate + $base_attack_rate * 0.8;
             if ($viper_attack_rate > 2.5) {
-                print "overcapping viper attack rate\n";
+                $warnings_to_print{ "overcapping viper attack rate" } = 1;
                 $viper_attack_rate = 2.5;
             }
             my $viper_attack_duration = int(1000 / $viper_attack_rate);
@@ -399,10 +428,14 @@ while ( $iteration < $max_iterations ) {
             $executioner_stacks = 0;
         }
 
+        if ( $time == $ichaival_end ) {
+            $ichaival_stacks = 0;
+        }
+
         if ( $has_malice and $time == $next_malice_proc and $malice_procs_left > 0 )
         {
             $total_malice_procs++;
-            my $pre_prot_damage = 0.25 * $base_damage;
+            my $pre_prot_damage = 0.25 * $base_damage; # effected by ichaival?
 
             $damage += calc_mitigated_damage($pre_prot_damage);
 
@@ -431,9 +464,14 @@ while ( $iteration < $max_iterations ) {
 
 }
 
+foreach my $key (keys %warnings_to_print) {
+	print $key . "\n";
+}
+
 print "Base attack rate $attack_rate Base attack damage $base_damage\n";
 print "Num attacks: " . $total_attacks/$max_iterations . ", avg damage " . ($damage / $total_attacks) . "\n";
 print "Total damage " . $damage/$max_iterations . " dps " . ($damage / ($max_iterations*$max_time/1000)) . "\n";
+print "Total lifesteal " . ($damage * $lifesteal)/$max_iterations . "\n";
 print "Num crits: " . $crits/$max_iterations .", total crit chance " . ($crits / $total_attacks) . "\n";
 if ($has_malice) {
     print  "Total Malice procs " . $total_malice_procs/$max_iterations . " Malice procs/crit " . ($total_malice_procs/$crits) . " Malice bonus DPS " . ($total_malice_procs * 0.25 * $base_damage)/($max_iterations*$max_time/1000) . "\n";

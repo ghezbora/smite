@@ -1,0 +1,296 @@
+#!/usr/bin/perl
+
+
+# Wish list
+#
+
+use strict;
+use warnings;
+
+# base stats
+my $base_attack_rate = 0.95; # freya
+my $attack_rate_level_scaling = 0.0195; # freya
+my $base_auto_damage = 35; #freya
+my $auto_level_scaling = 1.5; #freya
+my $base_mana = 220; #freya
+my $mana_level_scaling = 37; #freya
+
+#my @attack_chain_progression = ( 1, 0.75, 1.25 );
+my @attack_chain_progression = ( 1 );
+my $next_attack_chain = 0;
+
+
+my $has_pen_boots                   = 1;
+my $has_demonic_grip                = 1;
+my $has_telkhines_ring              = 0;
+my $has_hastened_fatalis            = 1;
+my $has_polynomicon                 = 0;
+my $has_spear                       = 1;
+my $has_shard                       = 0;
+my $has_bancrofts                   = 0;
+my $has_rod                         = 1;
+my $has_book                        = 0;
+my $has_pythagorems                 = 0;
+my $has_void_stone                  = 0;
+
+
+
+
+my %warnings_to_print;
+
+my $attack_rate = $base_attack_rate + 20 * $attack_rate_level_scaling * $base_attack_rate;
+my $mana = $base_mana + 20 * $mana_level_scaling;
+
+#print "attack rate $attack_rate\n";
+
+my $damage = 0;
+my $time = 0;
+my $next_attack = 0;
+my $num_attacks = 0;
+my $total_attacks = 0;
+
+my $magical_power = 0;
+my $lifesteal = 0.15; #freya
+#my $lifesteal = 0;
+
+#my $their_protection = 30 + 18 + 20 + 70 + 40; # bellona with full passive, gaia, spirit robe
+#my $their_protection = 30 + 18 + 20 + 50 + 50; # athena with HW, Sov, Void Stone
+#my $their_protection = 30 + 40; # sol with spirit robe
+#my $their_protection = 30 + 18 + 40; # awilix with spirit robe
+my $their_protection = 150;
+
+#my $their_health = 480 + 20 * 85 + 100 + 350 + 325; # bellona with gaia, frostbound, midgardian
+my $their_health = 400 + 20 * 75 + 250; #sol with MoR
+
+my $flat_pen = 0;
+my $percent_pen = 0;
+my $flat_reduction = 0;
+my $percent_reduction = 0;
+
+
+if ($has_pen_boots) {
+    $magical_power += 45;
+    $flat_pen += 10;
+}
+
+if ($has_void_stone) {
+    $magical_power += 40;
+    $flat_reduction += 15;
+}
+
+if ($has_demonic_grip) {
+    $attack_rate += $base_attack_rate * 0.25;
+    $magical_power += 60;
+}
+my $demonic_grip_stacks = 0;
+my $demonic_grip_end = 0;
+
+if ($has_telkhines_ring) {
+    $attack_rate += $base_attack_rate * 0.1;
+    $magical_power += 45;
+}
+
+if ($has_hastened_fatalis) {
+    $attack_rate += $base_attack_rate * 0.3;
+}
+
+if ($has_polynomicon) {
+    $magical_power += 75;
+    $mana += 300;
+    $lifesteal += .1;
+}
+my $has_polynomicon_buff = 0;
+
+if ($has_spear) {
+    $magical_power += 45;
+    $flat_pen += 15;
+}
+my $spear_stacks = 0;
+my $spear_end = 0;
+
+if ($has_shard) {
+    $magical_power += 70;
+    $percent_pen += .33;
+}
+
+if ($has_bancrofts) {
+    $magical_power += 100;
+    $lifesteal += .12;
+}
+
+if ($has_rod) {
+    $magical_power += 125;
+}
+
+if ($has_pythagorems) {
+    $magical_power += 90;
+    $lifesteal += .25;
+}
+
+if ($has_book) {
+    $mana += 875;
+    $magical_power += 100 + 0.03 * $mana;
+}
+
+
+
+
+#print "attack rate $attack_rate\n";
+
+if ($attack_rate > 2.5) { $attack_rate = 2.5; }
+
+my $eff_magical_power = $magical_power;
+
+if ($has_rod) { $eff_magical_power *= 1.25; }
+
+print "effective magical power $eff_magical_power\n";
+
+my $base_damage = $base_auto_damage + 20 * $auto_level_scaling + 0.2 * $eff_magical_power;
+my $attack_duration = int(1000 / $attack_rate);
+
+
+my $iteration = 0;
+my $max_iterations = 1; # no crits, no RNG
+my $max_time = 5000;
+
+
+
+
+sub calc_mitigated_damage( $ ) {
+
+    my $pre_prot_damage = shift;
+
+    print "pre_prot_damage = $pre_prot_damage\n";
+    print "    their prot = $their_protection\n";
+
+    my $their_eff_prot = $their_protection;
+    $their_eff_prot *= (1 - $percent_reduction);
+    $their_eff_prot *= (1 - 0.1*$spear_stacks);
+    $their_eff_prot *= (1 - 0.07*$demonic_grip_stacks);
+    print "    their prot after %reduction $their_eff_prot\n";
+    $their_eff_prot -= $flat_reduction;
+    $their_eff_prot -= 10*$spear_stacks;
+    $their_eff_prot -= 5*$demonic_grip_stacks;
+    print "    their prot after flat reduction $their_eff_prot\n";
+    $their_eff_prot *= (1 - $percent_pen);
+    print "    their prot after %pen $their_eff_prot\n";
+    $their_eff_prot -= $flat_pen;
+    if ($their_eff_prot < 0) { $their_eff_prot = 0; }
+    print "    their prot after flat pen $their_eff_prot\n";
+
+    my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
+
+    print "$damage mitigated damage\n";
+    
+    return $damage;
+
+}
+
+
+
+
+
+my $has_irradiate = 0;
+my $has_pulse = 0;
+my $irradiate_end = 0;
+my $pulse_end = 0;
+
+
+while ( $iteration < $max_iterations ) {
+
+    while ( $time < $max_time ) {
+
+        # anything before first attack (initiation) goes here
+
+        if ($time == 0) {
+            $has_irradiate = 1;
+            $has_pulse = 1;
+            $irradiate_end = $time + 5000;
+            $pulse_end = $time + 5000;
+            if ($has_polynomicon) { $has_polynomicon_buff = 1; }
+        }
+
+        if ( $time == $next_attack ) {
+
+            my $effective_base_damage = $base_damage;
+
+            if ($has_polynomicon_buff) {
+                $effective_base_damage += 0.6 * $eff_magical_power;
+                $has_polynomicon_buff = 0;
+            }
+
+            if ($has_pulse) {
+                $effective_base_damage += 60 + 0.15 * $eff_magical_power;
+            }
+
+            if ($has_irradiate) {
+                $effective_base_damage += 100 + 0.25 * $eff_magical_power;
+            }
+
+            if ($has_telkhines_ring) {
+                $effective_base_damage += 40;
+            }
+
+            my $pre_prot_damage = 0;
+
+            $pre_prot_damage += $effective_base_damage;
+
+            $damage += calc_mitigated_damage($pre_prot_damage);
+
+
+            # get ready for next attack
+            if ($has_spear) {
+                $spear_end = $time + 5000;
+                $spear_stacks++;
+                if ($spear_stacks > 2) { $spear_stacks = 2; }
+            }
+
+            if ($has_demonic_grip) {
+                $demonic_grip_end = $time + 3000;
+                $demonic_grip_stacks++;
+                if ($demonic_grip_stacks > 3) { $demonic_grip_stacks = 3; }
+            }
+
+
+            # attack chain progression
+            $next_attack = $time + int($attack_duration * ${attack_chain_progression}[ $next_attack_chain ]);
+            $next_attack_chain++;
+            if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
+
+            $num_attacks++;
+        }
+
+        $time++;
+    }
+
+    if ($time == $spear_end) { $spear_stacks = 0; }
+    if ($time == $demonic_grip_end) { $demonic_grip_stacks = 0; }
+    if ($time == $pulse_end) { $has_pulse = 0; }
+    if ($time == $irradiate_end) { $has_irradiate = 0; }
+
+    # reset
+    $time = 0;
+    $next_attack = 0;
+    $next_attack_chain = 0;
+    $total_attacks += $num_attacks;
+    $num_attacks = 0;
+    $spear_stacks = 0;
+    $spear_end = 0;
+    $demonic_grip_stacks = 0;
+    $demonic_grip_end = 0;
+
+    $iteration++;
+
+}
+
+foreach my $key (keys %warnings_to_print) {
+        print $key . "\n";
+}
+
+print "Base attack rate $attack_rate Base attack damage $base_damage\n";
+print "Num attacks: " . $total_attacks/$max_iterations . ", avg damage " . ($damage / $total_attacks) . "\n";
+print "Total damage " . $damage/$max_iterations . " dps " . ($damage / ($max_iterations*$max_time/1000)) . "\n";
+print "Total lifesteal " . ($damage * $lifesteal)/$max_iterations . "\n";
+
+
+
