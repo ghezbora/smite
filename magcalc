@@ -13,7 +13,10 @@ use Getopt::Std;
 
 my %opts;
 
-getopts('p:h:g:i:', \%opts);
+getopts('vp:h:g:i:', \%opts);
+
+my $verbose = 0;
+if ( defined $opts{'v'} ) { $verbose = 1; }
 
 my @items = split( /\s/, $opts{ 'i' } );
 
@@ -237,6 +240,10 @@ sub calc_mitigated_damage( $ ) {
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
     $messages_to_print{ "mitigated damage" } = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
+
+    if ( $verbose ) {
+        print "time $time their prot $their_protection -> $their_eff_prot; damage $pre_prot_damage -> " . ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage . " $spear_stacks spear stacks $demonic_grip_stacks demonic grip stacks\n";
+    }
     
     return $damage;
 
@@ -251,7 +258,14 @@ my $has_pulse = 0;
 my $irradiate_end = 0;
 my $pulse_end = 0;
 
-my $heat = 80; # assume i just cast radiance
+my $heat = 0;
+my $radiance_time = 0;
+my $stellar_burst_time = 3000;
+my $stellar_burst_detonate_time = $stellar_burst_time + 100;
+
+my $polynomicon_procs = 0;
+my $polynomicon_damage = 0;
+my $polynomicon_time = 0;
 
 
 while ( $iteration < $max_iterations ) {
@@ -265,10 +279,13 @@ while ( $iteration < $max_iterations ) {
             $has_pulse = 1;
             $irradiate_end = $time + 5000;
             $pulse_end = $time + 5000;
-            if (defined $items{"polynomicon"}) { $has_polynomicon_buff = 1; }
+            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+                $has_polynomicon_buff = 1;
+                $polynomicon_time = $time + 3000;
+            }
         }
 
-        if ($opts{'g'} eq "sol" and $time == 100) {
+        if ($opts{'g'} eq "sol" and $time == $stellar_burst_detonate_time) {
             # second blast, the time is probably not 100 but it's before the next attack
             my $pre_prot_damage = 160 + 0.35 * $eff_magical_power;
             $damage += calc_mitigated_damage( $pre_prot_damage );
@@ -277,6 +294,14 @@ while ( $iteration < $max_iterations ) {
             if ($spear_stacks > 2) { $spear_stacks = 2; }
 
             $heat += 10;
+        }
+
+        if ($opts{'g'} eq "sol" and $time == $radiance_time) {
+            $heat += 80;
+            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+                $has_polynomicon_buff = 1;
+            }
+            $radiance_time += 15000;
         }
 
         if ( $time == $next_attack ) {
@@ -294,11 +319,6 @@ while ( $iteration < $max_iterations ) {
             }
             $messages_to_print{ "heat effective magical power" } = $heat_eff_magical_power;
 
-            if ($has_polynomicon_buff) {
-                $effective_base_damage += 0.6 * $heat_eff_magical_power;
-                $has_polynomicon_buff = 0;
-            }
-
             if ($has_pulse) {
                 $effective_base_damage += 60 + 0.15 * $heat_eff_magical_power;
             }
@@ -313,23 +333,31 @@ while ( $iteration < $max_iterations ) {
 
             if ( $opts{ 'g' } eq "sol" and $heat == 100 ) { $pre_prot_damage *= 1.25; }
 
+            if ($has_polynomicon_buff) {
+                $pre_prot_damage += 0.6 * $heat_eff_magical_power;
+                $polynomicon_procs++;
+                $polynomicon_damage += 0.6 * $heat_eff_magical_power;
+                $has_polynomicon_buff = 0;
+                $polynomicon_time = $time + 3000;
+            }
+
             if (defined $items{"telkhines_ring"}) {
                 # apply this AFTER heat % bonus
                 $pre_prot_damage += 40;
             }
 
-            if ($opts{ 'g' } eq "sol" and $time == 0 ) { # stellar burst
+            if ($opts{ 'g' } eq "sol" and $time >= $stellar_burst_time) { # stellar burst
                 $pre_prot_damage += 160 + 0.35 * $heat_eff_magical_power;
-            }
-
-            $damage += calc_mitigated_damage($pre_prot_damage);
-
-            if ( $time == 0 ) { # stellar burst spear
+                if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+                    $has_polynomicon_buff = 1;
+                }
                 $spear_end = $time + 5000;
                 $spear_stacks++;
                 if ($spear_stacks > 2) { $spear_stacks = 2; }
-                if (defined $items{"polynomicon"}) { $has_polynomicon_buff = 1; }
+                $stellar_burst_time += 12000;
             }
+
+            $damage += calc_mitigated_damage($pre_prot_damage);
 
             # get ready for next attack
             if (defined $items{"spear"} and ($has_irradiate or $has_pulse)) {
@@ -392,6 +420,7 @@ foreach my $key (keys %messages_to_print) {
 print "Base attack rate $attack_rate Base attack damage $base_damage\n";
 print "Num attacks: " . $total_attacks/$max_iterations . ", avg damage " . ($damage / $total_attacks) . "\n";
 print "Total damage " . $damage/$max_iterations . " dps " . ($damage / ($max_iterations*$max_time/1000)) . "\n";
+print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
 print "Total lifesteal " . ($damage * $lifesteal)/$max_iterations . "\n";
 print "Total gold " . $gold . " Damage/gold " . $damage / $gold . "\n";
 

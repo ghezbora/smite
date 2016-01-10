@@ -95,11 +95,13 @@ my $time = 0;
 my $next_attack = 0;
 my $num_attacks = 0;
 my $total_attacks = 0;
+my $gold = 0;
 
 my $physical_power = 0;
 my $lifesteal = 0;
 
-my $their_protection = 18 + 60 + 20 + 60 + 40 + 55; # bellona with full passive, Mystical, MoR, and Runeforged
+#my $their_protection = 18 + 60 + 20 + 60 + 40 + 55; # bellona with full passive, Mystical, MoR, and Runeforged
+my $their_protection = 18 + 60 + 20 + 60 + 40; # bellona with full passive, Mystical, MoR
 if ( defined $opts{'p'} ) {
     $their_protection = $opts{'p'};
 }
@@ -119,6 +121,7 @@ if (defined $items{"jotunns"}) {
     $physical_power += 40;
     $flat_pen += 11;
     $mana += 150;
+    $gold += 2440;
 }
 
 # transcendence
@@ -126,46 +129,54 @@ if (defined $items{"transcendence"}) {
     $mana += 1050;
     $physical_power += 35;
     $physical_power += 0.03 * $mana;
+    $gold += 2600;
 }
 
 # qin's sais
 if (defined $items{"qins"}) {
     $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $physical_power += 30;
+    $gold += 2850;
 }
 
 # asi
 if (defined $items{"asi"}) {
     $flat_pen += 15;
     $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+    $gold += 1780;
 }
 
 # brawler's beatstick
 if (defined $items{"brawlers"}) {
     $physical_power += 40;
     $flat_pen += 20;
+    $gold += 2400;
 }
 
 # titan's bane
 if (defined $items{"titans"}) {
     $percent_pen += 0.33;
+    $gold += 2050;
 }
 
 # warrior tabi
 if (defined $items{"warrior_tabi"}) {
     $physical_power += 40;
+    $gold += 1550;
 }
 
 # ninja tabi
 if (defined $items{"ninja_tabi"}) {
     $physical_power += 20;
     $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+    $gold += 1500;
 }
 
 # executioner
 if (defined $items{"executioner"}) {
     $physical_power += 30;
     $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+    $gold += 2250;
 }
 my $executioner_stacks = 0;
 my $executioner_end = 0;
@@ -174,6 +185,7 @@ my $executioner_end = 0;
 if (defined $items{"ichaival"}) {
     $attack_rate += 0.3 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $flat_pen += 10;
+    $gold += 1700;
 }
 my $ichaival_stacks = 0;
 my $ichaival_end = 0;
@@ -182,6 +194,7 @@ my $ichaival_end = 0;
 if (defined $items{"devs_gloves"}) {
     $physical_power += 55;
     $lifesteal += 0.25;
+    $gold += 2050;
 }
 
 # soul eater
@@ -189,18 +202,21 @@ if (defined $items{"soul_eater"}) {
     $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $physical_power += 15;
     $lifesteal += 0.2;
+    $gold += 2000;
 }
 
 # golden bow
 if (defined $items{"golden_bow"}) {
     $base_crit_chance += 0.1;
     $physical_power += 35;
+    $gold += 2330;
 }
 
 # rage
 if (defined $items{"rage"}) {
     $base_crit_chance += 0.3;
     $physical_power += 30;
+    $gold += 2755;
 }
 my $rage_stacks = 0;
 
@@ -208,6 +224,7 @@ my $rage_stacks = 0;
 if (defined $items{"malice"}) {
     $base_crit_chance += 0.2;
     $physical_power += 50;
+    $gold += 2900;
 }
 my $total_malice_procs = 0;
 my $next_malice_proc = 0;
@@ -217,24 +234,17 @@ my $malice_procs_left = 0;
 if (defined $items{"deathbringer"}) {
     $base_crit_chance += 0.2;
     $physical_power += 50;
+    $gold += 3150;
 }
 
 
 
 my $viper_shots_left = 0;
+my $vengeful_assault = 0;
+my $vengeful_assault_end = 0;
+my $gravity_surge = 0;
+my $gravity_surge_end = 0;
 
-
-
-my $has_buff = 0;
-#my $buff_attack_increase = 0.75; # vengeful assault
-#my $buff_power_increase = 0; # vengeful assault
-my $buff_attack_increase = 0.70; # gravity surge
-my $buff_power_increase = 60; # gravity surge
-
-if ($has_buff) {
-    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * $buff_attack_increase;
-    $physical_power += $buff_power_increase;
-}
 
 if ($attack_rate > 2.5) { $attack_rate = 2.5; }
 
@@ -315,7 +325,7 @@ while ( $iteration < $max_iterations ) {
 
     while ( $time < $max_time ) {
 
-        if ($time == -1) {
+        if ($opts{'g'} eq "medusa" and $time == 0) {
             # start combo with ult
             my $pre_prot_damage = 700 + $base_damage;
             $damage += calc_mitigated_damage($pre_prot_damage);
@@ -323,13 +333,19 @@ while ( $iteration < $max_iterations ) {
             $next_attack = 250;
         }
 
+        if ($opts{'g'} eq "artemis" and $time == 0) {
+            # start with tusky
+            my $pre_prot_damage = 450 + $base_damage;
+            $damage += calc_mitigated_damage($pre_prot_damage);
+            $vengeful_assault = 1;
+            $vengeful_assault_end = $time + 5000;
+        }
 
-        if ($time == -1) {
+        if ($opts{'g'} eq "awilix" and $time == 0) {
             # start combo with moonlight charge + Ult
             my $pre_prot_damage = 250 + 0.6 * $base_damage;
             $damage += calc_mitigated_damage($pre_prot_damage);
 
-            
             $pre_prot_damage = 400 + 0.8 * $base_damage;
             $damage += calc_mitigated_damage($pre_prot_damage);
 
@@ -408,7 +424,15 @@ while ( $iteration < $max_iterations ) {
             $damage += calc_mitigated_damage($pre_prot_damage);
 
             # attack chain progression
-            $next_attack = $time + $attack_duration * ${attack_chain_progression}[ $next_attack_chain ];
+            my $eff_attack_rate = $attack_rate;
+            if ( $vengeful_assault ) {
+                $eff_attack_rate = $attack_rate + 0.75 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
+            }
+            if ( $eff_attack_rate > 2.5 ) {
+                $eff_attack_rate = 2.5;
+            }
+            my $eff_attack_duration = int(1000 / $eff_attack_rate);
+            $next_attack = $time + $eff_attack_duration * ${attack_chain_progression}[ $next_attack_chain ];
             $next_attack_chain++;
             if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
             $next_attack = int($next_attack + .99999);
@@ -429,7 +453,8 @@ while ( $iteration < $max_iterations ) {
             $num_attacks++;
         }
 
-        if ($num_attacks == 1 and $viper_shots_left == 0) {
+        if ($opts{'g'} eq "medusa" and $num_attacks == 1 and $viper_shots_left == 0) {
+            # start viper shot after the first AA for AA cancel benefit
             $viper_shots_left = 3;
             my $viper_attack_rate = $attack_rate +
                     $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 0.8;
@@ -441,21 +466,29 @@ while ( $iteration < $max_iterations ) {
             $next_attack = $time + $viper_attack_duration;
         }
 
-#        if ($feather_step_cooldown < $time and $num_attacks == 2) {
-#            # time to feather step
-#            my $pre_prot_damage = 360 + $base_damage;
-#
-#            $damage += calc_mitigated_damage($pre_prot_damage);
-#
-#            # reset attack chain
-#            $next_attack_chain = 0;
-#            $next_attack = $time + 250; # don't know actual AA cancel durations
-#
-#            $feather_step_cooldown += 8000;
-#        }
+        if ($opts{'g'} eq "awilix" and $feather_step_cooldown < $time and $num_attacks == 2) {
+            # time to feather step
+            my $pre_prot_damage = 360 + $base_damage;
+
+            $damage += calc_mitigated_damage($pre_prot_damage);
+
+            # reset attack chain
+            $next_attack_chain = 0;
+            $next_attack = $time + 250; # don't know actual AA cancel durations
+
+            $feather_step_cooldown += 8000;
+        }
 
         if ($time == $still_target_end) {
             $still_target_stacks = 0;
+        }
+
+        if ($time == $vengeful_assault_end) {
+            $vengeful_assault = 0;
+        }
+
+        if ($time == $gravity_surge_end) {
+            $gravity_surge = 0;
         }
 
         if ( $time == $executioner_end ) {
@@ -494,6 +527,8 @@ while ( $iteration < $max_iterations ) {
     $total_attacks += $num_attacks;
     $num_attacks = 0;
     $feather_step_cooldown = 0;
+    $vengeful_assault_end = 0;
+    $gravity_surge_end = 0;
 
     $iteration++;
 
@@ -511,6 +546,7 @@ print "Num crits: " . $crits/$max_iterations .", total crit chance " . ($crits /
 if (defined $items{ "malice" }) {
     print  "Total Malice procs " . $total_malice_procs/$max_iterations . " Malice procs/crit " . ($total_malice_procs/$crits) . " Malice bonus DPS " . ($total_malice_procs * 0.25 * $base_damage)/($max_iterations*$max_time/1000) . "\n";
 }
+print "Total gold " . $gold . " Damage/gold " . $damage / $gold / $max_iterations . "\n";
 
 
 
