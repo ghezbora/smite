@@ -7,45 +7,69 @@
 use strict;
 use warnings;
 
-# base stats
-#my $base_attack_rate = 0.95; # freya
-#my $attack_rate_level_scaling = 0.0195; # freya
-#my $base_auto_damage = 35; #freya
-#my $auto_level_scaling = 1.5; #freya
-#my $base_mana = 220; #freya
-#my $mana_level_scaling = 37; #freya
-my $base_attack_rate = 1; # sol
-my $attack_rate_level_scaling = 0.018; # sol
-my $base_auto_damage = 34; #sol
-my $auto_level_scaling = 1.45; #sol
-my $base_mana = 300; #sol
-my $mana_level_scaling = 57; #sol
+use Getopt::Std;
 
-#my @attack_chain_progression = ( 1, 0.75, 1.25 );
-my @attack_chain_progression = ( 1 );
+
+
+my %opts;
+
+getopts('g:i:', \%opts);
+
+my @items = split( /\s/, $opts{ 'i' } );
+
+my %items;
+
+foreach my $item (@items) {
+    $items{ $item } = 1;
+}
+
+
+
+
+
+my %base_stats = (
+    "attack_rate" => {
+        "freya" => 0.95,
+        "sol" => 1,
+    },
+    "attack_rate_level_scaling" => {
+        "freya" => 0.0195,
+        "sol" => 0.018,
+    },
+    "auto_damage" => {
+        "freya" => 35,
+        "sol" => 34,
+    },
+    "auto_level_scaling" => {
+        "freya" => 1.5,
+        "sol" => 1.45,
+    },
+    "mana" => {
+        "freya" => 220,
+        "sol" => 300,
+    },
+    "mana_level_scaling" => {
+        "freya" => 37,
+        "sol" => 57,
+    },
+    "attack_chain_progression" => {
+        "freya" => [ 1 ],
+        "sol" => [ 1 ],
+    },
+);
+
+
+
+my @attack_chain_progression = @{ $base_stats{ "attack_chain_progression" }->{ $opts{ 'g' } } };
 my $next_attack_chain = 0;
-
-
-my $has_pen_boots                   = 1;
-my $has_demonic_grip                = 1;
-my $has_telkhines_ring              = 1;
-my $has_hastened_fatalis            = 0;
-my $has_polynomicon                 = 0;
-my $has_spear                       = 1;
-my $has_shard                       = 1;
-my $has_bancrofts                   = 0;
-my $has_rod                         = 0;
-my $has_book                        = 0;
-my $has_pythagorems                 = 1;
-my $has_void_stone                  = 0;
-
-
-
 
 my %warnings_to_print;
 
-my $attack_rate = $base_attack_rate + 20 * $attack_rate_level_scaling * $base_attack_rate;
-my $mana = $base_mana + 20 * $mana_level_scaling;
+my $attack_rate = $base_stats{ "attack_rate" }->{ $opts{ 'g' } }
+        + 20 * $base_stats{ "attack_rate_level_scaling" }->{ $opts{ 'g' } }
+        * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+my $mana = $base_stats{ "mana" }->{ $opts{ 'g' } }
+        + 20 * $base_stats{ "mana_level_scaling" }->{ $opts{ 'g' } };
 
 #print "attack rate $attack_rate\n";
 
@@ -74,66 +98,66 @@ my $flat_reduction = 0;
 my $percent_reduction = 0;
 
 
-if ($has_pen_boots) {
+if (defined $items{"pen_boots"}) {
     $magical_power += 45;
     $flat_pen += 10;
 }
 
-if ($has_void_stone) {
+if (defined $items{"void_stone"}) {
     $magical_power += 40;
     $flat_reduction += 15;
 }
 
-if ($has_demonic_grip) {
-    $attack_rate += $base_attack_rate * 0.25;
+if (defined $items{"demonic_grip"}) {
+    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.25;
     $magical_power += 60;
 }
 my $demonic_grip_stacks = 0;
 my $demonic_grip_end = 0;
 
-if ($has_telkhines_ring) {
-    $attack_rate += $base_attack_rate * 0.1;
+if (defined $items{"telkhines_ring"}) {
+    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.1;
     $magical_power += 45;
 }
 
-if ($has_hastened_fatalis) {
-    $attack_rate += $base_attack_rate * 0.3;
+if (defined $items{"fatalis"}) {
+    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.3;
 }
 
-if ($has_polynomicon) {
+if (defined $items{"polynomicon"}) {
     $magical_power += 75;
     $mana += 300;
     $lifesteal += .1;
 }
 my $has_polynomicon_buff = 0;
 
-if ($has_spear) {
+if (defined $items{"spear"}) {
     $magical_power += 45;
     $flat_pen += 15;
 }
 my $spear_stacks = 0;
 my $spear_end = 0;
 
-if ($has_shard) {
+if (defined $items{"shard"}) {
     $magical_power += 70;
     $percent_pen += .33;
 }
 
-if ($has_bancrofts) {
+if (defined $items{"bancrofts"}) {
     $magical_power += 100;
     $lifesteal += .12;
 }
 
-if ($has_rod) {
+if (defined $items{"rod"}) {
     $magical_power += 125;
 }
 
-if ($has_pythagorems) {
+if (defined $items{"pythagorems"}) {
     $magical_power += 90;
     $lifesteal += .25;
 }
 
-if ($has_book) {
+if (defined $items{"book"}) {
     $mana += 875;
     $magical_power += 100 + 0.03 * $mana;
 }
@@ -147,11 +171,13 @@ if ($attack_rate > 2.5) { $attack_rate = 2.5; }
 
 my $eff_magical_power = $magical_power;
 
-if ($has_rod) { $eff_magical_power *= 1.25; }
+if (defined $items{"rod"}) { $eff_magical_power *= 1.25; }
 
 print "effective magical power $eff_magical_power\n";
 
-my $base_damage = $base_auto_damage + 20 * $auto_level_scaling + 0.2 * $eff_magical_power;
+my $base_damage = $base_stats{ "auto_damage" }->{ $opts{ 'g' } }
+        + 20 * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
+        + $eff_magical_power;
 my $attack_duration = int(1000 / $attack_rate);
 
 
@@ -256,7 +282,7 @@ while ( $iteration < $max_iterations ) {
 
             if ( $heat == 100 ) { $pre_prot_damage *= 1.25; }
 
-            if ($has_telkhines_ring) {
+            if (defined $items{"telkhines_ring"}) {
                 # apply this AFTER heat % bonus
                 $pre_prot_damage += 40;
             }
@@ -271,24 +297,24 @@ while ( $iteration < $max_iterations ) {
                 $spear_end = $time + 5000;
                 $spear_stacks++;
                 if ($spear_stacks > 2) { $spear_stacks = 2; }
-                if ($has_polynomicon) { $has_polynomicon_buff = 1; }
+                if (defined $items{"polynomicon"}) { $has_polynomicon_buff = 1; }
             }
 
             # get ready for next attack
-            if ($has_spear and ($has_irradiate or $has_pulse)) {
+            if (defined $items{"spear"} and ($has_irradiate or $has_pulse)) {
                 $spear_end = $time + 5000;
                 $spear_stacks++;
                 if ($spear_stacks > 2) { $spear_stacks = 2; }
             }
 
-            if ($has_demonic_grip) {
+            if (defined $items{"demonic_grip"}) {
                 $demonic_grip_end = $time + 3000;
                 $demonic_grip_stacks++;
                 if ($demonic_grip_stacks > 3) { $demonic_grip_stacks = 3; }
             }
 
             # attack chain progression
-            my $heat_attack_rate = $attack_rate + $base_attack_rate * ($heat * 0.25 * 0.012);
+            my $heat_attack_rate = $attack_rate + $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * ($heat * 0.25 * 0.012);
             if ( $heat_attack_rate > 2.5 ) { $heat_attack_rate = 2.5; }
             print "heat effective attack rate = $heat_attack_rate\n";
             my $heat_attack_duration = int(1000 / $heat_attack_rate);
@@ -300,6 +326,8 @@ while ( $iteration < $max_iterations ) {
 
             $heat += 5;
             if ( $heat > 100 ) { $heat = 100; }
+
+            print "next attack $next_attack\n";
         }
 
         $time++;

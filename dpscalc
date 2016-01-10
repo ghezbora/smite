@@ -72,7 +72,7 @@ my %base_stats = (
 
 
 
-my @attack_chain_progression = $base_stats{ "attack_chain_progression" }->{ $opts{ 'g' } };
+my @attack_chain_progression = @{ $base_stats{ "attack_chain_progression" }->{ $opts{ 'g' } } };
 my $next_attack_chain = 0;
 
 my $still_target_stacks = 0;
@@ -409,6 +409,7 @@ while ( $iteration < $max_iterations ) {
             # attack chain progression
             $next_attack = $time + $attack_duration * ${attack_chain_progression}[ $next_attack_chain ];
             $next_attack_chain++;
+            print "attack_duration $attack_duration attack chain " . ${attack_chain_progression}[ $next_attack_chain ] . "\n";
             if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
             $next_attack = int($next_attack + .99999);
 
