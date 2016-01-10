@@ -13,7 +13,7 @@ use Getopt::Std;
 
 my %opts;
 
-getopts('g:i:', \%opts);
+getopts('p:h:g:i:', \%opts);
 
 my @items = split( /\s/, $opts{ 'i' } );
 
@@ -78,19 +78,21 @@ my $time = 0;
 my $next_attack = 0;
 my $num_attacks = 0;
 my $total_attacks = 0;
+my $gold = 0;
 
 my $magical_power = 0;
-#my $lifesteal = 0.15; #freya
 my $lifesteal = 0;
+if ( $opts{ 'g' } eq "freya" ) { $lifesteal += 0.15; }
 
-#my $their_protection = 30 + 18 + 20 + 70 + 40; # bellona with full passive, gaia, spirit robe
 my $their_protection = 30 + 18 + 20 + 50 + 50; # athena with HW, Sov, Void Stone
-#my $their_protection = 30 + 18 + 70; # athena with HW and Sov
-#my $their_protection = 30 + 40; # sol with spirit robe
-#my $their_protection = 30 + 18 + 40; # awilix with spirit robe
+if ( defined $opts{'p'} ) {
+    $their_protection = $opts{'p'};
+}
 
-#my $their_health = 480 + 20 * 85 + 100 + 350 + 325; # bellona with gaia, frostbound, midgardian
 my $their_health = 400 + 20 * 75 + 250; #sol with MoR
+if ( defined $opts{ 'h' } ) {
+    $their_health = $opts{ 'h' };
+}
 
 my $flat_pen = 0;
 my $percent_pen = 0;
@@ -101,21 +103,25 @@ my $percent_reduction = 0;
 if (defined $items{"pen_boots"}) {
     $magical_power += 45;
     $flat_pen += 10;
+    $gold += 1700;
 }
 
 if (defined $items{"cooldown_boots"}) {
     $magical_power += 30;
     $mana += 250;
+    $gold += 1600;
 }
 
 if (defined $items{"void_stone"}) {
     $magical_power += 40;
     $flat_reduction += 15;
+    $gold += 2350;
 }
 
 if (defined $items{"demonic_grip"}) {
     $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.25;
     $magical_power += 60;
+    $gold += 2280;
 }
 my $demonic_grip_stacks = 0;
 my $demonic_grip_end = 0;
@@ -123,22 +129,26 @@ my $demonic_grip_end = 0;
 if (defined $items{"telkhines_ring"}) {
     $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.1;
     $magical_power += 45;
+    $gold += 2125;
 }
 
 if (defined $items{"fatalis"}) {
     $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.3;
+    $gold += 2140;
 }
 
 if (defined $items{"polynomicon"}) {
     $magical_power += 75;
     $mana += 300;
     $lifesteal += .1;
+    $gold += 2300;
 }
 my $has_polynomicon_buff = 0;
 
 if (defined $items{"spear"}) {
     $magical_power += 45;
     $flat_pen += 15;
+    $gold += 2150;
 }
 my $spear_stacks = 0;
 my $spear_end = 0;
@@ -146,26 +156,38 @@ my $spear_end = 0;
 if (defined $items{"shard"}) {
     $magical_power += 70;
     $percent_pen += .33;
+    $gold += 2050;
 }
 
 if (defined $items{"bancrofts"}) {
     $magical_power += 100;
     $lifesteal += .12;
+    $gold += 2400;
 }
 
 if (defined $items{"rod"}) {
     $magical_power += 125;
+    $gold += 3320;
 }
 
 if (defined $items{"pythagorems"}) {
     $magical_power += 90;
     $lifesteal += .25;
+    $gold += 2600;
 }
 
 if (defined $items{"book"}) {
     $mana += 875;
     $magical_power += 100 + 0.03 * $mana;
+    $gold += 2650;
 }
+
+if (defined $items{"gem"} ) {
+    $magical_power += 70;
+    $mana += 250;
+    $gold += 2850;
+}
+
 
 
 
@@ -238,15 +260,15 @@ while ( $iteration < $max_iterations ) {
 
         # anything before first attack (initiation) goes here
 
-        #if ($time == 0) {
-        #    $has_irradiate = 1;
-        #    $has_pulse = 1;
-        #    $irradiate_end = $time + 5000;
-        #    $pulse_end = $time + 5000;
-        #    if ($has_polynomicon) { $has_polynomicon_buff = 1; }
-        #}
+        if ($opts{'g'} eq "freya" and $time == 0) {
+            $has_irradiate = 1;
+            $has_pulse = 1;
+            $irradiate_end = $time + 5000;
+            $pulse_end = $time + 5000;
+            if (defined $items{"polynomicon"}) { $has_polynomicon_buff = 1; }
+        }
 
-        if ($time == 100) {
+        if ($opts{'g'} eq "sol" and $time == 100) {
             # second blast, the time is probably not 100 but it's before the next attack
             my $pre_prot_damage = 160 + 0.35 * $eff_magical_power;
             $damage += calc_mitigated_damage( $pre_prot_damage );
@@ -261,8 +283,15 @@ while ( $iteration < $max_iterations ) {
 
             my $effective_base_damage = $base_damage;
 
-            my $heat_eff_magical_power = $eff_magical_power +
+            my $heat_eff_magical_power;
+            if ( $opts{ 'g' } eq "sol" ) {
+                $heat_eff_magical_power = $eff_magical_power +
                     int(0.25 * $heat * $magical_power / 100);
+            }
+            else
+            {
+                $heat_eff_magical_power = $eff_magical_power;
+            }
             $messages_to_print{ "heat effective magical power" } = $heat_eff_magical_power;
 
             if ($has_polynomicon_buff) {
@@ -282,14 +311,14 @@ while ( $iteration < $max_iterations ) {
 
             $pre_prot_damage += $effective_base_damage;
 
-            if ( $heat == 100 ) { $pre_prot_damage *= 1.25; }
+            if ( $opts{ 'g' } eq "sol" and $heat == 100 ) { $pre_prot_damage *= 1.25; }
 
             if (defined $items{"telkhines_ring"}) {
                 # apply this AFTER heat % bonus
                 $pre_prot_damage += 40;
             }
 
-            if ( $time == 0 ) { # stellar burst
+            if ($opts{ 'g' } eq "sol" and $time == 0 ) { # stellar burst
                 $pre_prot_damage += 160 + 0.35 * $heat_eff_magical_power;
             }
 
@@ -316,10 +345,13 @@ while ( $iteration < $max_iterations ) {
             }
 
             # attack chain progression
-            my $heat_attack_rate = $attack_rate + $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * ($heat * 0.25 * 0.012);
-            if ( $heat_attack_rate > 2.5 ) { $heat_attack_rate = 2.5; }
-            #print "heat effective attack rate = $heat_attack_rate\n";
-            my $heat_attack_duration = int(1000 / $heat_attack_rate);
+            my $heat_attack_duration = $attack_duration;
+            if ( $opts{ 'g' } eq "sol" ) {
+                my $heat_attack_rate = $attack_rate + $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * ($heat * 0.25 * 0.012);
+                if ( $heat_attack_rate > 2.5 ) { $heat_attack_rate = 2.5; }
+                #print "heat effective attack rate = $heat_attack_rate\n";
+                $heat_attack_duration = int(1000 / $heat_attack_rate);
+            }
             $next_attack = $time + int($heat_attack_duration * ${attack_chain_progression}[ $next_attack_chain ]);
             $next_attack_chain++;
             if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
@@ -361,6 +393,6 @@ print "Base attack rate $attack_rate Base attack damage $base_damage\n";
 print "Num attacks: " . $total_attacks/$max_iterations . ", avg damage " . ($damage / $total_attacks) . "\n";
 print "Total damage " . $damage/$max_iterations . " dps " . ($damage / ($max_iterations*$max_time/1000)) . "\n";
 print "Total lifesteal " . ($damage * $lifesteal)/$max_iterations . "\n";
-
+print "Total gold " . $gold . " Damage/gold " . $damage / $gold . "\n";
 
 

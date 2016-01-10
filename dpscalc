@@ -15,7 +15,7 @@ use Getopt::Std;
 
 my %opts;
 
-getopts('g:i:', \%opts);
+getopts('p:h:g:i:', \%opts);
 
 my @items = split( /\s/, $opts{ 'i' } );
 
@@ -100,10 +100,14 @@ my $physical_power = 0;
 my $lifesteal = 0;
 
 my $their_protection = 18 + 60 + 20 + 60 + 40 + 55; # bellona with full passive, Mystical, MoR, and Runeforged
-#my $their_protection = 9 + (20*2.6) + 40; # Sol with MoR
+if ( defined $opts{'p'} ) {
+    $their_protection = $opts{'p'};
+}
 
 my $their_health = 480 + 20 * 85 + 200 + 250 + 325 + 100 + 350; # bellona with Mystical, MoR, Frostbound, Runeforged, and Gaia
-#my $their_health = 400 + 20 * 75 + 250; #sol with MoR
+if ( defined $opts{ 'h' } ) {
+    $their_health = $opts{ 'h' };
+}
 
 my $flat_pen = 0;
 my $percent_pen = 0;
