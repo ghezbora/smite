@@ -44,7 +44,7 @@ my $has_devs_gloves     = 1;
 my $has_soul_eater      = 0;
 my $has_warrior_tabi    = 1;
 my $has_ninja_tabi      = 0;
-my $has_ichaival	= 0;
+my $has_ichaival        = 0;
 my $has_executioner     = 1;
 my $has_titans_bane     = 0;
 my $has_brawlers        = 0;
@@ -230,14 +230,25 @@ sub calc_mitigated_damage( $ ) {
 
     my $pre_prot_damage = shift;
 
+    print "pre_prot_damage = $pre_prot_damage\n";
+    print "    their prot = $their_protection\n";
+
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
+    $their_eff_prot *= (1 - 0.08 * $executioner_stacks);
+    print "    their prot after %reduction $their_eff_prot\n";
     $their_eff_prot -= $flat_reduction;
+    $their_eff_prot -= 6 * $executioner_stacks;
+    print "    their prot after flat reduction $their_eff_prot\n";
     $their_eff_prot *= (1 - $percent_pen);
+    print "    their prot after %pen $their_eff_prot\n";
     $their_eff_prot -= $flat_pen;
     if ($their_eff_prot < 0) { $their_eff_prot = 0; }
+    print "    their prot after flat pen $their_eff_prot\n";
 
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
+
+    print "$damage mitigated damage\n";
     
     return $damage;
 
@@ -360,20 +371,7 @@ while ( $iteration < $max_iterations ) {
                 $executioner_end = $time + 3000;
             }
 
-            my $their_eff_prot = $their_protection;
-            $their_eff_prot *= (1 - $percent_reduction);
-            if ($has_executioner) {
-                $their_eff_prot *= (1 - 0.08 * $executioner_stacks);
-            }
-            $their_eff_prot -= $flat_reduction;
-            if ($has_executioner) {
-                $their_eff_prot -= 6 * $executioner_stacks;
-            }
-            $their_eff_prot *= (1 - $percent_pen);
-            $their_eff_prot -= $flat_pen;
-            if ($their_eff_prot < 0) { $their_eff_prot = 0; }
-
-            $damage += ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
+            $damage += calc_mitigated_damage($pre_prot_damage);
 
             # attack chain progression
             $next_attack = $time + $attack_duration * ${attack_chain_progression}[ $next_attack_chain ];

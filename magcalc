@@ -8,12 +8,18 @@ use strict;
 use warnings;
 
 # base stats
-my $base_attack_rate = 0.95; # freya
-my $attack_rate_level_scaling = 0.0195; # freya
-my $base_auto_damage = 35; #freya
-my $auto_level_scaling = 1.5; #freya
-my $base_mana = 220; #freya
-my $mana_level_scaling = 37; #freya
+#my $base_attack_rate = 0.95; # freya
+#my $attack_rate_level_scaling = 0.0195; # freya
+#my $base_auto_damage = 35; #freya
+#my $auto_level_scaling = 1.5; #freya
+#my $base_mana = 220; #freya
+#my $mana_level_scaling = 37; #freya
+my $base_attack_rate = 1; # sol
+my $attack_rate_level_scaling = 0.018; # sol
+my $base_auto_damage = 34; #sol
+my $auto_level_scaling = 1.45; #sol
+my $base_mana = 300; #sol
+my $mana_level_scaling = 57; #sol
 
 #my @attack_chain_progression = ( 1, 0.75, 1.25 );
 my @attack_chain_progression = ( 1 );
@@ -22,13 +28,13 @@ my $next_attack_chain = 0;
 
 my $has_pen_boots                   = 1;
 my $has_demonic_grip                = 1;
-my $has_telkhines_ring              = 0;
-my $has_hastened_fatalis            = 1;
+my $has_telkhines_ring              = 1;
+my $has_hastened_fatalis            = 0;
 my $has_polynomicon                 = 0;
-my $has_spear                       = 1;
-my $has_shard                       = 0;
+my $has_spear                       = 0;
+my $has_shard                       = 1;
 my $has_bancrofts                   = 0;
-my $has_rod                         = 1;
+my $has_rod                         = 0;
 my $has_book                        = 0;
 my $has_pythagorems                 = 0;
 my $has_void_stone                  = 0;
@@ -55,9 +61,9 @@ my $lifesteal = 0.15; #freya
 
 #my $their_protection = 30 + 18 + 20 + 70 + 40; # bellona with full passive, gaia, spirit robe
 #my $their_protection = 30 + 18 + 20 + 50 + 50; # athena with HW, Sov, Void Stone
+my $their_protection = 30 + 18 + 70; # athena with HW and Sov
 #my $their_protection = 30 + 40; # sol with spirit robe
 #my $their_protection = 30 + 18 + 40; # awilix with spirit robe
-my $their_protection = 150;
 
 #my $their_health = 480 + 20 * 85 + 100 + 350 + 325; # bellona with gaia, frostbound, midgardian
 my $their_health = 400 + 20 * 75 + 250; #sol with MoR
@@ -195,6 +201,8 @@ my $has_pulse = 0;
 my $irradiate_end = 0;
 my $pulse_end = 0;
 
+my $heat = 80;
+
 
 while ( $iteration < $max_iterations ) {
 
@@ -202,44 +210,72 @@ while ( $iteration < $max_iterations ) {
 
         # anything before first attack (initiation) goes here
 
-        if ($time == 0) {
-            $has_irradiate = 1;
-            $has_pulse = 1;
-            $irradiate_end = $time + 5000;
-            $pulse_end = $time + 5000;
-            if ($has_polynomicon) { $has_polynomicon_buff = 1; }
+        #if ($time == 0) {
+        #    $has_irradiate = 1;
+        #    $has_pulse = 1;
+        #    $irradiate_end = $time + 5000;
+        #    $pulse_end = $time + 5000;
+        #    if ($has_polynomicon) { $has_polynomicon_buff = 1; }
+        #}
+
+        if ($time == 100) {
+            # second blast, the time is probably not 100 but it's before the next attack
+            my $pre_prot_damage = 160 + 0.35 * $eff_magical_power;
+            $damage += calc_mitigated_damage( $pre_prot_damage );
+
+            $spear_stacks++;
+            if ($spear_stacks > 2) { $spear_stacks = 2; }
+
+            $heat += 10;
         }
 
         if ( $time == $next_attack ) {
 
             my $effective_base_damage = $base_damage;
 
+            my $heat_eff_magical_power = $eff_magical_power +
+                    int(0.25 * $heat * $magical_power / 100);
+            print "mag power $magical_power eff mag power $eff_magical_power heat power $heat_eff_magical_power\n";
+
             if ($has_polynomicon_buff) {
-                $effective_base_damage += 0.6 * $eff_magical_power;
+                $effective_base_damage += 0.6 * $heat_eff_magical_power;
                 $has_polynomicon_buff = 0;
             }
 
             if ($has_pulse) {
-                $effective_base_damage += 60 + 0.15 * $eff_magical_power;
+                $effective_base_damage += 60 + 0.15 * $heat_eff_magical_power;
             }
 
             if ($has_irradiate) {
-                $effective_base_damage += 100 + 0.25 * $eff_magical_power;
-            }
-
-            if ($has_telkhines_ring) {
-                $effective_base_damage += 40;
+                $effective_base_damage += 100 + 0.25 * $heat_eff_magical_power;
             }
 
             my $pre_prot_damage = 0;
 
             $pre_prot_damage += $effective_base_damage;
 
+            if ( $heat == 100 ) { $pre_prot_damage *= 1.25; }
+
+            if ($has_telkhines_ring) {
+                # apply this AFTER heat % bonus
+                $pre_prot_damage += 40;
+            }
+
+            if ( $time == 0 ) { # stellar burst
+                $pre_prot_damage += 160 + 0.35 * $heat_eff_magical_power;
+            }
+
             $damage += calc_mitigated_damage($pre_prot_damage);
 
+            if ( $time == 0 ) { # stellar burst spear
+                $spear_end = $time + 5000;
+                $spear_stacks++;
+                if ($spear_stacks > 2) { $spear_stacks = 2; }
+                if ($has_polynomicon) { $has_polynomicon_buff = 1; }
+            }
 
             # get ready for next attack
-            if ($has_spear) {
+            if ($has_spear and ($has_irradiate or $has_pulse)) {
                 $spear_end = $time + 5000;
                 $spear_stacks++;
                 if ($spear_stacks > 2) { $spear_stacks = 2; }
@@ -251,13 +287,19 @@ while ( $iteration < $max_iterations ) {
                 if ($demonic_grip_stacks > 3) { $demonic_grip_stacks = 3; }
             }
 
-
             # attack chain progression
-            $next_attack = $time + int($attack_duration * ${attack_chain_progression}[ $next_attack_chain ]);
+            my $heat_attack_rate = $attack_rate + $base_attack_rate * ($heat * 0.25 * 0.012);
+            if ( $heat_attack_rate > 2.5 ) { $heat_attack_rate = 2.5; }
+            print "heat effective attack rate = $heat_attack_rate\n";
+            my $heat_attack_duration = int(1000 / $heat_attack_rate);
+            $next_attack = $time + int($heat_attack_duration * ${attack_chain_progression}[ $next_attack_chain ]);
             $next_attack_chain++;
             if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
 
             $num_attacks++;
+
+            $heat += 5;
+            if ( $heat > 100 ) { $heat = 100; }
         }
 
         $time++;
