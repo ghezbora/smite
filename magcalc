@@ -63,7 +63,7 @@ my %base_stats = (
 my @attack_chain_progression = @{ $base_stats{ "attack_chain_progression" }->{ $opts{ 'g' } } };
 my $next_attack_chain = 0;
 
-my %warnings_to_print;
+my %messages_to_print;
 
 my $attack_rate = $base_stats{ "attack_rate" }->{ $opts{ 'g' } }
         + 20 * $base_stats{ "attack_rate_level_scaling" }->{ $opts{ 'g' } }
@@ -84,8 +84,8 @@ my $magical_power = 0;
 my $lifesteal = 0;
 
 #my $their_protection = 30 + 18 + 20 + 70 + 40; # bellona with full passive, gaia, spirit robe
-#my $their_protection = 30 + 18 + 20 + 50 + 50; # athena with HW, Sov, Void Stone
-my $their_protection = 30 + 18 + 70; # athena with HW and Sov
+my $their_protection = 30 + 18 + 20 + 50 + 50; # athena with HW, Sov, Void Stone
+#my $their_protection = 30 + 18 + 70; # athena with HW and Sov
 #my $their_protection = 30 + 40; # sol with spirit robe
 #my $their_protection = 30 + 18 + 40; # awilix with spirit robe
 
@@ -101,6 +101,11 @@ my $percent_reduction = 0;
 if (defined $items{"pen_boots"}) {
     $magical_power += 45;
     $flat_pen += 10;
+}
+
+if (defined $items{"cooldown_boots"}) {
+    $magical_power += 30;
+    $mana += 250;
 }
 
 if (defined $items{"void_stone"}) {
@@ -192,27 +197,24 @@ sub calc_mitigated_damage( $ ) {
 
     my $pre_prot_damage = shift;
 
-    print "pre_prot_damage = $pre_prot_damage\n";
-    print "    their prot = $their_protection\n";
+    $messages_to_print{ "pre_prot_damage" } = $pre_prot_damage;
+    $messages_to_print{ "their starting prot" } = $their_protection;
 
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
     $their_eff_prot *= (1 - 0.1*$spear_stacks);
     $their_eff_prot *= (1 - 0.07*$demonic_grip_stacks);
-    print "    their prot after %reduction $their_eff_prot\n";
     $their_eff_prot -= $flat_reduction;
     $their_eff_prot -= 10*$spear_stacks;
     $their_eff_prot -= 5*$demonic_grip_stacks;
-    print "    their prot after flat reduction $their_eff_prot\n";
     $their_eff_prot *= (1 - $percent_pen);
-    print "    their prot after %pen $their_eff_prot\n";
     $their_eff_prot -= $flat_pen;
     if ($their_eff_prot < 0) { $their_eff_prot = 0; }
-    print "    their prot after flat pen $their_eff_prot\n";
+    $messages_to_print{ "their effective prot" } = $their_eff_prot;
 
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
-    print "$damage mitigated damage\n";
+    $messages_to_print{ "mitigated damage" } = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
     
     return $damage;
 
@@ -227,7 +229,7 @@ my $has_pulse = 0;
 my $irradiate_end = 0;
 my $pulse_end = 0;
 
-my $heat = 80;
+my $heat = 80; # assume i just cast radiance
 
 
 while ( $iteration < $max_iterations ) {
@@ -261,7 +263,7 @@ while ( $iteration < $max_iterations ) {
 
             my $heat_eff_magical_power = $eff_magical_power +
                     int(0.25 * $heat * $magical_power / 100);
-            print "mag power $magical_power eff mag power $eff_magical_power heat power $heat_eff_magical_power\n";
+            $messages_to_print{ "heat effective magical power" } = $heat_eff_magical_power;
 
             if ($has_polynomicon_buff) {
                 $effective_base_damage += 0.6 * $heat_eff_magical_power;
@@ -316,7 +318,7 @@ while ( $iteration < $max_iterations ) {
             # attack chain progression
             my $heat_attack_rate = $attack_rate + $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * ($heat * 0.25 * 0.012);
             if ( $heat_attack_rate > 2.5 ) { $heat_attack_rate = 2.5; }
-            print "heat effective attack rate = $heat_attack_rate\n";
+            #print "heat effective attack rate = $heat_attack_rate\n";
             my $heat_attack_duration = int(1000 / $heat_attack_rate);
             $next_attack = $time + int($heat_attack_duration * ${attack_chain_progression}[ $next_attack_chain ]);
             $next_attack_chain++;
@@ -326,8 +328,6 @@ while ( $iteration < $max_iterations ) {
 
             $heat += 5;
             if ( $heat > 100 ) { $heat = 100; }
-
-            print "next attack $next_attack\n";
         }
 
         $time++;
@@ -353,8 +353,8 @@ while ( $iteration < $max_iterations ) {
 
 }
 
-foreach my $key (keys %warnings_to_print) {
-        print $key . "\n";
+foreach my $key (keys %messages_to_print) {
+        print $key . " " . $messages_to_print{ $key} . "\n";
 }
 
 print "Base attack rate $attack_rate Base attack damage $base_damage\n";

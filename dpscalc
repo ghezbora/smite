@@ -78,7 +78,7 @@ my $next_attack_chain = 0;
 my $still_target_stacks = 0;
 my $still_target_end = 0;
 
-my %warnings_to_print;
+my %messages_to_print;
 
 #$base_stats{ "attack_rate" }->{ $opts{ 'g' } }
 
@@ -263,25 +263,22 @@ sub calc_mitigated_damage( $ ) {
 
     my $pre_prot_damage = shift;
 
-    #print "pre_prot_damage = $pre_prot_damage\n";
-    #print "    their prot = $their_protection\n";
+    $messages_to_print{ "pre_prot_damage" } = $pre_prot_damage;
+    $messages_to_print{ "their starting prot" } = $their_protection;
 
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
     $their_eff_prot *= (1 - 0.08 * $executioner_stacks);
-    #print "    their prot after %reduction $their_eff_prot\n";
     $their_eff_prot -= $flat_reduction;
     $their_eff_prot -= 6 * $executioner_stacks;
-    #print "    their prot after flat reduction $their_eff_prot\n";
     $their_eff_prot *= (1 - $percent_pen);
-    #print "    their prot after %pen $their_eff_prot\n";
     $their_eff_prot -= $flat_pen;
     if ($their_eff_prot < 0) { $their_eff_prot = 0; }
-    #print "    their prot after flat pen $their_eff_prot\n";
+    $messages_to_print{ "their effective prot" } = $their_eff_prot;
 
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
-    #print "$damage mitigated damage\n";
+    $messages_to_print{ "mitigated damage" } = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
     
     return $damage;
 
@@ -409,7 +406,6 @@ while ( $iteration < $max_iterations ) {
             # attack chain progression
             $next_attack = $time + $attack_duration * ${attack_chain_progression}[ $next_attack_chain ];
             $next_attack_chain++;
-            print "attack_duration $attack_duration attack chain " . ${attack_chain_progression}[ $next_attack_chain ] . "\n";
             if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
             $next_attack = int($next_attack + .99999);
 
@@ -434,7 +430,7 @@ while ( $iteration < $max_iterations ) {
             my $viper_attack_rate = $attack_rate +
                     $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 0.8;
             if ($viper_attack_rate > 2.5) {
-                $warnings_to_print{ "overcapping viper attack rate" } = 1;
+                $messages_to_print{ "overcapping viper attack rate" } = 1;
                 $viper_attack_rate = 2.5;
             }
             my $viper_attack_duration = int(1000 / $viper_attack_rate);
@@ -499,8 +495,8 @@ while ( $iteration < $max_iterations ) {
 
 }
 
-foreach my $key (keys %warnings_to_print) {
-	print $key . "\n";
+foreach my $key (keys %messages_to_print) {
+        print $key . " " . $messages_to_print{ $key} . "\n";
 }
 
 print "Base attack rate $attack_rate Base attack damage $base_damage\n";
