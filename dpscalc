@@ -7,57 +7,88 @@
 use strict;
 use warnings;
 
-# base stats
-#my $base_attack_rate = 0.95; # artemis
-#my $attack_rate_level_scaling = 0.014; # artemis
-#my $base_attack_rate = 1; #awilix
-#my $attack_rate_level_scaling = 0.0189; #awilix
-my $base_attack_rate = 0.95; # medusa
-my $attack_rate_level_scaling = 0.014; # medusa
-#my $base_auto_damage = 35; #artemis
-#my $auto_level_scaling = 2.05; #artemis
-#my $base_auto_damage = 38; #awilix
-#my $auto_level_scaling = 2.16; #awilix
-my $base_auto_damage = 38; #medusa
-my $auto_level_scaling = 2.6; #medusa
-#my $base_mana = 205; #artemis
-#my $mana_level_scaling = 34; #artemis
-#my $base_mana = 220; #awilix
-#my $mana_level_scaling = 38; #awilix
-my $base_mana = 220; #medusa
-my $mana_level_scaling = 34; #medusa
-my $base_crit_chance = 0;
 
-#my @attack_chain_progression = ( 1, 0.75, 1.25 );
-my @attack_chain_progression = ( 1 );
+
+use Getopt::Std;
+
+
+
+my %opts;
+
+getopts('g:i:', \%opts);
+
+my @items = split( /\s/, $opts{ 'i' } );
+
+my %items;
+
+foreach my $item (@items) {
+    $items{ $item } = 1;
+}
+
+
+
+
+
+
+
+my %base_stats = (
+    "attack_rate" => {
+        "artemis" => 0.95,
+        "awilix" => 1,
+        "medusa" => 0.95,
+    },
+    "attack_rate_level_scaling" => {
+        "artemis" => 0.014,
+        "awilix" => 0.0189,
+        "medusa" => 0.014,
+    },
+    "auto_damage" => {
+        "artemis" => 35,
+        "awilix" => 38,
+        "medusa" => 38,
+    },
+    "auto_level_scaling" => {
+        "artemis" => 2.05,
+        "awilix" => 2.16,
+        "medusa" => 2.6,
+    },
+    "mana" => {
+        "artemis" => 205,
+        "awilix" => 220,
+        "medusa" => 220,
+    },
+    "mana_level_scaling" => {
+        "artemis" => 34,
+        "awilix" => 38,
+        "medusa" => 34,
+    },
+    "attack_chain_progression" => {
+        "artemis" => [ 1 ],
+        "awilix" => [ 1, 0.75, 1.25 ],
+        "medusa" => [ 1 ],
+    },
+);
+
+
+
+
+my @attack_chain_progression = $base_stats{ "attack_chain_progression" }->{ $opts{ 'g' } };
 my $next_attack_chain = 0;
 
-my $has_still_target = 0;
 my $still_target_stacks = 0;
 my $still_target_end = 0;
 
-my $has_rage            = 1;
-my $has_malice          = 0;
-my $has_deathbringer    = 1;
-my $has_golden_bow      = 0;
-my $has_devs_gloves     = 1;
-my $has_soul_eater      = 0;
-my $has_warrior_tabi    = 1;
-my $has_ninja_tabi      = 0;
-my $has_ichaival        = 0;
-my $has_executioner     = 1;
-my $has_titans_bane     = 0;
-my $has_brawlers        = 0;
-my $has_asi             = 0;
-my $has_transcendence   = 0;
-my $has_qins            = 1;
-my $has_jotunns         = 0;
-
 my %warnings_to_print;
 
-my $attack_rate = $base_attack_rate + 20 * $attack_rate_level_scaling * $base_attack_rate;
-my $mana = $base_mana + 20 * $mana_level_scaling;
+#$base_stats{ "attack_rate" }->{ $opts{ 'g' } }
 
+my $attack_rate = $base_stats{ "attack_rate" }->{ $opts{ 'g' } }
+        + 20 * $base_stats{ "attack_rate_level_scaling" }->{ $opts{ 'g' } }
+        * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+my $mana = $base_stats{ "mana" }->{ $opts{ 'g' } }
+        + 20 * $base_stats{ "mana_level_scaling" }->{ $opts{ 'g' } };
+
+my $base_crit_chance = 0;
 my $crits = 0;
 my $damage = 0;
 my $time = 0;
@@ -80,97 +111,97 @@ my $flat_reduction = 0;
 my $percent_reduction = 0;
 
 # jotunn's wrath
-if ($has_jotunns) {
+if (defined $items{"jotunns"}) {
     $physical_power += 40;
     $flat_pen += 11;
     $mana += 150;
 }
 
 # transcendence
-if ($has_transcendence) {
+if (defined $items{"transcendence"}) {
     $mana += 1050;
     $physical_power += 35;
     $physical_power += 0.03 * $mana;
 }
 
 # qin's sais
-if ($has_qins) {
-    $attack_rate += 0.15 * $base_attack_rate;
+if (defined $items{"qins"}) {
+    $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $physical_power += 30;
 }
 
 # asi
-if ($has_asi) {
+if (defined $items{"asi"}) {
     $flat_pen += 15;
-    $attack_rate += 0.2 * $base_attack_rate;
+    $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
 }
 
 # brawler's beatstick
-if ($has_brawlers) {
+if (defined $items{"brawlers"}) {
     $physical_power += 40;
     $flat_pen += 20;
 }
 
 # titan's bane
-if ($has_titans_bane) {
+if (defined $items{"titans"}) {
     $percent_pen += 0.33;
 }
 
 # warrior tabi
-if ($has_warrior_tabi) {
+if (defined $items{"warrior_tabi"}) {
     $physical_power += 40;
 }
 
 # ninja tabi
-if ($has_ninja_tabi) {
+if (defined $items{"ninja_tabi"}) {
     $physical_power += 20;
-    $attack_rate += 0.15 * $base_attack_rate;
+    $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
 }
 
 # executioner
-if ($has_executioner) {
+if (defined $items{"executioner"}) {
     $physical_power += 30;
-    $attack_rate += 0.2 * $base_attack_rate;
+    $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
 }
 my $executioner_stacks = 0;
 my $executioner_end = 0;
 
 # ichaival
-if ($has_ichaival) {
-    $attack_rate += $base_attack_rate * 0.3;
+if (defined $items{"ichaival"}) {
+    $attack_rate += 0.3 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $flat_pen += 10;
 }
 my $ichaival_stacks = 0;
 my $ichaival_end = 0;
 
 # dev's gloves
-if ($has_devs_gloves) {
+if (defined $items{"devs_gloves"}) {
     $physical_power += 55;
     $lifesteal += 0.25;
 }
 
 # soul eater
-if ($has_soul_eater) {
-    $attack_rate += $base_attack_rate * 0.15;
+if (defined $items{"soul_eater"}) {
+    $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $physical_power += 15;
     $lifesteal += 0.2;
 }
 
 # golden bow
-if ($has_golden_bow) {
+if (defined $items{"golden_bow"}) {
     $base_crit_chance += 0.1;
     $physical_power += 35;
 }
 
 # rage
-if ($has_rage) {
+if (defined $items{"rage"}) {
     $base_crit_chance += 0.3;
     $physical_power += 30;
 }
 my $rage_stacks = 0;
 
 # malice
-if ($has_malice) {
+if (defined $items{"malice"}) {
     $base_crit_chance += 0.2;
     $physical_power += 50;
 }
@@ -179,7 +210,7 @@ my $next_malice_proc = 0;
 my $malice_procs_left = 0;
 
 # deathbringer
-if ($has_deathbringer) {
+if (defined $items{"deathbringer"}) {
     $base_crit_chance += 0.2;
     $physical_power += 50;
 }
@@ -197,14 +228,16 @@ my $buff_attack_increase = 0.70; # gravity surge
 my $buff_power_increase = 60; # gravity surge
 
 if ($has_buff) {
-    $attack_rate += $base_attack_rate * $buff_attack_increase;
+    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * $buff_attack_increase;
     $physical_power += $buff_power_increase;
 }
 
 if ($attack_rate > 2.5) { $attack_rate = 2.5; }
 
 
-my $base_damage = $base_auto_damage + 20 * $auto_level_scaling + $physical_power;
+my $base_damage = $base_stats{ "auto_damage" }->{ $opts{ 'g' } }
+        + 20 * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
+        + $physical_power;
 my $attack_duration = int(1000 / $attack_rate);
 
 
@@ -230,25 +263,25 @@ sub calc_mitigated_damage( $ ) {
 
     my $pre_prot_damage = shift;
 
-    print "pre_prot_damage = $pre_prot_damage\n";
-    print "    their prot = $their_protection\n";
+    #print "pre_prot_damage = $pre_prot_damage\n";
+    #print "    their prot = $their_protection\n";
 
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
     $their_eff_prot *= (1 - 0.08 * $executioner_stacks);
-    print "    their prot after %reduction $their_eff_prot\n";
+    #print "    their prot after %reduction $their_eff_prot\n";
     $their_eff_prot -= $flat_reduction;
     $their_eff_prot -= 6 * $executioner_stacks;
-    print "    their prot after flat reduction $their_eff_prot\n";
+    #print "    their prot after flat reduction $their_eff_prot\n";
     $their_eff_prot *= (1 - $percent_pen);
-    print "    their prot after %pen $their_eff_prot\n";
+    #print "    their prot after %pen $their_eff_prot\n";
     $their_eff_prot -= $flat_pen;
     if ($their_eff_prot < 0) { $their_eff_prot = 0; }
-    print "    their prot after flat pen $their_eff_prot\n";
+    #print "    their prot after flat pen $their_eff_prot\n";
 
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
-    print "$damage mitigated damage\n";
+    #print "$damage mitigated damage\n";
     
     return $damage;
 
@@ -308,7 +341,7 @@ while ( $iteration < $max_iterations ) {
 
             my $total_crit_chance = $base_crit_chance;
 
-            if ($has_still_target) {
+            if ($opts{ 'g' } eq "artemis") {
                 $total_crit_chance += 0.05 * $still_target_stacks;
 
                 $still_target_stacks += 1;
@@ -316,7 +349,7 @@ while ( $iteration < $max_iterations ) {
                 $still_target_end = $time + 4000;
             }
 
-            if ($has_rage) {
+            if (defined $items{ "rage" }) {
                 $total_crit_chance += 0.1 * $rage_stacks;
             }
 
@@ -326,7 +359,7 @@ while ( $iteration < $max_iterations ) {
             if ( $rng < $total_crit_chance ) {
                 # critical hit
                 $pre_prot_damage += $effective_base_damage * 2;
-                if ($has_deathbringer) {
+                if (defined $items{ "deathbringer" }) {
                     $pre_prot_damage += $effective_base_damage * 0.4;
                 }
                 $crits++;
@@ -351,11 +384,11 @@ while ( $iteration < $max_iterations ) {
                 }
             }
 
-            if ($has_qins) {
+            if (defined $items{ "qins" }) {
                 $pre_prot_damage += 0.04 * $their_health;
             }
 
-            if ($has_ichaival) {
+            if (defined $items{ "ichaival" }) {
                 $ichaival_stacks += 1;
                 if ($ichaival_stacks > 3) {
                     $ichaival_stacks = 3;
@@ -363,7 +396,7 @@ while ( $iteration < $max_iterations ) {
                 $ichaival_end = $time + 3000;
             }
 
-            if ($has_executioner) {
+            if (defined $items{ "executioner" }) {
                 $executioner_stacks += 1;
                 if ($executioner_stacks > 3) {
                     $executioner_stacks = 3;
@@ -383,7 +416,8 @@ while ( $iteration < $max_iterations ) {
                 $viper_shots_left--;
                 my $pre_prot_damage = 90 + $effective_base_damage * 0.3;
                 $damage += calc_mitigated_damage( $pre_prot_damage );
-                my $viper_attack_rate = $attack_rate + $base_attack_rate * 0.8;
+                my $viper_attack_rate = $attack_rate +
+                        $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 0.8;
                 if ($viper_attack_rate > 2.5) {
                     $viper_attack_rate = 2.5;
                 }
@@ -396,7 +430,8 @@ while ( $iteration < $max_iterations ) {
 
         if ($num_attacks == 1 and $viper_shots_left == 0) {
             $viper_shots_left = 3;
-            my $viper_attack_rate = $attack_rate + $base_attack_rate * 0.8;
+            my $viper_attack_rate = $attack_rate +
+                    $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 0.8;
             if ($viper_attack_rate > 2.5) {
                 $warnings_to_print{ "overcapping viper attack rate" } = 1;
                 $viper_attack_rate = 2.5;
@@ -430,7 +465,8 @@ while ( $iteration < $max_iterations ) {
             $ichaival_stacks = 0;
         }
 
-        if ( $has_malice and $time == $next_malice_proc and $malice_procs_left > 0 )
+        if ( defined $items{ "malice" }
+                and $time == $next_malice_proc and $malice_procs_left > 0 )
         {
             $total_malice_procs++;
             my $pre_prot_damage = 0.25 * $base_damage; # effected by ichaival?
@@ -471,7 +507,7 @@ print "Num attacks: " . $total_attacks/$max_iterations . ", avg damage " . ($dam
 print "Total damage " . $damage/$max_iterations . " dps " . ($damage / ($max_iterations*$max_time/1000)) . "\n";
 print "Total lifesteal " . ($damage * $lifesteal)/$max_iterations . "\n";
 print "Num crits: " . $crits/$max_iterations .", total crit chance " . ($crits / $total_attacks) . "\n";
-if ($has_malice) {
+if (defined $items{ "malice" }) {
     print  "Total Malice procs " . $total_malice_procs/$max_iterations . " Malice procs/crit " . ($total_malice_procs/$crits) . " Malice bonus DPS " . ($total_malice_procs * 0.25 * $base_damage)/($max_iterations*$max_time/1000) . "\n";
 }
 

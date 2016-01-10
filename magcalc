@@ -31,12 +31,12 @@ my $has_demonic_grip                = 1;
 my $has_telkhines_ring              = 1;
 my $has_hastened_fatalis            = 0;
 my $has_polynomicon                 = 0;
-my $has_spear                       = 0;
+my $has_spear                       = 1;
 my $has_shard                       = 1;
 my $has_bancrofts                   = 0;
 my $has_rod                         = 0;
 my $has_book                        = 0;
-my $has_pythagorems                 = 0;
+my $has_pythagorems                 = 1;
 my $has_void_stone                  = 0;
 
 
@@ -56,8 +56,8 @@ my $num_attacks = 0;
 my $total_attacks = 0;
 
 my $magical_power = 0;
-my $lifesteal = 0.15; #freya
-#my $lifesteal = 0;
+#my $lifesteal = 0.15; #freya
+my $lifesteal = 0;
 
 #my $their_protection = 30 + 18 + 20 + 70 + 40; # bellona with full passive, gaia, spirit robe
 #my $their_protection = 30 + 18 + 20 + 50 + 50; # athena with HW, Sov, Void Stone
