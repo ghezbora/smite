@@ -15,7 +15,10 @@ use Getopt::Std;
 
 my %opts;
 
-getopts('p:h:g:i:', \%opts);
+getopts('vp:h:g:i:', \%opts);
+
+my $verbose = 0;
+if ( defined $opts{'v'} ) { $verbose = 1; }
 
 my @items = split( /\s/, $opts{ 'i' } );
 
@@ -293,6 +296,10 @@ sub calc_mitigated_damage( $ ) {
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
     $messages_to_print{ "mitigated damage" } = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
+    
+    if ( $verbose ) {
+        print "time $time their prot $their_protection -> $their_eff_prot; damage $pre_prot_damage -> " . int(( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage) . " $executioner_stacks exec stacks\n";
+    }
     
     return $damage;
 
