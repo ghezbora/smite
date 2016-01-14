@@ -13,7 +13,10 @@ use Getopt::Std;
 
 my %opts;
 
-getopts('vt:p:h:g:i:', \%opts);
+getopts('vl:t:p:h:g:i:', \%opts);
+
+my $char_level = 20;
+if (defined $opts{'l'} ) { $char_level = $opts{'l'}; }
 
 my $verbose = 0;
 if ( defined $opts{'v'} ) { $verbose = 1; }
@@ -69,10 +72,10 @@ my $next_attack_chain = 0;
 my %messages_to_print;
 
 my $attack_rate = $base_stats{ "attack_rate" }->{ $opts{ 'g' } }
-        + 20 * $base_stats{ "attack_rate_level_scaling" }->{ $opts{ 'g' } }
+        + $char_level * $base_stats{ "attack_rate_level_scaling" }->{ $opts{ 'g' } }
         * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
 my $mana = $base_stats{ "mana" }->{ $opts{ 'g' } }
-        + 20 * $base_stats{ "mana_level_scaling" }->{ $opts{ 'g' } };
+        + $char_level * $base_stats{ "mana_level_scaling" }->{ $opts{ 'g' } };
 
 #print "attack rate $attack_rate\n";
 
@@ -206,7 +209,7 @@ if (defined $items{"rod"}) { $eff_magical_power *= 1.25; }
 print "effective magical power $eff_magical_power\n";
 
 my $base_damage = $base_stats{ "auto_damage" }->{ $opts{ 'g' } }
-        + 20 * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
+        + $char_level * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
         + 0.2 * $eff_magical_power;
 my $attack_duration = int(1000 / $attack_rate);
 
@@ -261,8 +264,12 @@ my $pulse_end = 0;
 
 my $heat = 0;
 my $radiance_time = 0;
+my $radiance_level = 5;
+my @radiance_heat_amount = ( 0, 40, 50, 60, 70, 80 );
 my $stellar_burst_time = 0;
 my $stellar_burst_detonate_time = $stellar_burst_time + 100;
+my $stellar_burst_level = 5;
+my @stellar_burst_damage = ( 0, 40, 70, 100, 130, 160 );
 
 my $polynomicon_procs = 0;
 my $polynomicon_damage = 0;
@@ -288,7 +295,7 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "sol" and $time == $stellar_burst_detonate_time) {
             # second blast, the time is probably not 100 but it's before the next attack
-            my $pre_prot_damage = 160 + 0.35 * $eff_magical_power;
+            my $pre_prot_damage = $stellar_burst_damage[ $stellar_burst_level ] + 0.35 * $eff_magical_power;
             $damage += calc_mitigated_damage( $pre_prot_damage );
 
             if(defined $items{"spear"}) {
@@ -301,7 +308,7 @@ while ( $iteration < $max_iterations ) {
         }
 
         if ($opts{'g'} eq "sol" and $time == $radiance_time) {
-            $heat += 80;
+            $heat += $radiance_heat_amount[ $radiance_level ];
             if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
                 $has_polynomicon_buff = 1;
             }
@@ -326,7 +333,7 @@ while ( $iteration < $max_iterations ) {
             my $pre_prot_damage = 0;
 
             my $heat_eff_base_damage = $base_stats{ "auto_damage" }->{ $opts{ 'g' } }
-                    + 20 * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
+                    + $char_level * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
                     + 0.2 * $heat_eff_magical_power;
             $pre_prot_damage += $heat_eff_base_damage;
 
@@ -354,7 +361,8 @@ while ( $iteration < $max_iterations ) {
             }
 
             if ($opts{ 'g' } eq "sol" and $time >= $stellar_burst_time) { # stellar burst
-                $pre_prot_damage += 160 + 0.35 * $heat_eff_magical_power;
+                $pre_prot_damage += $stellar_burst_damage[ $stellar_burst_level ]
+                        + 0.35 * $heat_eff_magical_power;
                 if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
                     $has_polynomicon_buff = 1;
                 }
@@ -386,7 +394,7 @@ while ( $iteration < $max_iterations ) {
             if ( $opts{ 'g' } eq "sol" ) {
                 my $heat_attack_rate = $attack_rate + $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * ($heat * 0.25 * 0.012);
                 if ( $heat_attack_rate > 2.5 ) { $heat_attack_rate = 2.5; }
-                #print "heat effective attack rate = $heat_attack_rate\n";
+                $messages_to_print{ "heat effective attack rate" } = $heat_attack_rate;
                 $heat_attack_duration = int(1000 / $heat_attack_rate);
             }
             $next_attack = $time + int($heat_attack_duration * ${attack_chain_progression}[ $next_attack_chain ]);
