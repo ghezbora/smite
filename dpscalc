@@ -39,36 +39,43 @@ my %base_stats = (
         "artemis" => 0.95,
         "awilix" => 1,
         "medusa" => 0.95,
+        "xbal" => 0.95,
     },
     "attack_rate_level_scaling" => {
         "artemis" => 0.014,
         "awilix" => 0.0189,
         "medusa" => 0.014,
+        "xbal" => 0.01,
     },
     "auto_damage" => {
         "artemis" => 35,
         "awilix" => 38,
         "medusa" => 38,
+        "xbal" => 37,
     },
     "auto_level_scaling" => {
         "artemis" => 2.05,
         "awilix" => 2.16,
         "medusa" => 2.6,
+        "xbal" => 2.5,
     },
     "mana" => {
         "artemis" => 205,
         "awilix" => 220,
         "medusa" => 220,
+        "xbal" => 220,
     },
     "mana_level_scaling" => {
         "artemis" => 34,
         "awilix" => 38,
         "medusa" => 34,
+        "xbal" => 37,
     },
     "attack_chain_progression" => {
         "artemis" => [ 1 ],
         "awilix" => [ 1, 0.75, 1.25 ],
         "medusa" => [ 1 ],
+        "xbal" => [ 1 ],
     },
 );
 
@@ -126,6 +133,12 @@ if (defined $items{"jotunns"}) {
     $mana += 150;
     $gold += 2440;
 }
+
+if (defined $items{"fatalis"}) {
+    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.3;
+    $gold += 2140;
+}
+
 
 # transcendence
 if (defined $items{"transcendence"}) {
@@ -247,6 +260,13 @@ my $vengeful_assault = 0;
 my $vengeful_assault_end = 0;
 my $gravity_surge = 0;
 my $gravity_surge_end = 0;
+my $has_initiative = 0;
+my $initiative_end = 0;
+my $has_branching_bolas = 0;
+my $xbal_passive_stacks = 0;
+if ( $opts{'g'} eq "xbal" ) {
+    $xbal_passive_stacks = 6;
+}
 
 
 if ($attack_rate > 2.5) { $attack_rate = 2.5; }
@@ -280,8 +300,8 @@ sub calc_mitigated_damage( $ ) {
 
     my $pre_prot_damage = shift;
 
-    $messages_to_print{ "pre_prot_damage" } = $pre_prot_damage;
-    $messages_to_print{ "their starting prot" } = $their_protection;
+    #$messages_to_print{ "pre_prot_damage" } = $pre_prot_damage;
+    #$messages_to_print{ "their starting prot" } = $their_protection;
 
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
@@ -291,11 +311,11 @@ sub calc_mitigated_damage( $ ) {
     $their_eff_prot *= (1 - $percent_pen);
     $their_eff_prot -= $flat_pen;
     if ($their_eff_prot < 0) { $their_eff_prot = 0; }
-    $messages_to_print{ "their effective prot" } = $their_eff_prot;
+    #$messages_to_print{ "their effective prot" } = $their_eff_prot;
 
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
-    $messages_to_print{ "mitigated damage" } = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
+    #$messages_to_print{ "mitigated damage" } = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
     
     if ( $verbose ) {
         print "time $time their prot $their_protection -> $their_eff_prot; damage $pre_prot_damage -> " . int(( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage) . " $executioner_stacks exec stacks\n";
@@ -332,7 +352,11 @@ while ( $iteration < $max_iterations ) {
 
     while ( $time < $max_time ) {
 
-        if ($opts{'g'} eq "medusa" and $time == 0) {
+        if ($opts{'g'} eq 'xbal' and $time == 0) {
+            $has_branching_bolas = 1;
+        }
+
+        if ($opts{'g'} eq "medusa" and $time == -1) {
             # start combo with ult
             my $pre_prot_damage = 700 + $base_damage;
             $damage += calc_mitigated_damage($pre_prot_damage);
@@ -342,8 +366,8 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "artemis" and $time == 0) {
             # start with tusky
-            my $pre_prot_damage = 450 + $base_damage;
-            $damage += calc_mitigated_damage($pre_prot_damage);
+            #my $pre_prot_damage = 450 + $base_damage;
+            #$damage += calc_mitigated_damage($pre_prot_damage);
             $vengeful_assault = 1;
             $vengeful_assault_end = $time + 5000;
         }
@@ -356,12 +380,27 @@ while ( $iteration < $max_iterations ) {
             $pre_prot_damage = 400 + 0.8 * $base_damage;
             $damage += calc_mitigated_damage($pre_prot_damage);
 
+            $has_initiative = 1;
+            $initiative_end = $time + 2500;
+
             $next_attack = 250;
         }
 
         if ( $time == $next_attack ) {
 
-	    my $effective_base_damage = $base_damage + 10 * $ichaival_stacks;
+	    my $effective_base_damage = $base_damage * ${attack_chain_progression}[ $next_attack_chain ]
+                    + 10 * $ichaival_stacks + 5 * $xbal_passive_stacks;
+
+            if ($has_initiative) {
+                $effective_base_damage += $physical_power * 0.3;
+            }
+
+            if ($has_branching_bolas) {
+                $effective_base_damage += 50;
+            }
+
+            $next_attack_chain++;
+            if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
 
             my $total_crit_chance = $base_crit_chance;
 
@@ -440,8 +479,6 @@ while ( $iteration < $max_iterations ) {
             }
             my $eff_attack_duration = int(1000 / $eff_attack_rate);
             $next_attack = $time + $eff_attack_duration * ${attack_chain_progression}[ $next_attack_chain ];
-            $next_attack_chain++;
-            if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
             $next_attack = int($next_attack + .99999);
 
             if ($viper_shots_left > 0) {
@@ -504,6 +541,10 @@ while ( $iteration < $max_iterations ) {
 
         if ( $time == $ichaival_end ) {
             $ichaival_stacks = 0;
+        }
+
+        if ( $time == $initiative_end ) {
+            $has_initiative = 0;
         }
 
         if ( defined $items{ "malice" }

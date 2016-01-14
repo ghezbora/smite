@@ -13,7 +13,7 @@ use Getopt::Std;
 
 my %opts;
 
-getopts('vp:h:g:i:', \%opts);
+getopts('vt:p:h:g:i:', \%opts);
 
 my $verbose = 0;
 if ( defined $opts{'v'} ) { $verbose = 1; }
@@ -214,6 +214,7 @@ my $attack_duration = int(1000 / $attack_rate);
 my $iteration = 0;
 my $max_iterations = 1; # no crits, no RNG
 my $max_time = 5000;
+if (defined $opts{'t'}) { $max_time = $opts{'t'}; }
 
 
 
@@ -322,14 +323,6 @@ while ( $iteration < $max_iterations ) {
             }
             $messages_to_print{ "heat effective magical power" } = $heat_eff_magical_power;
 
-            if ($has_pulse) {
-                $effective_base_damage += 60 + 0.15 * $heat_eff_magical_power;
-            }
-
-            if ($has_irradiate) {
-                $effective_base_damage += 100 + 0.25 * $heat_eff_magical_power;
-            }
-
             my $pre_prot_damage = 0;
 
             my $heat_eff_base_damage = $base_stats{ "auto_damage" }->{ $opts{ 'g' } }
@@ -337,6 +330,15 @@ while ( $iteration < $max_iterations ) {
                     + 0.2 * $heat_eff_magical_power;
             $pre_prot_damage += $heat_eff_base_damage;
 
+            if ($has_pulse) {
+                $pre_prot_damage += 60 + 0.15 * $heat_eff_magical_power;
+            }
+
+            if ($has_irradiate) {
+                $pre_prot_damage += 100 + 0.25 * $heat_eff_magical_power;
+            }
+
+            # apply sol's bonus only to her base damage, not to polynomicon / telkhines / etc.
             if ( $opts{ 'g' } eq "sol" and $heat == 100 ) { $pre_prot_damage *= 1.25; }
 
             if ($has_polynomicon_buff) {
@@ -348,7 +350,6 @@ while ( $iteration < $max_iterations ) {
             }
 
             if (defined $items{"telkhines_ring"}) {
-                # apply this AFTER heat % bonus
                 $pre_prot_damage += 40;
             }
 
@@ -399,12 +400,13 @@ while ( $iteration < $max_iterations ) {
         }
 
         $time++;
-    }
 
-    if ($time == $spear_end) { $spear_stacks = 0; }
-    if ($time == $demonic_grip_end) { $demonic_grip_stacks = 0; }
-    if ($time == $pulse_end) { $has_pulse = 0; }
-    if ($time == $irradiate_end) { $has_irradiate = 0; }
+        if ($time == $spear_end) { $spear_stacks = 0; }
+        if ($time == $demonic_grip_end) { $demonic_grip_stacks = 0; }
+        if ($time == $pulse_end) { $has_pulse = 0; }
+        if ($time == $irradiate_end) { $has_irradiate = 0; }
+
+    }
 
     # reset
     $time = 0;
