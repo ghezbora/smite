@@ -143,6 +143,16 @@ my %ability_stats = (
         "sentinel" => 0,
         "im_a_monster" => 0,
 
+        "irradiate" => 0,
+        "pulse" => 0,
+        "banish" => 0,
+        "valkyries_discretion" => 0,
+
+        "radiance" => 0,
+        "stellar_burst" => 0,
+        "disapparate" => 0,
+        "supernova" => 0,
+
         "shadow_lock" => 1,
         "siphon_darkness" => 2,
         "shadow_step" => 0,
@@ -156,6 +166,8 @@ my %ability_stats = (
 my %abilities = (
     "scylla" => [ "sic_em", "crush", "sentinel", "im_a_monster" ],
     "nox" => [ "shadow_lock", "siphon_darkness", "shadow_step", "night_terror" ],
+    "freya" => [ "irradiate", "pulse", "banish", "valkyries_discretion" ],
+    "sol" => [ "radiance", "stellar_burst", "disapparate", "supernova" ],
 );
 
 
@@ -526,172 +538,6 @@ while ( $iteration < $max_iterations ) {
             }
         }
         
-
-#        # anything before first attack (initiation) goes here
-#        if ($opts{'g'} eq "nox" and $time >= $ability_stats{ "time" }->{ "shadow_lock" } ) {
-#            # use shadow_lock
-#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "shadow_lock" }->[
-#                    $ability_stats{ "level" }->{ "shadow_lock" } ] +
-#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "shadow_lock" });
-#            $damage += calc_mitigated_damage( $pre_prot_damage );
-#
-#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-#                $has_polynomicon_buff = 1;
-#                $polynomicon_time = $time + 3000;
-#            }
-#            if(defined $items{"spear"}) {
-#                $spear_stacks++;
-#                $spear_end = $time + 5000;
-#                if ($spear_stacks > 2) { $spear_stacks = 2; }
-#            }
-#
-#            $shadow_lock_ticks_left = 3;
-#            $shadow_lock_next_tick = $time + 500;
-#
-#            $ability_stats{ "time" }->{ "shadow_lock" } = $time +
-#                    (1000*($ability_stats{ "cooldown" }->{ "shadow_lock" } * (1 - $cdr)));
-#        }
-#
-#        if ($time == $shadow_lock_next_tick and $shadow_lock_ticks_left > 0) {
-#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "shadow_lock" }->[
-#                    $ability_stats{ "level" }->{ "shadow_lock" } ] +
-#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "shadow_lock" });
-#            $damage += calc_mitigated_damage( $pre_prot_damage );
-#
-#            if(defined $items{"spear"}) {
-#                $spear_stacks++;
-#                $spear_end = $time + 5000;
-#                if ($spear_stacks > 2) { $spear_stacks = 2; }
-#            }
-#
-#            $shadow_lock_ticks_left--;
-#            $shadow_lock_next_tick = $time + 500;
-#        }
-#
-#        if ($opts{'g'} eq "nox" and $time >= $ability_stats{ "time" }->{ "siphon_darkness" } ) {
-#            # use siphon_darkness
-#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "siphon_darkness" }->[
-#                    $ability_stats{ "level" }->{ "siphon_darkness" } ] +
-#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "siphon_darkness" });
-#            $damage += calc_mitigated_damage( $pre_prot_damage );
-#
-#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-#                $has_polynomicon_buff = 1;
-#                $polynomicon_time = $time + 3000;
-#            }
-#            if(defined $items{"spear"}) {
-#                $spear_stacks++;
-#                $spear_end = $time + 5000;
-#                if ($spear_stacks > 2) { $spear_stacks = 2; }
-#            }
-#
-#            $ability_stats{ "time" }->{ "siphon_darkness" } = $time +
-#                    (1000*($ability_stats{ "cooldown" }->{ "siphon_darkness" } * (1 - $cdr)));
-#        }
-#
-#        if ($opts{'g'} eq "nox" and $time >= $ability_stats{ "time" }->{ "night_terror" } ) {
-#            # use night_terror
-#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "night_terror" }->[
-#                    $ability_stats{ "level" }->{ "night_terror" } ] +
-#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "night_terror" });
-#            $damage += calc_mitigated_damage( $pre_prot_damage );
-#
-#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-#                $has_polynomicon_buff = 1;
-#                $polynomicon_time = $time + 3000;
-#            }
-#            if(defined $items{"spear"}) {
-#                $spear_stacks++;
-#                $spear_end = $time + 5000;
-#                if ($spear_stacks > 2) { $spear_stacks = 2; }
-#            }
-#
-#            $night_terror_ticks_left = 5;
-#            $night_terror_next_tick = $time + 1000;
-#
-#            $ability_stats{ "time" }->{ "night_terror" } = $time +
-#                    (1000*($ability_stats{ "cooldown" }->{ "night_terror" } * (1 - $cdr)));
-#        }
-#
-#        if ($time == $night_terror_next_tick and $night_terror_ticks_left > 0) {
-#            my $pre_prot_damage = 0.1 * ($ability_stats{ "damage" }->{ "night_terror" }->[
-#                    $ability_stats{ "level" }->{ "night_terror" } ] ) +
-#                    ($eff_magical_power * 0.05);
-#            $damage += calc_mitigated_damage( $pre_prot_damage );
-#
-#            if(defined $items{"spear"}) {
-#                $spear_stacks++;
-#                $spear_end = $time + 5000;
-#                if ($spear_stacks > 2) { $spear_stacks = 2; }
-#            }
-#
-#            $night_terror_ticks_left--;
-#            $night_terror_next_tick = $time + 1000;
-#        }
-#
-#        if ($opts{'g'} eq "scylla" and $time >= $ability_stats{ "time" }->{ "crush" } ) {
-#            # use crush
-#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "crush" }->[
-#                    $ability_stats{ "level" }->{ "crush" } ] +
-#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "crush" });
-#            $damage += calc_mitigated_damage( $pre_prot_damage );
-#
-#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-#                $has_polynomicon_buff = 1;
-#                $polynomicon_time = $time + 3000;
-#            }
-#            if(defined $items{"spear"}) {
-#                $spear_stacks++;
-#                $spear_end = $time + 5000;
-#                if ($spear_stacks > 2) { $spear_stacks = 2; }
-#            }
-#
-#            $ability_stats{ "time" }->{ "crush" } = $time +
-#                    (1000*($ability_stats{ "cooldown" }->{ "crush" } * (1 - $cdr)));
-#        }
-#
-#        if ($opts{'g'} eq "scylla" and $time >= $ability_stats{ "time" }->{ "sic_em" } ) {
-#            # use sic_em
-#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "sic_em" }->[
-#                    $ability_stats{ "level" }->{ "sic_em" } ] +
-#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "sic_em" });
-#            $damage += calc_mitigated_damage( $pre_prot_damage );
-#
-#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-#                $has_polynomicon_buff = 1;
-#                $polynomicon_time = $time + 3000;
-#            }
-#            if(defined $items{"spear"}) {
-#                $spear_stacks++;
-#                $spear_end = $time + 5000;
-#                if ($spear_stacks > 2) { $spear_stacks = 2; }
-#            }
-#
-#            $ability_stats{ "time" }->{ "sic_em" } = $time +
-#                    (1000*($ability_stats{ "cooldown" }->{ "sic_em" } * (1 - $cdr)));
-#        }
-#
-#        if ($opts{'g'} eq "scylla" and $time >= $ability_stats{ "time" }->{ "im_a_monster" } ) {
-#            # use im_a_monster
-#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "im_a_monster" }->[
-#                    $ability_stats{ "level" }->{ "im_a_monster" } ] +
-#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "im_a_monster" });
-#            $damage += calc_mitigated_damage( $pre_prot_damage );
-#
-#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-#                $has_polynomicon_buff = 1;
-#                $polynomicon_time = $time + 3000;
-#            }
-#            if(defined $items{"spear"}) {
-#                $spear_stacks++;
-#                $spear_end = $time + 5000;
-#                if ($spear_stacks > 2) { $spear_stacks = 2; }
-#            }
-#
-#            $ability_stats{ "time" }->{ "im_a_monster" } = $time +
-#                    (1000*($ability_stats{ "cooldown" }->{ "im_a_monster" } * (1 - $cdr)));
-#        }
-
         if ($opts{'g'} eq "freya" and $time == 0) {
             $has_irradiate = 1;
             $has_pulse = 1;
