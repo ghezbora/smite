@@ -587,14 +587,14 @@ foreach my $key (keys %messages_to_print) {
 }
 
 print "Base attack rate $attack_rate Base attack damage $base_damage\n";
-print "Num attacks: " . $total_attacks/$max_iterations . ", avg damage " . ($damage / $total_attacks) . "\n";
-print "Total damage " . $damage/$max_iterations . " dps " . ($damage / ($max_iterations*$max_time/1000)) . "\n";
-print "Total lifesteal " . ($damage * $lifesteal)/$max_iterations . "\n";
-print "Num crits: " . $crits/$max_iterations .", total crit chance " . ($crits / $total_attacks) . "\n";
+printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($damage / $total_attacks);
+printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$max_time/1000));
+printf "Total lifesteal %.2f\n", ($damage * $lifesteal)/$max_iterations;
+printf "Num crits: %d total crit chance %.2f\n", $crits/$max_iterations, ($crits / $total_attacks);
 if (defined $items{ "malice" }) {
-    print  "Total Malice procs " . $total_malice_procs/$max_iterations . " Malice procs/crit " . ($total_malice_procs/$crits) . " Malice bonus DPS " . ($total_malice_procs * 0.25 * $base_damage)/($max_iterations*$max_time/1000) . "\n";
+    printf  "Total Malice procs %d Malice procs/crit %.2f Malice bonus damage per crit %.2f\n", $total_malice_procs/$max_iterations, ($total_malice_procs/$crits), ($total_malice_procs * 0.25 * $base_damage)/($crits);
 }
-print "Total gold " . $gold . " Damage/gold " . $damage / $gold / $max_iterations . "\n";
+printf "Total gold %d Damage/gold %.2f\n", $gold, $damage / $gold / $max_iterations;
 
 
 

@@ -436,12 +436,12 @@ foreach my $key (keys %messages_to_print) {
 }
 
 print "Base attack rate $attack_rate Base attack damage $base_damage\n";
-print "Num attacks: " . $total_attacks/$max_iterations . ", avg damage " . int($damage / $total_attacks) . "\n";
-print "Total damage " . int($damage/$max_iterations) . " dps " . int($damage / ($max_iterations*$max_time/1000)) . "\n";
+printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($damage / $total_attacks);
+printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$max_time/1000));
 if ( defined $items{ "polynomicon" } ) {
     print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
 }
-print "Total lifesteal " . ($damage * $lifesteal)/$max_iterations . "\n";
+printf "Total lifesteal %.2f\n", ($damage * $lifesteal)/$max_iterations;
 printf "Total gold %d damage/gold %.2f\n", $gold, $damage / $gold;
 
 
