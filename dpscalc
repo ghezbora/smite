@@ -2,20 +2,25 @@
 
 
 # Wish list
+# divide magical and physical protection
 #
 
 use strict;
 use warnings;
 
-
-
 use Getopt::Std;
 
+#################################################################################
+# declare globals
+#################################################################################
 
 
 my %opts;
 
-getopts('vp:h:g:i:', \%opts);
+getopts('vl:t:p:h:g:i:', \%opts);
+
+my $char_level = 20;
+if (defined $opts{'l'} ) { $char_level = $opts{'l'}; }
 
 my $verbose = 0;
 if ( defined $opts{'v'} ) { $verbose = 1; }
@@ -34,44 +39,252 @@ foreach my $item (@items) {
 
 
 
+my %ability_stats = (
+    "cooldown" => {
+        "crush" => 10,
+        "sic_em" => 10,
+        "sentinel" => 15,
+        "im_a_monster" => 90,
+
+        "shadow_lock" => 10,
+        "siphon_darkness" => 15,
+        "shadow_step" => 15,
+        "night_terror" => 90,
+    },
+    "time" => { # will be updated with cooldown when used
+        "crush" => 0,
+        "sic_em" => 0,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "shadow_lock" => 0,
+        "siphon_darkness" => 0,
+        "shadow_step" => 0,
+        "night_terror" => 0,
+    },
+    "damage" => {
+        "crush" => [ 0, 90, 140, 190, 240, 290 ],
+        "sic_em" => [ 0, 60, 110, 160, 210, 260 ],
+        "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
+        "im_a_monster" => [ 0, 400, 500, 600, 700, 800 ],
+
+        "shadow_lock" => [ 0, 0, 0, 0, 0, 0 ],
+        "siphon_darkness" => [ 0, 90, 160, 230, 300, 370 ],
+        "shadow_step" => [ 0, 70, 110, 150, 190, 230 ],
+        "night_terror" => [ 0, 200, 250, 300, 350, 400 ],
+    },
+    "tick_damage" => {
+        "crush" => [ 0, 0, 0, 0, 0, 0 ],
+        "sic_em" => [ 0, 0, 0, 0, 0, 0 ],
+        "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
+        "im_a_monster" => [ 0, 0, 0, 0, 0, 0 ],
+
+        "shadow_lock" => [ 0, 30, 40, 50, 60, 70 ],
+        "siphon_darkness" => [ 0, 0, 0, 0, 0, 0 ],
+        "shadow_step" => [ 0, 0, 0, 0, 0, 0 ],
+        "night_terror" => [ 0, 20, 25, 30, 35, 40 ],
+    },
+    "scaling" => {
+        "crush" => 0.8,
+        "sic_em" => 0.6,
+        "sentinel" => 0,
+        "im_a_monster" => 1.2,
+
+        "shadow_lock" => 0,
+        "siphon_darkness" => 1,
+        "shadow_step" => 0.4,
+        "night_terror" => .6,
+    },
+    "tick_scaling" => {
+        "crush" => 0,
+        "sic_em" => 0,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "shadow_lock" => 0.2,
+        "siphon_darkness" => 0,
+        "shadow_step" => 0,
+        "night_terror" => .05,
+    },
+    "tick_duration" => {
+        "crush" => 0,
+        "sic_em" => 0,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "shadow_lock" => .5,
+        "siphon_darkness" => 0,
+        "shadow_step" => 0,
+        "night_terror" => 1,
+    },
+    "num_ticks" => {
+        "crush" => 0,
+        "sic_em" => 0,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "shadow_lock" => 4,
+        "siphon_darkness" => 0,
+        "shadow_step" => 0,
+        "night_terror" => 5,
+    },
+    "level" => {
+        "crush" => 5,
+        "sic_em" => 5,
+        "sentinel" => 5,
+        "im_a_monster" => 5,
+
+        "shadow_lock" => 5,
+        "siphon_darkness" => 5,
+        "shadow_step" => 5,
+        "night_terror" => 5,
+    },
+    "order" => {
+        "crush" => 2,
+        "sic_em" => 1,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "irradiate" => 0,
+        "pulse" => 0,
+        "banish" => 0,
+        "valkyries_discretion" => 0,
+
+        "radiance" => 0,
+        "stellar_burst" => 0,
+        "disapparate" => 0,
+        "supernova" => 0,
+
+        "transgressors_fate" => 0,
+        "vengeful_assault" => 0,
+        "suppress_the_insolent" => 0,
+        "calydonian_boar" => 0,
+
+        "summon_suku" => 0,
+        "feather_step" => 0,
+        "moonlight_charge" => 0,
+        "gravity_surge" => 0,
+
+        "viper_shot" => 0,
+        "acid_spray" => 0,
+        "lacerate" => 0,
+        "petrify" => 0,
+
+        "branching_bolas" => 0,
+        "poison_darts" => 0,
+        "rising_jaguar" => 0,
+        "darkest_of_nights" => 0,
+
+        "shadow_lock" => 1,
+        "siphon_darkness" => 2,
+        "shadow_step" => 0,
+        "night_terror" => 0,
+    },
+);
+
+
+
+
+my %abilities = (
+    "scylla" => [ "sic_em", "crush", "sentinel", "im_a_monster" ],
+    "nox" => [ "shadow_lock", "siphon_darkness", "shadow_step", "night_terror" ],
+    "freya" => [ "irradiate", "pulse", "banish", "valkyries_discretion" ],
+    "sol" => [ "radiance", "stellar_burst", "disapparate", "supernova" ],
+    "artemis" => [ "transgressors_fate", "vengeful_assault", "suppress_the_insolent", "calydonian_boar" ],
+    "awilix" => [ "summon_suku", "feather_step", "moonlight_charge", "gravity_surge" ],
+    "medusa" => [ "viper_shot", "acid_spray", "lacerate", "petrify" ],
+    "xbal" => [ "branching_bolas", "poison_darts", "rising_jaguar", "darkest_of_nights" ],
+);
+
+
+
+
+
+
 my %base_stats = (
+    "type" => {
+        "freya" => "magical",
+        "sol" => "magical",
+        "scylla" => "magical",
+        "nox" => "magical",
+
+        "artemis" => "physical",
+        "awilix" => "physical",
+        "medusa" => "physical",
+        "xbal" => "physical",
+    },
     "attack_rate" => {
+        "freya" => 0.95,
+        "sol" => 1,
+        "scylla" => 1,
+        "nox" => 1,
+
         "artemis" => 0.95,
         "awilix" => 1,
         "medusa" => 0.95,
         "xbal" => 0.95,
     },
     "attack_rate_level_scaling" => {
+        "freya" => 0.0195,
+        "sol" => 0.018,
+        "scylla" => 0.008,
+        "nox" => 0.008,
+
         "artemis" => 0.014,
         "awilix" => 0.0189,
         "medusa" => 0.014,
         "xbal" => 0.01,
     },
     "auto_damage" => {
+        "freya" => 35,
+        "sol" => 34,
+        "scylla" => 34,
+        "nox" => 34,
+
         "artemis" => 35,
         "awilix" => 38,
         "medusa" => 38,
         "xbal" => 37,
     },
     "auto_level_scaling" => {
+        "freya" => 1.5,
+        "sol" => 1.45,
+        "scylla" => 1.45,
+        "nox" => 1.5,
+
         "artemis" => 2.05,
         "awilix" => 2.16,
         "medusa" => 2.6,
         "xbal" => 2.5,
     },
     "mana" => {
+        "freya" => 220,
+        "sol" => 300,
+        "scylla" => 298,
+        "nox" => 250,
+
         "artemis" => 205,
         "awilix" => 220,
         "medusa" => 220,
         "xbal" => 220,
     },
     "mana_level_scaling" => {
+        "freya" => 37,
+        "sol" => 57,
+        "scylla" => 56,
+        "nox" => 38,
+
         "artemis" => 34,
         "awilix" => 38,
         "medusa" => 34,
         "xbal" => 37,
     },
     "attack_chain_progression" => {
+        "freya" => [ 1 ],
+        "sol" => [ 1 ],
+        "scylla" => [ 1 ],
+        "nox" => [ 1 ],
+
         "artemis" => [ 1 ],
         "awilix" => [ 1, 0.75, 1.25 ],
         "medusa" => [ 1 ],
@@ -81,22 +294,16 @@ my %base_stats = (
 
 
 
-
 my @attack_chain_progression = @{ $base_stats{ "attack_chain_progression" }->{ $opts{ 'g' } } };
 my $next_attack_chain = 0;
 
-my $still_target_stacks = 0;
-my $still_target_end = 0;
-
 my %messages_to_print;
 
-#$base_stats{ "attack_rate" }->{ $opts{ 'g' } }
-
 my $attack_rate = $base_stats{ "attack_rate" }->{ $opts{ 'g' } }
-        + 20 * $base_stats{ "attack_rate_level_scaling" }->{ $opts{ 'g' } }
+        + $char_level * $base_stats{ "attack_rate_level_scaling" }->{ $opts{ 'g' } }
         * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
 my $mana = $base_stats{ "mana" }->{ $opts{ 'g' } }
-        + 20 * $base_stats{ "mana_level_scaling" }->{ $opts{ 'g' } };
+        + $char_level * $base_stats{ "mana_level_scaling" }->{ $opts{ 'g' } };
 
 my $base_crit_chance = 0;
 my $crits = 0;
@@ -110,15 +317,17 @@ my $total_attacks = 0;
 my $gold = 0;
 
 my $physical_power = 0;
+my $magical_power = 0;
 my $lifesteal = 0;
+if ( $opts{ 'g' } eq "freya" ) { $lifesteal += 0.15; }
+my $cdr = 0;
 
-#my $their_protection = 18 + 60 + 20 + 60 + 40 + 55; # bellona with full passive, Mystical, MoR, and Runeforged
-my $their_protection = 18 + 60 + 20 + 60 + 40; # bellona with full passive, Mystical, MoR
+my $their_protection = 30 + 18 + 20 + 50 + 50; # athena with HW, Sov, Void Stone
 if ( defined $opts{'p'} ) {
     $their_protection = $opts{'p'};
 }
 
-my $their_health = 480 + 20 * 85 + 200 + 250 + 325 + 100 + 350; # bellona with Mystical, MoR, Frostbound, Runeforged, and Gaia
+my $their_health = 400 + 20 * 75 + 250; #sol with MoR
 if ( defined $opts{ 'h' } ) {
     $their_health = $opts{ 'h' };
 }
@@ -128,11 +337,116 @@ my $percent_pen = 0;
 my $flat_reduction = 0;
 my $percent_reduction = 0;
 
+#################################################################################
+# magical items
+#################################################################################
+if (defined $items{"pen_boots"}) {
+    $magical_power += 45;
+    $flat_pen += 10;
+    $gold += 1700;
+}
+
+if (defined $items{"cooldown_boots"}) {
+    $magical_power += 30;
+    $cdr += 0.15;
+    $mana += 250;
+    $gold += 1600;
+}
+
+if (defined $items{"void_stone"}) {
+    $magical_power += 40;
+    $flat_reduction += 15;
+    $gold += 2350;
+}
+
+if (defined $items{"demonic_grip"}) {
+    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.25;
+    $magical_power += 60;
+    $gold += 2280;
+}
+my $demonic_grip_stacks = 0;
+my $demonic_grip_end = 0;
+
+if (defined $items{"telkhines_ring"}) {
+    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.1;
+    $magical_power += 45;
+    $gold += 2125;
+}
+
+if (defined $items{"fatalis"}) {
+    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.3;
+    $gold += 2140;
+}
+
+if (defined $items{"polynomicon"}) {
+    $magical_power += 75;
+    $mana += 300;
+    $lifesteal += .1;
+    $gold += 2300;
+}
+my $has_polynomicon_buff = 0;
+
+if (defined $items{"spear"}) {
+    $magical_power += 45;
+    $flat_pen += 15;
+    $gold += 2150;
+}
+my $spear_stacks = 0;
+my $spear_end = 0;
+
+if (defined $items{"shard"}) {
+    $magical_power += 70;
+    $percent_pen += .33;
+    $gold += 2050;
+}
+
+if (defined $items{"bancrofts"}) {
+    $magical_power += 100;
+    $lifesteal += .12;
+    $gold += 2400;
+}
+
+if (defined $items{"rod"}) {
+    $magical_power += 125;
+    $gold += 3320;
+}
+
+if (defined $items{"chronos"}) {
+    $magical_power += 75;
+    $cdr += 0.25;
+    $gold += 2400;
+}
+
+if (defined $items{"pythagorems"}) {
+    $magical_power += 90;
+    $lifesteal += .25;
+    $cdr += 0.1;
+    $gold += 2600;
+}
+
+if (defined $items{"book"}) {
+    $mana += 875;
+    $magical_power += 100 + 0.03 * $mana;
+    $gold += 2650;
+}
+
+if (defined $items{"gem"} ) {
+    $magical_power += 70;
+    $mana += 250;
+    $gold += 2850;
+}
+
+
+#################################################################################
+# physical items
+#################################################################################
+
 # jotunn's wrath
 if (defined $items{"jotunns"}) {
     $physical_power += 40;
     $flat_pen += 11;
     $mana += 150;
+    $cdr += 0.25;
     $gold += 2440;
 }
 
@@ -257,6 +571,85 @@ if (defined $items{"deathbringer"}) {
 
 
 
+#################################################################################
+# calculate stats
+#################################################################################
+if ($cdr > 0.4) { $cdr = 0.4; }
+
+if ($attack_rate > 2.5) { $attack_rate = 2.5; }
+
+if ( $opts{'g'} eq "scylla" ) {
+    if ( $ability_stats{ "level" }->{ "crush" } == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "sic_em" } == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "im_a_monster" } == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "sentinel" } == 5 ) { $magical_power += 20; }
+}
+
+if (defined $items{"rod"}) { $magical_power *= 1.25; }
+
+
+
+#################################################################################
+# iteration and time mgmt
+#################################################################################
+
+my $iteration = 0;
+my $max_iterations = 1000;
+if ( $base_stats{ "type" }->{ $opts{ 'g'} } eq "magical" ) {
+    $max_iterations = 1; # no crit, no rng
+}
+my $max_time = 5000;
+if (defined $opts{'t'}) { $max_time = $opts{'t'}; }
+
+
+#################################################################################
+# protection handling
+#################################################################################
+
+sub calc_mitigated_damage( $ $ ) {
+
+    my $pre_prot_damage = shift;
+    my $damage_source = shift;
+
+    my $their_eff_prot = $their_protection;
+    $their_eff_prot *= (1 - $percent_reduction);
+    $their_eff_prot *= (1 - 0.1*$spear_stacks);
+    $their_eff_prot *= (1 - 0.07*$demonic_grip_stacks);
+    $their_eff_prot *= (1 - 0.08 * $executioner_stacks);
+    $their_eff_prot -= $flat_reduction;
+    $their_eff_prot -= 10*$spear_stacks;
+    $their_eff_prot -= 6 * $executioner_stacks;
+    $their_eff_prot -= 5*$demonic_grip_stacks;
+    $their_eff_prot *= (1 - $percent_pen);
+    $their_eff_prot -= $flat_pen;
+    if ($their_eff_prot < 0) { $their_eff_prot = 0; }
+
+    my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
+
+
+    if ( $verbose ) {
+        printf "time %6d damage from %16s their prot %4d -> %4d damage %4d -> %4d ",
+                $time, $damage_source, $their_protection, $their_eff_prot, $pre_prot_damage, int(( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage);
+        if ( defined $items{ "spear" } ) {
+            print " $spear_stacks spear stacks "
+        }
+        if ( defined $items{ "demonic_grip" } ) {
+            print " $demonic_grip_stacks demonic grip stacks";
+        }
+        print "\n";
+    }
+    
+    return $damage;
+
+}
+
+
+
+
+#################################################################################
+# buffs and stacks
+#################################################################################
+
 my $viper_shots_left = 0;
 my $vengeful_assault = 0;
 my $vengeful_assault_end = 0;
@@ -269,90 +662,167 @@ my $xbal_passive_stacks = 0;
 if ( $opts{'g'} eq "xbal" ) {
     $xbal_passive_stacks = 6;
 }
-
-
-if ($attack_rate > 2.5) { $attack_rate = 2.5; }
-
-
-my $base_damage = $base_stats{ "auto_damage" }->{ $opts{ 'g' } }
-        + 20 * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
-        + $physical_power;
-my $attack_duration = int(1000 / $attack_rate);
-
-
-my $iteration = 0;
-my $max_iterations = 1000;
-my $max_time = 5000;
-
 my $feather_step_cooldown = 0;
+my $still_target_stacks = 0;
+my $still_target_end = 0;
+
+my $has_irradiate = 0;
+my $has_pulse = 0;
+my $irradiate_end = 0;
+my $pulse_end = 0;
+
+my $heat = 0;
+my $radiance_time = 0;
+my $radiance_level = 5;
+my @radiance_heat_amount = ( 0, 40, 50, 60, 70, 80 );
+my $stellar_burst_time = 0;
+my $stellar_burst_detonate_time = $stellar_burst_time + 100;
+my $stellar_burst_level = 5;
+my @stellar_burst_damage = ( 0, 40, 70, 100, 130, 160 );
+
+my $polynomicon_procs = 0;
+my $polynomicon_damage = 0;
+my $polynomicon_time = 0;
+
+my $shadow_lock_ticks_left = 0;
+my $shadow_lock_next_tick = 0;
+my $night_terror_ticks_left = 0;
+my $night_terror_next_tick = 0;
+
+my %ticks = ();
+
+my $combo_order_idx = 1;
+my $next_skill;
 
 
 
-
-
-
-
-
-
-
-
-
-
-sub calc_mitigated_damage( $ ) {
-
-    my $pre_prot_damage = shift;
-
-    #$messages_to_print{ "pre_prot_damage" } = $pre_prot_damage;
-    #$messages_to_print{ "their starting prot" } = $their_protection;
-
-    my $their_eff_prot = $their_protection;
-    $their_eff_prot *= (1 - $percent_reduction);
-    $their_eff_prot *= (1 - 0.08 * $executioner_stacks);
-    $their_eff_prot -= $flat_reduction;
-    $their_eff_prot -= 6 * $executioner_stacks;
-    $their_eff_prot *= (1 - $percent_pen);
-    $their_eff_prot -= $flat_pen;
-    if ($their_eff_prot < 0) { $their_eff_prot = 0; }
-    #$messages_to_print{ "their effective prot" } = $their_eff_prot;
-
-    my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
-
-    #$messages_to_print{ "mitigated damage" } = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
-    
-    if ( $verbose ) {
-        print "time $time their prot $their_protection -> $their_eff_prot; damage $pre_prot_damage -> " . int(( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage) . " $executioner_stacks exec stacks\n";
+#################################################################################
+# skill ordering and cooldowns
+#################################################################################
+sub get_next_skill() {
+    my $i = 0;
+    while($i < 4) {
+        if ( $ability_stats{ "order" }->{ $abilities{ $opts{'g'} }->[ $i ] } == $combo_order_idx ) {
+            # found next skill
+            $next_skill = $abilities{ $opts{'g'} }->[ $i ];
+            return;
+        }
+        $i++;
     }
-    
-    return $damage;
-
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#################################################################################
+# main loop
+#################################################################################
 
 while ( $iteration < $max_iterations ) {
 
     while ( $time < $max_time ) {
+
+        #################################################################################
+        # execute skills
+        #################################################################################
+        undef $next_skill;
+        get_next_skill();
+        if( not defined $next_skill ) {
+            $combo_order_idx = 1; # reset combo
+            get_next_skill();
+        }
+
+        if ( defined $next_skill ) {
+            if ( $time >= $ability_stats{ "time" }->{ $next_skill } ) {
+                # time to use next ability
+                my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
+
+                if ($has_initiative) {
+                    $eff_physical_power *= 1.3;
+                }
+                my $eff_magical_power = $magical_power;
+                if ( $opts{ 'g' } eq "sol" ) {
+                    $eff_magical_power *= int(0.25 * $heat / 100);
+                }
+
+                my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
+                        $ability_stats{ "level" }->{ $next_skill } ] +
+                        ($eff_magical_power * $ability_stats{ "scaling" }->{ $next_skill });
+                if( $pre_prot_damage > 0 ) { 
+                    $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill );
+                    if(defined $items{"spear"}) {
+                        $spear_stacks++;
+                        $spear_end = $time + 5000;
+                        if ($spear_stacks > 2) { $spear_stacks = 2; }
+                    }
+                }
+
+                $pre_prot_damage = $ability_stats{ "tick_damage" }->{ $next_skill }->[
+                        $ability_stats{ "level" }->{ $next_skill } ] +
+                        ($eff_magical_power * $ability_stats{ "tick_scaling" }->{ $next_skill });
+                if( $pre_prot_damage > 0 ) { 
+                    # this ability has ticks, schedule them
+                    my $i = 0;
+                    while ( $i < $ability_stats{ "num_ticks" }->{ $next_skill } ) {
+
+                        my $tick_time = $time + ($i + 1) * $ability_stats{ "tick_duration" }->{ $next_skill } * 1000;
+                        while ( defined $ticks{ $tick_time } ) { $tick_time++; }
+                        $ticks{ $tick_time } = $pre_prot_damage;
+
+                        $i++;
+                    }
+                }
+
+                $ability_stats{ "time" }->{ $next_skill } = $time +
+                        (1000*($ability_stats{ "cooldown" }->{ $next_skill } * (1 - $cdr)));
+
+                $combo_order_idx++;
+            }
+        }
+
+        if ( defined $ticks{ $time } ) {
+            $damage += calc_mitigated_damage( $ticks{ $time }, "tick" );
+            if(defined $items{"spear"}) {
+                $spear_stacks++;
+                $spear_end = $time + 5000;
+                if ($spear_stacks > 2) { $spear_stacks = 2; }
+            }
+        }
+        
+        if ($opts{'g'} eq "freya" and $time == 0) {
+            $has_irradiate = 1;
+            $has_pulse = 1;
+            $irradiate_end = $time + 5000;
+            $pulse_end = $time + 5000;
+            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+                $has_polynomicon_buff = 1;
+                $polynomicon_time = $time + 3000;
+            }
+        }
+
+        if ($opts{'g'} eq "sol" and $time == $stellar_burst_detonate_time) {
+            # second blast, the time is probably not 100 but it's before the next attack
+            my $eff_magical_power = $magical_power;
+            if ( $opts{ 'g' } eq "sol" ) {
+                $eff_magical_power *= int(0.25 * $heat / 100);
+            }
+
+            my $pre_prot_damage = $stellar_burst_damage[ $stellar_burst_level ] + 0.35 * $eff_magical_power;
+            $damage += calc_mitigated_damage( $pre_prot_damage, "stellar burst" );
+
+            if(defined $items{"spear"}) {
+                $spear_stacks++;
+                $spear_end = $time + 5000;
+                if ($spear_stacks > 2) { $spear_stacks = 2; }
+            }
+
+            $heat += 10;
+        }
+
+        if ($opts{'g'} eq "sol" and $time == $radiance_time) {
+            $heat += $radiance_heat_amount[ $radiance_level ];
+            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+                $has_polynomicon_buff = 1;
+            }
+            $radiance_time += 15000;
+        }
 
         if ($opts{'g'} eq 'xbal' and $time == 0) {
             $has_branching_bolas = 1;
@@ -360,8 +830,13 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "medusa" and $time == -1) {
             # start combo with ult
-            my $pre_prot_damage = 700 + $base_damage;
-            $damage += calc_mitigated_damage($pre_prot_damage);
+            my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
+
+            if ($has_initiative) {
+                $eff_physical_power *= 1.3;
+            }
+            my $pre_prot_damage = 700 + $eff_physical_power;
+            $damage += calc_mitigated_damage($pre_prot_damage, "petrify");
 
             $next_attack = 250;
         }
@@ -376,11 +851,16 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "awilix" and $time == 0) {
             # start combo with moonlight charge + Ult
-            my $pre_prot_damage = 250 + 0.6 * $base_damage;
-            $damage += calc_mitigated_damage($pre_prot_damage);
+            my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
 
-            $pre_prot_damage = 400 + 0.8 * $base_damage;
-            $damage += calc_mitigated_damage($pre_prot_damage);
+            if ($has_initiative) {
+                $eff_physical_power *= 1.3;
+            }
+            my $pre_prot_damage = 250 + 0.6 * $eff_physical_power;
+            $damage += calc_mitigated_damage($pre_prot_damage, "moonlight charge");
+
+            $pre_prot_damage = 400 + 0.8 * $eff_physical_power;
+            $damage += calc_mitigated_damage($pre_prot_damage, "gravity surge");
 
             $has_initiative = 1;
             $initiative_end = $time + 2500;
@@ -388,22 +868,74 @@ while ( $iteration < $max_iterations ) {
             $next_attack = 250;
         }
 
+        if ($opts{'g'} eq "medusa" and $num_attacks == 1 and $viper_shots_left == 0) {
+            # start viper shot after the first AA for AA cancel benefit
+            $viper_shots_left = 3;
+            my $viper_attack_rate = $attack_rate +
+                    $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 0.8;
+            if ($viper_attack_rate > 2.5) {
+                $messages_to_print{ "overcapping viper attack rate" } = 1;
+                $viper_attack_rate = 2.5;
+            }
+            my $viper_attack_duration = int(1000 / $viper_attack_rate);
+            $next_attack = $time + $viper_attack_duration;
+        }
+
+        if ($opts{'g'} eq "awilix" and $feather_step_cooldown < $time and $num_attacks == 2) {
+            # time to feather step
+            my $eff_physical_power = $physical_power + 10 * $ichaival_stacks;
+            if ($has_initiative) {
+                $eff_physical_power *= 1.3;
+            }
+            my $pre_prot_damage = 360 + $eff_physical_power;
+
+            $damage += calc_mitigated_damage($pre_prot_damage, "feather step");
+
+            # reset attack chain
+            $next_attack_chain = 0;
+            $next_attack = $time + 250; # don't know actual AA cancel durations
+
+            $feather_step_cooldown += 8000; # TODO use new cooldown system
+        }
+
+
+
+        #################################################################################
+        # execute basic attacks
+        #################################################################################
         if ( $time == $next_attack ) {
 
-	    my $effective_base_damage = $base_damage * ${attack_chain_progression}[ $next_attack_chain ]
-                    + 10 * $ichaival_stacks + 5 * $xbal_passive_stacks;
+            my $pre_prot_damage = 0;
+
+            my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
 
             if ($has_initiative) {
-                $effective_base_damage += $physical_power * 0.3;
+                $eff_physical_power *= 1.3;
             }
 
-            if ($has_branching_bolas) {
-                $effective_base_damage += 50;
+	    my $eff_physical_base_dmg  = ($base_stats{ "auto_damage" }->{ $opts{ 'g' } }
+                    + $char_level * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
+                    + $eff_physical_power)
+                    * ${attack_chain_progression}[ $next_attack_chain ];
+
+            my $eff_magical_power = $magical_power;
+            if ( $opts{ 'g' } eq "sol" ) {
+                $eff_magical_power *= int(0.25 * $heat / 100);
             }
 
-            $next_attack_chain++;
-            if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
+            my $eff_magical_base_dmg = ($base_stats{ "auto_damage" }->{ $opts{ 'g' } }
+                    + $char_level * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
+                    + 0.2 * $eff_magical_power)
+                    * ${attack_chain_progression}[ $next_attack_chain ];
 
+            # base damage
+            if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
+                $pre_prot_damage += $eff_physical_base_dmg;
+            } else {
+                $pre_prot_damage += $eff_magical_base_dmg;
+            }
+
+            # crit chance
             my $total_crit_chance = $base_crit_chance;
 
             if ($opts{ 'g' } eq "artemis") {
@@ -418,14 +950,12 @@ while ( $iteration < $max_iterations ) {
                 $total_crit_chance += 0.1 * $rage_stacks;
             }
 
-            my $pre_prot_damage = 0;
-
             my $rng = rand();
             if ( $rng < $total_crit_chance ) {
                 # critical hit
-                $pre_prot_damage += $effective_base_damage * 2;
+                $pre_prot_damage += $eff_physical_base_dmg;
                 if (defined $items{ "deathbringer" }) {
-                    $pre_prot_damage += $effective_base_damage * 0.4;
+                    $pre_prot_damage += $eff_physical_base_dmg * 0.4;
                 }
                 $crits++;
 
@@ -441,16 +971,87 @@ while ( $iteration < $max_iterations ) {
             }
             else
             {
-                $pre_prot_damage += $effective_base_damage;
-
                 # handle rage
                 if ( $rage_stacks < 5 ) {
                     $rage_stacks++;
                 }
             }
 
+            # ability buffs
+            if ($has_pulse) {
+                $pre_prot_damage += 60 + 0.15 * $eff_magical_power;
+            }
+
+            if ($has_irradiate) {
+                $pre_prot_damage += 100 + 0.25 * $eff_magical_power;
+            }
+
+            # apply sol's bonus only to her base damage, not to polynomicon / telkhines / etc.
+            if ( $opts{ 'g' } eq "sol" and $heat == 100 ) { $pre_prot_damage *= 1.25; }
+
+            if ($has_polynomicon_buff) {
+                $pre_prot_damage += 0.6 * $eff_magical_power;
+                $polynomicon_procs++;
+                $polynomicon_damage += 0.6 * $eff_magical_power;
+                $has_polynomicon_buff = 0;
+                $polynomicon_time = $time + 3000;
+            }
+
+            # add viper shot extra damage
+            if ($viper_shots_left > 0) {
+                $viper_shots_left--;
+                my $pre_prot_damage = 30 + $eff_physical_power * 0.1;
+                my $i = 0;
+                # this ability has ticks, schedule them
+                while ( $i < 3 ) {
+                    # viper shot 3 ticks at 0.5 seconds
+                    my $tick_time = $time + ($i + 1) * 0.5 * 1000;
+                    while ( defined $ticks{ $tick_time } ) { $tick_time++; }
+                    $ticks{ $tick_time } = $pre_prot_damage;
+
+                    $i++;
+                }
+            }
+
+
+            # item buffs
+            if (defined $items{"telkhines_ring"}) {
+                $pre_prot_damage += 40;
+            }
+
+            if ($opts{ 'g' } eq "sol" and $time >= $stellar_burst_time) { # stellar burst
+                $pre_prot_damage += $stellar_burst_damage[ $stellar_burst_level ]
+                        + 0.35 * $eff_magical_power;
+                if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+                    $has_polynomicon_buff = 1;
+                }
+                if(defined $items{"spear"}) {
+                    $spear_end = $time + 5000;
+                    $spear_stacks++;
+                    if ($spear_stacks > 2) { $spear_stacks = 2; }
+                }
+                $stellar_burst_time += 12000;
+            }
+
             if (defined $items{ "qins" }) {
                 $pre_prot_damage += 0.04 * $their_health;
+            }
+
+            # all damage calcs done, execute the attack
+            $damage += calc_mitigated_damage($pre_prot_damage, "attack");
+            $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack");
+
+            # get ready for next attack
+            if (defined $items{"spear"} and ($has_irradiate or $has_pulse)) {
+                $spear_end = $time + 5000;
+                $spear_stacks++;
+                if ($spear_stacks > 2) { $spear_stacks = 2; }
+            }
+
+            if (defined $items{"demonic_grip"}) {
+                $demonic_grip_end = $time + 3000;
+                $demonic_grip_stacks++;
+                if ($demonic_grip_stacks > 3) { $demonic_grip_stacks = 3; }
             }
 
             if (defined $items{ "ichaival" }) {
@@ -469,103 +1070,85 @@ while ( $iteration < $max_iterations ) {
                 $executioner_end = $time + 3000;
             }
 
-            $damage += calc_mitigated_damage($pre_prot_damage);
-            $attack_damage += calc_mitigated_damage($pre_prot_damage);
-
             # attack chain progression
             my $eff_attack_rate = $attack_rate;
+            if ( $opts{ 'g' } eq "sol" ) {
+                $eff_attack_rate = $attack_rate +
+                        $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * ($heat * 0.25 * 0.012);
+                $messages_to_print{ "heat effective attack rate" } = $eff_attack_rate;
+            }
             if ( $vengeful_assault ) {
                 $eff_attack_rate = $attack_rate + 0.75 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
-            if ( $eff_attack_rate > 2.5 ) {
-                $eff_attack_rate = 2.5;
-            }
-            my $eff_attack_duration = int(1000 / $eff_attack_rate);
-            $next_attack = $time + $eff_attack_duration * ${attack_chain_progression}[ $next_attack_chain ];
-            $next_attack = int($next_attack + .99999);
-
             if ($viper_shots_left > 0) {
-                $viper_shots_left--;
-                my $pre_prot_damage = 90 + $effective_base_damage * 0.3;
-                $damage += calc_mitigated_damage( $pre_prot_damage );
-                my $viper_attack_rate = $attack_rate +
+                $eff_attack_rate = $attack_rate +
                         $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 0.8;
-                if ($viper_attack_rate > 2.5) {
-                    $viper_attack_rate = 2.5;
-                }
-                my $viper_attack_duration = int(1000 / $viper_attack_rate);
-                $next_attack = $time + $viper_attack_duration;
             }
+
+            if ( $eff_attack_rate > 2.5 ) { $eff_attack_rate = 2.5; }
+
+            my $eff_attack_duration = int(1000 / $eff_attack_rate);
+            $next_attack = $time + int($eff_attack_duration * ${attack_chain_progression}[ $next_attack_chain ]);
+            $next_attack_chain++;
+            if ($next_attack_chain >= scalar @attack_chain_progression ) { $next_attack_chain = 0; }
 
             $num_attacks++;
+
+            $heat += 5;
+            if ( $heat > 100 ) { $heat = 100; }
         }
 
-        if ($opts{'g'} eq "medusa" and $num_attacks == 1 and $viper_shots_left == 0) {
-            # start viper shot after the first AA for AA cancel benefit
-            $viper_shots_left = 3;
-            my $viper_attack_rate = $attack_rate +
-                    $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 0.8;
-            if ($viper_attack_rate > 2.5) {
-                $messages_to_print{ "overcapping viper attack rate" } = 1;
-                $viper_attack_rate = 2.5;
-            }
-            my $viper_attack_duration = int(1000 / $viper_attack_rate);
-            $next_attack = $time + $viper_attack_duration;
-        }
+        #################################################################################
+        # get ready for next loop
+        #################################################################################
 
-        if ($opts{'g'} eq "awilix" and $feather_step_cooldown < $time and $num_attacks == 2) {
-            # time to feather step
-            my $pre_prot_damage = 360 + $base_damage;
-
-            $damage += calc_mitigated_damage($pre_prot_damage);
-
-            # reset attack chain
-            $next_attack_chain = 0;
-            $next_attack = $time + 250; # don't know actual AA cancel durations
-
-            $feather_step_cooldown += 8000;
-        }
-
-        if ($time == $still_target_end) {
-            $still_target_stacks = 0;
-        }
-
-        if ($time == $vengeful_assault_end) {
-            $vengeful_assault = 0;
-        }
-
-        if ($time == $gravity_surge_end) {
-            $gravity_surge = 0;
-        }
-
-        if ( $time == $executioner_end ) {
-            $executioner_stacks = 0;
-        }
-
-        if ( $time == $ichaival_end ) {
-            $ichaival_stacks = 0;
-        }
-
-        if ( $time == $initiative_end ) {
-            $has_initiative = 0;
-        }
 
         if ( defined $items{ "malice" }
                 and $time == $next_malice_proc and $malice_procs_left > 0 )
         {
             $total_malice_procs++;
-            my $pre_prot_damage = 0.25 * $base_damage; # effected by ichaival?
+            # TODO duplicating this eff_physical_power in a lot of places
+            my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
 
-            $damage += calc_mitigated_damage($pre_prot_damage);
-            $malice_damage += calc_mitigated_damage($pre_prot_damage);
+            if ($has_initiative) {
+                $eff_physical_power *= 1.3;
+            }
+            my $pre_prot_damage = 0.25 * $eff_physical_power; # effected by ichaival?
+
+            $damage += calc_mitigated_damage($pre_prot_damage, "malice");
+            $malice_damage += calc_mitigated_damage($pre_prot_damage, "malice");
 
             $malice_procs_left -= 1;
             $next_malice_proc += 1000;
         }
+
+        if ($time == $still_target_end) { $still_target_stacks = 0; }
+        if ($time == $vengeful_assault_end) { $vengeful_assault = 0; }
+        if ($time == $gravity_surge_end) { $gravity_surge = 0; }
+        if ($time == $executioner_end ) { $executioner_stacks = 0; }
+        if ($time == $ichaival_end ) { $ichaival_stacks = 0; }
+        if ($time == $initiative_end ) { $has_initiative = 0; }
+        if ($time == $spear_end) { $spear_stacks = 0; }
+        if ($time == $demonic_grip_end) { $demonic_grip_stacks = 0; }
+        if ($time == $pulse_end) { $has_pulse = 0; }
+        if ($time == $irradiate_end) { $has_irradiate = 0; }
+
         $time++;
+
     }
 
-    # reset
+    #################################################################################
+    # get ready for next loop
+    #################################################################################
+    $time = 0;
+    $next_attack = 0;
+    $next_attack_chain = 0;
+    $total_attacks += $num_attacks;
+    $num_attacks = 0;
+    $spear_stacks = 0;
+    $spear_end = 0;
+    $demonic_grip_stacks = 0;
+    $demonic_grip_end = 0;
     $executioner_stacks = 0;
     $executioner_end = 0;
     $still_target_stacks = 0;
@@ -586,21 +1169,25 @@ while ( $iteration < $max_iterations ) {
 
 }
 
+#################################################################################
+# output
+#################################################################################
 foreach my $key (keys %messages_to_print) {
         print $key . " " . $messages_to_print{ $key} . "\n";
 }
 
-print "Base attack rate $attack_rate Base attack damage $base_damage\n";
+print "Base attack rate $attack_rate\n";
 printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
 printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$max_time/1000));
 printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($damage - $attack_damage)/$max_iterations);
-printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$max_time/1000));
-printf "Total lifesteal %.2f\n", ($damage * $lifesteal)/$max_iterations;
+if ( defined $items{ "polynomicon" } ) {
+    print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
+}
 printf "Num crits: %d total crit chance %.2f\n", $crits/$max_iterations, ($crits / $total_attacks);
 if (defined $items{ "malice" }) {
     printf  "Total Malice procs %d Malice procs/crit %.2f Malice damage %.2f Malice bonus damage per crit %.2f\n", $total_malice_procs/$max_iterations, ($total_malice_procs/$crits), $malice_damage/$max_iterations, ($malice_damage)/($crits);
 }
-printf "Total gold %d Damage/gold %.2f\n", $gold, $damage / $gold / $max_iterations;
-
+printf "Total lifesteal %.2f\n", ($damage * $lifesteal)/$max_iterations;
+printf "Total gold %d damage/gold %.2f\n", $gold, $damage / $gold;
 
 
