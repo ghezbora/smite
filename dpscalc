@@ -101,6 +101,8 @@ my $mana = $base_stats{ "mana" }->{ $opts{ 'g' } }
 my $base_crit_chance = 0;
 my $crits = 0;
 my $damage = 0;
+my $attack_damage = 0;
+my $malice_damage = 0;
 my $time = 0;
 my $next_attack = 0;
 my $num_attacks = 0;
@@ -468,6 +470,7 @@ while ( $iteration < $max_iterations ) {
             }
 
             $damage += calc_mitigated_damage($pre_prot_damage);
+            $attack_damage += calc_mitigated_damage($pre_prot_damage);
 
             # attack chain progression
             my $eff_attack_rate = $attack_rate;
@@ -554,6 +557,7 @@ while ( $iteration < $max_iterations ) {
             my $pre_prot_damage = 0.25 * $base_damage; # effected by ichaival?
 
             $damage += calc_mitigated_damage($pre_prot_damage);
+            $malice_damage += calc_mitigated_damage($pre_prot_damage);
 
             $malice_procs_left -= 1;
             $next_malice_proc += 1000;
@@ -587,12 +591,14 @@ foreach my $key (keys %messages_to_print) {
 }
 
 print "Base attack rate $attack_rate Base attack damage $base_damage\n";
-printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($damage / $total_attacks);
+printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
+printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$max_time/1000));
+printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($damage - $attack_damage)/$max_iterations);
 printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$max_time/1000));
 printf "Total lifesteal %.2f\n", ($damage * $lifesteal)/$max_iterations;
 printf "Num crits: %d total crit chance %.2f\n", $crits/$max_iterations, ($crits / $total_attacks);
 if (defined $items{ "malice" }) {
-    printf  "Total Malice procs %d Malice procs/crit %.2f Malice bonus damage per crit %.2f\n", $total_malice_procs/$max_iterations, ($total_malice_procs/$crits), ($total_malice_procs * 0.25 * $base_damage)/($crits);
+    printf  "Total Malice procs %d Malice procs/crit %.2f Malice damage %.2f Malice bonus damage per crit %.2f\n", $total_malice_procs/$max_iterations, ($total_malice_procs/$crits), $malice_damage/$max_iterations, ($malice_damage)/($crits);
 }
 printf "Total gold %d Damage/gold %.2f\n", $gold, $damage / $gold / $max_iterations;
 

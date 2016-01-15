@@ -3,6 +3,8 @@
 
 # Wish list
 #
+# make avg damage include only attack damage, not ability damage
+#
 
 use strict;
 use warnings;
@@ -33,34 +35,176 @@ foreach my $item (@items) {
 
 
 
+
+
+my %ability_stats = (
+    "cooldown" => {
+        "crush" => 10,
+        "sic_em" => 10,
+        "sentinel" => 15,
+        "im_a_monster" => 90,
+
+        "shadow_lock" => 10,
+        "siphon_darkness" => 15,
+        "shadow_step" => 15,
+        "night_terror" => 90,
+    },
+    "time" => { # will be updated with cooldown when used
+        "crush" => 0,
+        "sic_em" => 0,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "shadow_lock" => 0,
+        "siphon_darkness" => 0,
+        "shadow_step" => 0,
+        "night_terror" => 0,
+    },
+    "damage" => {
+        "crush" => [ 0, 90, 140, 190, 240, 290 ],
+        "sic_em" => [ 0, 60, 110, 160, 210, 260 ],
+        "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
+        "im_a_monster" => [ 0, 400, 500, 600, 700, 800 ],
+
+        "shadow_lock" => [ 0, 0, 0, 0, 0, 0 ],
+        "siphon_darkness" => [ 0, 90, 160, 230, 300, 370 ],
+        "shadow_step" => [ 0, 70, 110, 150, 190, 230 ],
+        "night_terror" => [ 0, 200, 250, 300, 350, 400 ],
+    },
+    "tick_damage" => {
+        "crush" => [ 0, 0, 0, 0, 0, 0 ],
+        "sic_em" => [ 0, 0, 0, 0, 0, 0 ],
+        "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
+        "im_a_monster" => [ 0, 0, 0, 0, 0, 0 ],
+
+        "shadow_lock" => [ 0, 30, 40, 50, 60, 70 ],
+        "siphon_darkness" => [ 0, 0, 0, 0, 0, 0 ],
+        "shadow_step" => [ 0, 0, 0, 0, 0, 0 ],
+        "night_terror" => [ 0, 20, 25, 30, 35, 40 ],
+    },
+    "scaling" => {
+        "crush" => 0.8,
+        "sic_em" => 0.6,
+        "sentinel" => 0,
+        "im_a_monster" => 1.2,
+
+        "shadow_lock" => 0,
+        "siphon_darkness" => 1,
+        "shadow_step" => 0.4,
+        "night_terror" => .6,
+    },
+    "tick_scaling" => {
+        "crush" => 0,
+        "sic_em" => 0,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "shadow_lock" => 0.2,
+        "siphon_darkness" => 0,
+        "shadow_step" => 0,
+        "night_terror" => .05,
+    },
+    "tick_duration" => {
+        "crush" => 0,
+        "sic_em" => 0,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "shadow_lock" => .5,
+        "siphon_darkness" => 0,
+        "shadow_step" => 0,
+        "night_terror" => 1,
+    },
+    "num_ticks" => {
+        "crush" => 0,
+        "sic_em" => 0,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "shadow_lock" => 4,
+        "siphon_darkness" => 0,
+        "shadow_step" => 0,
+        "night_terror" => 5,
+    },
+    "level" => {
+        "crush" => 5,
+        "sic_em" => 5,
+        "sentinel" => 5,
+        "im_a_monster" => 5,
+
+        "shadow_lock" => 5,
+        "siphon_darkness" => 5,
+        "shadow_step" => 5,
+        "night_terror" => 5,
+    },
+    "order" => {
+        "crush" => 2,
+        "sic_em" => 1,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "shadow_lock" => 1,
+        "siphon_darkness" => 2,
+        "shadow_step" => 0,
+        "night_terror" => 0,
+    },
+);
+
+
+
+
+my %abilities = (
+    "scylla" => [ "sic_em", "crush", "sentinel", "im_a_monster" ],
+    "nox" => [ "shadow_lock", "siphon_darkness", "shadow_step", "night_terror" ],
+);
+
+
+
+
+
+
 my %base_stats = (
     "attack_rate" => {
         "freya" => 0.95,
         "sol" => 1,
+        "scylla" => 1,
+        "nox" => 1,
     },
     "attack_rate_level_scaling" => {
         "freya" => 0.0195,
         "sol" => 0.018,
+        "scylla" => 0.008,
+        "nox" => 0.008,
     },
     "auto_damage" => {
         "freya" => 35,
         "sol" => 34,
+        "scylla" => 34,
+        "nox" => 34,
     },
     "auto_level_scaling" => {
         "freya" => 1.5,
         "sol" => 1.45,
+        "scylla" => 1.45,
+        "nox" => 1.5,
     },
     "mana" => {
         "freya" => 220,
         "sol" => 300,
+        "scylla" => 298,
+        "nox" => 250,
     },
     "mana_level_scaling" => {
         "freya" => 37,
         "sol" => 57,
+        "scylla" => 56,
+        "nox" => 38,
     },
     "attack_chain_progression" => {
         "freya" => [ 1 ],
         "sol" => [ 1 ],
+        "scylla" => [ 1 ],
+        "nox" => [ 1 ],
     },
 );
 
@@ -80,6 +224,7 @@ my $mana = $base_stats{ "mana" }->{ $opts{ 'g' } }
 #print "attack rate $attack_rate\n";
 
 my $damage = 0;
+my $attack_damage = 0;
 my $time = 0;
 my $next_attack = 0;
 my $num_attacks = 0;
@@ -89,6 +234,7 @@ my $gold = 0;
 my $magical_power = 0;
 my $lifesteal = 0;
 if ( $opts{ 'g' } eq "freya" ) { $lifesteal += 0.15; }
+my $cdr = 0;
 
 my $their_protection = 30 + 18 + 20 + 50 + 50; # athena with HW, Sov, Void Stone
 if ( defined $opts{'p'} ) {
@@ -114,6 +260,7 @@ if (defined $items{"pen_boots"}) {
 
 if (defined $items{"cooldown_boots"}) {
     $magical_power += 30;
+    $cdr += 0.15;
     $mana += 250;
     $gold += 1600;
 }
@@ -176,9 +323,16 @@ if (defined $items{"rod"}) {
     $gold += 3320;
 }
 
+if (defined $items{"chronos"}) {
+    $magical_power += 75;
+    $cdr += 0.25;
+    $gold += 2400;
+}
+
 if (defined $items{"pythagorems"}) {
     $magical_power += 90;
     $lifesteal += .25;
+    $cdr += 0.1;
     $gold += 2600;
 }
 
@@ -200,7 +354,16 @@ if (defined $items{"gem"} ) {
 
 #print "attack rate $attack_rate\n";
 
+if ($cdr > 0.4) { $cdr = 0.4; }
+
 if ($attack_rate > 2.5) { $attack_rate = 2.5; }
+
+if ( $opts{'g'} eq "scylla" ) {
+    if ( $ability_stats{ "level" }->{ "crush" } == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "sic_em" } == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "im_a_monster" } == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "sentinel" } == 5 ) { $magical_power += 20; }
+}
 
 my $eff_magical_power = $magical_power;
 
@@ -222,12 +385,10 @@ if (defined $opts{'t'}) { $max_time = $opts{'t'}; }
 
 
 
-sub calc_mitigated_damage( $ ) {
+sub calc_mitigated_damage( $ $ ) {
 
     my $pre_prot_damage = shift;
-
-    #$messages_to_print{ "pre_prot_damage" } = $pre_prot_damage;
-    #$messages_to_print{ "their starting prot" } = $their_protection;
+    my $damage_source = shift;
 
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
@@ -239,14 +400,20 @@ sub calc_mitigated_damage( $ ) {
     $their_eff_prot *= (1 - $percent_pen);
     $their_eff_prot -= $flat_pen;
     if ($their_eff_prot < 0) { $their_eff_prot = 0; }
-    #$messages_to_print{ "their effective prot" } = $their_eff_prot;
 
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
-    #$messages_to_print{ "mitigated damage" } = int( ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage );
 
     if ( $verbose ) {
-        print "time $time their prot $their_protection -> $their_eff_prot; damage $pre_prot_damage -> " . int(( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage) . " $spear_stacks spear stacks $demonic_grip_stacks demonic grip stacks\n";
+        printf "time %6d damage from %16s their prot %4d -> %4d damage %4d -> %4d ",
+                $time, $damage_source, $their_protection, $their_eff_prot, $pre_prot_damage, int(( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage);
+        if ( defined $items{ "spear" } ) {
+            print " $spear_stacks spear stacks "
+        }
+        if ( defined $items{ "demonic_grip" } ) {
+            print " $demonic_grip_stacks demonic grip stacks";
+        }
+        print "\n";
     }
     
     return $damage;
@@ -275,12 +442,255 @@ my $polynomicon_procs = 0;
 my $polynomicon_damage = 0;
 my $polynomicon_time = 0;
 
+my $shadow_lock_ticks_left = 0;
+my $shadow_lock_next_tick = 0;
+my $night_terror_ticks_left = 0;
+my $night_terror_next_tick = 0;
+
+my %ticks = ();
+
+my $combo_order_idx = 1;
+my $next_skill;
+
+
+
+sub get_next_skill() {
+    my $i = 0;
+    while($i < 4) {
+        if ( $ability_stats{ "order" }->{ $abilities{ $opts{'g'} }->[ $i ] } == $combo_order_idx ) {
+            # found next skill
+            $next_skill = $abilities{ $opts{'g'} }->[ $i ];
+            return;
+        }
+        $i++;
+    }
+}
+
 
 while ( $iteration < $max_iterations ) {
 
     while ( $time < $max_time ) {
 
-        # anything before first attack (initiation) goes here
+        undef $next_skill;
+        get_next_skill();
+        if( not defined $next_skill ) {
+            $combo_order_idx = 1; # reset combo
+            get_next_skill();
+        }
+
+        if ( defined $next_skill ) {
+            if ( $time >= $ability_stats{ "time" }->{ $next_skill } ) {
+                # time to use next ability
+
+                my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
+                        $ability_stats{ "level" }->{ $next_skill } ] +
+                        ($eff_magical_power * $ability_stats{ "scaling" }->{ $next_skill });
+                if( $pre_prot_damage > 0 ) { 
+                    $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill );
+                    if(defined $items{"spear"}) {
+                        $spear_stacks++;
+                        $spear_end = $time + 5000;
+                        if ($spear_stacks > 2) { $spear_stacks = 2; }
+                    }
+                }
+
+                $pre_prot_damage = $ability_stats{ "tick_damage" }->{ $next_skill }->[
+                        $ability_stats{ "level" }->{ $next_skill } ] +
+                        ($eff_magical_power * $ability_stats{ "tick_scaling" }->{ $next_skill });
+                if( $pre_prot_damage > 0 ) { 
+                    # this ability has ticks, schedule them
+                    my $i = 0;
+                    while ( $i < $ability_stats{ "num_ticks" }->{ $next_skill } ) {
+
+                        my $tick_time = $time + ($i + 1) * $ability_stats{ "tick_duration" }->{ $next_skill } * 1000;
+                        while ( defined $ticks{ $tick_time } ) { $tick_time++; }
+                        $ticks{ $tick_time } = $pre_prot_damage;
+
+                        $i++;
+                    }
+                }
+
+                $ability_stats{ "time" }->{ $next_skill } = $time +
+                        (1000*($ability_stats{ "cooldown" }->{ $next_skill } * (1 - $cdr)));
+
+                $combo_order_idx++;
+            }
+        }
+
+        if ( defined $ticks{ $time } ) {
+            $damage += calc_mitigated_damage( $ticks{ $time }, "tick" );
+            if(defined $items{"spear"}) {
+                $spear_stacks++;
+                $spear_end = $time + 5000;
+                if ($spear_stacks > 2) { $spear_stacks = 2; }
+            }
+        }
+        
+
+#        # anything before first attack (initiation) goes here
+#        if ($opts{'g'} eq "nox" and $time >= $ability_stats{ "time" }->{ "shadow_lock" } ) {
+#            # use shadow_lock
+#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "shadow_lock" }->[
+#                    $ability_stats{ "level" }->{ "shadow_lock" } ] +
+#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "shadow_lock" });
+#            $damage += calc_mitigated_damage( $pre_prot_damage );
+#
+#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+#                $has_polynomicon_buff = 1;
+#                $polynomicon_time = $time + 3000;
+#            }
+#            if(defined $items{"spear"}) {
+#                $spear_stacks++;
+#                $spear_end = $time + 5000;
+#                if ($spear_stacks > 2) { $spear_stacks = 2; }
+#            }
+#
+#            $shadow_lock_ticks_left = 3;
+#            $shadow_lock_next_tick = $time + 500;
+#
+#            $ability_stats{ "time" }->{ "shadow_lock" } = $time +
+#                    (1000*($ability_stats{ "cooldown" }->{ "shadow_lock" } * (1 - $cdr)));
+#        }
+#
+#        if ($time == $shadow_lock_next_tick and $shadow_lock_ticks_left > 0) {
+#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "shadow_lock" }->[
+#                    $ability_stats{ "level" }->{ "shadow_lock" } ] +
+#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "shadow_lock" });
+#            $damage += calc_mitigated_damage( $pre_prot_damage );
+#
+#            if(defined $items{"spear"}) {
+#                $spear_stacks++;
+#                $spear_end = $time + 5000;
+#                if ($spear_stacks > 2) { $spear_stacks = 2; }
+#            }
+#
+#            $shadow_lock_ticks_left--;
+#            $shadow_lock_next_tick = $time + 500;
+#        }
+#
+#        if ($opts{'g'} eq "nox" and $time >= $ability_stats{ "time" }->{ "siphon_darkness" } ) {
+#            # use siphon_darkness
+#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "siphon_darkness" }->[
+#                    $ability_stats{ "level" }->{ "siphon_darkness" } ] +
+#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "siphon_darkness" });
+#            $damage += calc_mitigated_damage( $pre_prot_damage );
+#
+#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+#                $has_polynomicon_buff = 1;
+#                $polynomicon_time = $time + 3000;
+#            }
+#            if(defined $items{"spear"}) {
+#                $spear_stacks++;
+#                $spear_end = $time + 5000;
+#                if ($spear_stacks > 2) { $spear_stacks = 2; }
+#            }
+#
+#            $ability_stats{ "time" }->{ "siphon_darkness" } = $time +
+#                    (1000*($ability_stats{ "cooldown" }->{ "siphon_darkness" } * (1 - $cdr)));
+#        }
+#
+#        if ($opts{'g'} eq "nox" and $time >= $ability_stats{ "time" }->{ "night_terror" } ) {
+#            # use night_terror
+#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "night_terror" }->[
+#                    $ability_stats{ "level" }->{ "night_terror" } ] +
+#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "night_terror" });
+#            $damage += calc_mitigated_damage( $pre_prot_damage );
+#
+#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+#                $has_polynomicon_buff = 1;
+#                $polynomicon_time = $time + 3000;
+#            }
+#            if(defined $items{"spear"}) {
+#                $spear_stacks++;
+#                $spear_end = $time + 5000;
+#                if ($spear_stacks > 2) { $spear_stacks = 2; }
+#            }
+#
+#            $night_terror_ticks_left = 5;
+#            $night_terror_next_tick = $time + 1000;
+#
+#            $ability_stats{ "time" }->{ "night_terror" } = $time +
+#                    (1000*($ability_stats{ "cooldown" }->{ "night_terror" } * (1 - $cdr)));
+#        }
+#
+#        if ($time == $night_terror_next_tick and $night_terror_ticks_left > 0) {
+#            my $pre_prot_damage = 0.1 * ($ability_stats{ "damage" }->{ "night_terror" }->[
+#                    $ability_stats{ "level" }->{ "night_terror" } ] ) +
+#                    ($eff_magical_power * 0.05);
+#            $damage += calc_mitigated_damage( $pre_prot_damage );
+#
+#            if(defined $items{"spear"}) {
+#                $spear_stacks++;
+#                $spear_end = $time + 5000;
+#                if ($spear_stacks > 2) { $spear_stacks = 2; }
+#            }
+#
+#            $night_terror_ticks_left--;
+#            $night_terror_next_tick = $time + 1000;
+#        }
+#
+#        if ($opts{'g'} eq "scylla" and $time >= $ability_stats{ "time" }->{ "crush" } ) {
+#            # use crush
+#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "crush" }->[
+#                    $ability_stats{ "level" }->{ "crush" } ] +
+#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "crush" });
+#            $damage += calc_mitigated_damage( $pre_prot_damage );
+#
+#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+#                $has_polynomicon_buff = 1;
+#                $polynomicon_time = $time + 3000;
+#            }
+#            if(defined $items{"spear"}) {
+#                $spear_stacks++;
+#                $spear_end = $time + 5000;
+#                if ($spear_stacks > 2) { $spear_stacks = 2; }
+#            }
+#
+#            $ability_stats{ "time" }->{ "crush" } = $time +
+#                    (1000*($ability_stats{ "cooldown" }->{ "crush" } * (1 - $cdr)));
+#        }
+#
+#        if ($opts{'g'} eq "scylla" and $time >= $ability_stats{ "time" }->{ "sic_em" } ) {
+#            # use sic_em
+#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "sic_em" }->[
+#                    $ability_stats{ "level" }->{ "sic_em" } ] +
+#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "sic_em" });
+#            $damage += calc_mitigated_damage( $pre_prot_damage );
+#
+#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+#                $has_polynomicon_buff = 1;
+#                $polynomicon_time = $time + 3000;
+#            }
+#            if(defined $items{"spear"}) {
+#                $spear_stacks++;
+#                $spear_end = $time + 5000;
+#                if ($spear_stacks > 2) { $spear_stacks = 2; }
+#            }
+#
+#            $ability_stats{ "time" }->{ "sic_em" } = $time +
+#                    (1000*($ability_stats{ "cooldown" }->{ "sic_em" } * (1 - $cdr)));
+#        }
+#
+#        if ($opts{'g'} eq "scylla" and $time >= $ability_stats{ "time" }->{ "im_a_monster" } ) {
+#            # use im_a_monster
+#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "im_a_monster" }->[
+#                    $ability_stats{ "level" }->{ "im_a_monster" } ] +
+#                    ($eff_magical_power * $ability_stats{ "scaling" }->{ "im_a_monster" });
+#            $damage += calc_mitigated_damage( $pre_prot_damage );
+#
+#            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+#                $has_polynomicon_buff = 1;
+#                $polynomicon_time = $time + 3000;
+#            }
+#            if(defined $items{"spear"}) {
+#                $spear_stacks++;
+#                $spear_end = $time + 5000;
+#                if ($spear_stacks > 2) { $spear_stacks = 2; }
+#            }
+#
+#            $ability_stats{ "time" }->{ "im_a_monster" } = $time +
+#                    (1000*($ability_stats{ "cooldown" }->{ "im_a_monster" } * (1 - $cdr)));
+#        }
 
         if ($opts{'g'} eq "freya" and $time == 0) {
             $has_irradiate = 1;
@@ -296,7 +706,7 @@ while ( $iteration < $max_iterations ) {
         if ($opts{'g'} eq "sol" and $time == $stellar_burst_detonate_time) {
             # second blast, the time is probably not 100 but it's before the next attack
             my $pre_prot_damage = $stellar_burst_damage[ $stellar_burst_level ] + 0.35 * $eff_magical_power;
-            $damage += calc_mitigated_damage( $pre_prot_damage );
+            $damage += calc_mitigated_damage( $pre_prot_damage, "stellar burst" );
 
             if(defined $items{"spear"}) {
                 $spear_stacks++;
@@ -374,7 +784,8 @@ while ( $iteration < $max_iterations ) {
                 $stellar_burst_time += 12000;
             }
 
-            $damage += calc_mitigated_damage($pre_prot_damage);
+            $damage += calc_mitigated_damage($pre_prot_damage, "attack");
+            $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack");
 
             # get ready for next attack
             if (defined $items{"spear"} and ($has_irradiate or $has_pulse)) {
@@ -436,8 +847,9 @@ foreach my $key (keys %messages_to_print) {
 }
 
 print "Base attack rate $attack_rate Base attack damage $base_damage\n";
-printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($damage / $total_attacks);
+printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
 printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$max_time/1000));
+printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($damage - $attack_damage)/$max_iterations);
 if ( defined $items{ "polynomicon" } ) {
     print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
 }
