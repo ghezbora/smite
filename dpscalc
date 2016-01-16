@@ -139,47 +139,19 @@ my %ability_stats = (
         "shadow_step" => 5,
         "night_terror" => 5,
     },
-    "order" => {
-        "crush" => 2,
-        "sic_em" => 1,
-        "sentinel" => 0,
-        "im_a_monster" => 0,
+);
 
-        "irradiate" => 0,
-        "pulse" => 0,
-        "banish" => 0,
-        "valkyries_discretion" => 0,
 
-        "radiance" => 0,
-        "stellar_burst" => 0,
-        "disapparate" => 0,
-        "supernova" => 0,
 
-        "transgressors_fate" => 0,
-        "vengeful_assault" => 0,
-        "suppress_the_insolent" => 0,
-        "calydonian_boar" => 0,
-
-        "summon_suku" => 0,
-        "feather_step" => 0,
-        "moonlight_charge" => 0,
-        "gravity_surge" => 0,
-
-        "viper_shot" => 0,
-        "acid_spray" => 0,
-        "lacerate" => 0,
-        "petrify" => 0,
-
-        "branching_bolas" => 0,
-        "poison_darts" => 0,
-        "rising_jaguar" => 0,
-        "darkest_of_nights" => 0,
-
-        "shadow_lock" => 1,
-        "siphon_darkness" => 2,
-        "shadow_step" => 0,
-        "night_terror" => 0,
-    },
+my %combos = (
+    "scylla" => [ "sic_em", "crush", "im_a_monster" ],
+    "nox" => [ "shadow_lock", "siphon_darkness", "night_terror" ],
+    "freya" => [ ],
+    "sol" => [ ],
+    "artemis" => [ ],
+    "awilix" => [ "moonlight_charge", "gravity_surge", "feather_step",  ],
+    "medusa" => [ ],
+    "xbal" => [ ],
 );
 
 
@@ -643,7 +615,7 @@ my $night_terror_next_tick = 0;
 
 my %ticks = ();
 
-my $combo_order_idx = 1;
+my $combo_idx = 0;
 my $next_skill;
 
 
@@ -739,15 +711,13 @@ sub calc_mitigated_damage( $ $ $ ) {
 # skill ordering and cooldowns
 #################################################################################
 sub get_next_skill() {
-    my $i = 0;
-    while($i < 4) {
-        if ( $ability_stats{ "order" }->{ $abilities{ $opts{'g'} }->[ $i ] } == $combo_order_idx ) {
-            # found next skill
-            $next_skill = $abilities{ $opts{'g'} }->[ $i ];
-            return;
-        }
-        $i++;
+    if ( scalar( $combos{ $opts{'g'} } ) == 0 ) {
+        return undef;
     }
+    if ( scalar( $combos{ $opts{'g'} } ) < $combo_idx ) {
+        $combo_idx = 0;
+    }
+    return $combos{ $opts{ 'g' } }->[ $combo_idx ];
 }
 
 #################################################################################
@@ -768,12 +738,7 @@ while ( $iteration < $max_iterations ) {
         # execute skills
         #################################################################################
         undef $next_skill;
-        get_next_skill();
-        if( not defined $next_skill ) {
-            $combo_order_idx = 1; # reset combo
-            get_next_skill();
-        }
-
+        $next_skill = get_next_skill();
         if ( defined $next_skill ) {
             if ( $time >= $ability_stats{ "time" }->{ $next_skill } ) {
                 # time to use next ability
@@ -808,7 +773,7 @@ while ( $iteration < $max_iterations ) {
                 $ability_stats{ "time" }->{ $next_skill } = $time +
                         (1000*($ability_stats{ "cooldown" }->{ $next_skill } * (1 - $cdr)));
 
-                $combo_order_idx++;
+                $combo_idx++;
             }
         }
 
