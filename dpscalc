@@ -50,6 +50,8 @@ my %ability_stats = (
         "siphon_darkness" => 15,
         "shadow_step" => 15,
         "night_terror" => 90,
+
+        "feather_step" => 8,
     },
     "time" => { # will be updated with cooldown when used
         "crush" => 0,
@@ -61,6 +63,8 @@ my %ability_stats = (
         "siphon_darkness" => 0,
         "shadow_step" => 0,
         "night_terror" => 0,
+
+        "feather_step" => 0,
     },
     "damage" => {
         "crush" => [ 0, 90, 140, 190, 240, 290 ],
@@ -149,7 +153,8 @@ my %combos = (
     "freya" => [ ],
     "sol" => [ ],
     "artemis" => [ ],
-    "awilix" => [ "moonlight_charge", "gravity_surge", "feather_step",  ],
+    #"awilix" => [ "moonlight_charge", "gravity_surge" ],
+    "awilix" => [ ],
     "medusa" => [ ],
     "xbal" => [ ],
 );
@@ -586,7 +591,6 @@ my $xbal_passive_stacks = 0;
 if ( $opts{'g'} eq "xbal" ) {
     $xbal_passive_stacks = 6;
 }
-my $feather_step_cooldown = 0;
 my $still_target_stacks = 0;
 my $still_target_end = 0;
 
@@ -773,6 +777,9 @@ while ( $iteration < $max_iterations ) {
                 $ability_stats{ "time" }->{ $next_skill } = $time +
                         (1000*($ability_stats{ "cooldown" }->{ $next_skill } * (1 - $cdr)));
 
+                $next_attack_chain = 0;
+                $next_attack = $time + 250; # don't know actual AA cancel durations
+
                 $combo_idx++;
             }
         }
@@ -867,7 +874,8 @@ while ( $iteration < $max_iterations ) {
             $next_attack = $time + $viper_attack_duration;
         }
 
-        if ($opts{'g'} eq "awilix" and $feather_step_cooldown < $time and $num_attacks == 2) {
+        if ($opts{'g'} eq "awilix" and $next_attack_chain == 2 and
+                $ability_stats{ "time" }->{ "feather_step" } <= $time ) {
             # time to feather step
             my $pre_prot_damage = 360 + get_eff_power();
 
@@ -877,7 +885,8 @@ while ( $iteration < $max_iterations ) {
             $next_attack_chain = 0;
             $next_attack = $time + 250; # don't know actual AA cancel durations
 
-            $feather_step_cooldown += 8000; # TODO use new cooldown system
+            $ability_stats{ "time" }->{ "feather_step" } = $time +
+                    (1000*($ability_stats{ "cooldown" }->{ "feather_step" } * (1 - $cdr)));
         }
 
 
@@ -1088,6 +1097,11 @@ while ( $iteration < $max_iterations ) {
     #################################################################################
     # get ready for next loop
     #################################################################################
+    foreach my $ability ( keys $ability_stats{ "time" } )
+    {
+        # reset all cooldowns
+        $ability_stats{ "time" }->{ $ability } = 0;
+    }
     $time = 0;
     $next_attack = 0;
     $next_attack_chain = 0;
@@ -1109,7 +1123,6 @@ while ( $iteration < $max_iterations ) {
     $next_attack_chain = 0;
     $total_attacks += $num_attacks;
     $num_attacks = 0;
-    $feather_step_cooldown = 0;
     $vengeful_assault_end = 0;
     $gravity_surge_end = 0;
 
