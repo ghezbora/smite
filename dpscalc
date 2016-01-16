@@ -602,48 +602,6 @@ my $max_time = 5000;
 if (defined $opts{'t'}) { $max_time = $opts{'t'}; }
 
 
-#################################################################################
-# protection handling
-#################################################################################
-
-sub calc_mitigated_damage( $ $ ) {
-
-    my $pre_prot_damage = shift;
-    my $damage_source = shift;
-
-    my $their_eff_prot = $their_protection;
-    $their_eff_prot *= (1 - $percent_reduction);
-    $their_eff_prot *= (1 - 0.1*$spear_stacks);
-    $their_eff_prot *= (1 - 0.07*$demonic_grip_stacks);
-    $their_eff_prot *= (1 - 0.08 * $executioner_stacks);
-    $their_eff_prot -= $flat_reduction;
-    $their_eff_prot -= 10*$spear_stacks;
-    $their_eff_prot -= 6 * $executioner_stacks;
-    $their_eff_prot -= 5*$demonic_grip_stacks;
-    $their_eff_prot *= (1 - $percent_pen);
-    $their_eff_prot -= $flat_pen;
-    if ($their_eff_prot < 0) { $their_eff_prot = 0; }
-
-    my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
-
-
-    if ( $verbose ) {
-        printf "time %6d damage from %16s their prot %4d -> %4d damage %4d -> %4d ",
-                $time, $damage_source, $their_protection, $their_eff_prot, $pre_prot_damage, int(( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage);
-        if ( defined $items{ "spear" } ) {
-            print " $spear_stacks spear stacks "
-        }
-        if ( defined $items{ "demonic_grip" } ) {
-            print " $demonic_grip_stacks demonic grip stacks";
-        }
-        print "\n";
-    }
-    
-    return $damage;
-
-}
-
-
 
 
 #################################################################################
@@ -697,6 +655,92 @@ my $next_skill;
 
 
 #################################################################################
+# calculations
+#################################################################################
+sub get_eff_power() {
+    
+    if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
+        my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
+        if ($has_initiative) {
+            $eff_physical_power *= 1.3;
+        }
+        return $eff_physical_power
+    }
+    else
+    {
+        my $eff_magical_power = $magical_power;
+        if ( $opts{ 'g' } eq "sol" ) {
+            $eff_magical_power *= int(0.25 * $heat / 100);
+        }
+        return $eff_magical_power;
+    }
+}
+
+sub get_basic_attack_damage() {
+
+    if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
+        my $eff_physical_base_dmg  = ($base_stats{ "auto_damage" }->{ $opts{ 'g' } }
+                + $char_level * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
+                + get_eff_power())
+                * ${attack_chain_progression}[ $next_attack_chain ];
+        return $eff_physical_base_dmg;
+    }
+    else
+    {
+        my $eff_magical_base_dmg = ($base_stats{ "auto_damage" }->{ $opts{ 'g' } }
+                + $char_level * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
+                + 0.2 * get_eff_power())
+                * ${attack_chain_progression}[ $next_attack_chain ];
+        return $eff_magical_base_dmg;
+    }
+}
+
+sub calc_mitigated_damage( $ $ $ ) {
+
+    my $pre_prot_damage = shift;
+    my $damage_source = shift;
+    my $print = shift;
+
+    my $their_eff_prot = $their_protection;
+    $their_eff_prot *= (1 - $percent_reduction);
+    $their_eff_prot *= (1 - 0.1*$spear_stacks);
+    $their_eff_prot *= (1 - 0.07*$demonic_grip_stacks);
+    $their_eff_prot *= (1 - 0.08 * $executioner_stacks);
+    $their_eff_prot -= $flat_reduction;
+    $their_eff_prot -= 10*$spear_stacks;
+    $their_eff_prot -= 6 * $executioner_stacks;
+    $their_eff_prot -= 5*$demonic_grip_stacks;
+    $their_eff_prot *= (1 - $percent_pen);
+    $their_eff_prot -= $flat_pen;
+    if ($their_eff_prot < 0) { $their_eff_prot = 0; }
+
+    my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
+
+
+    if ( $verbose and $print ) {
+        printf "time %6d %16s prot %4d -> %4d damage %4d -> %4d ",
+                $time, $damage_source, $their_protection, $their_eff_prot, $pre_prot_damage, int(( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage);
+        if ( defined $items{ "spear" } ) {
+            print " $spear_stacks spear stacks "
+        }
+        if ( defined $items{ "demonic_grip" } ) {
+            print " $demonic_grip_stacks grip stacks";
+        }
+        if ( defined $items{ "executioner" } ) {
+            print " $executioner_stacks executioner stacks";
+        }
+        #if ( $opts{'g'} eq "sol" ) {
+        #    print " $heat heat ";
+        #}
+        print "\n";
+    }
+    
+    return $damage;
+
+}
+
+
+#################################################################################
 # skill ordering and cooldowns
 #################################################################################
 sub get_next_skill() {
@@ -732,21 +776,11 @@ while ( $iteration < $max_iterations ) {
         if ( defined $next_skill ) {
             if ( $time >= $ability_stats{ "time" }->{ $next_skill } ) {
                 # time to use next ability
-                my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
-
-                if ($has_initiative) {
-                    $eff_physical_power *= 1.3;
-                }
-                my $eff_magical_power = $magical_power;
-                if ( $opts{ 'g' } eq "sol" ) {
-                    $eff_magical_power *= int(0.25 * $heat / 100);
-                }
-
                 my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
                         $ability_stats{ "level" }->{ $next_skill } ] +
-                        ($eff_magical_power * $ability_stats{ "scaling" }->{ $next_skill });
+                        (get_eff_power() * $ability_stats{ "scaling" }->{ $next_skill });
                 if( $pre_prot_damage > 0 ) { 
-                    $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill );
+                    $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1 );
                     if(defined $items{"spear"}) {
                         $spear_stacks++;
                         $spear_end = $time + 5000;
@@ -756,7 +790,7 @@ while ( $iteration < $max_iterations ) {
 
                 $pre_prot_damage = $ability_stats{ "tick_damage" }->{ $next_skill }->[
                         $ability_stats{ "level" }->{ $next_skill } ] +
-                        ($eff_magical_power * $ability_stats{ "tick_scaling" }->{ $next_skill });
+                        (get_eff_power() * $ability_stats{ "tick_scaling" }->{ $next_skill });
                 if( $pre_prot_damage > 0 ) { 
                     # this ability has ticks, schedule them
                     my $i = 0;
@@ -778,7 +812,7 @@ while ( $iteration < $max_iterations ) {
         }
 
         if ( defined $ticks{ $time } ) {
-            $damage += calc_mitigated_damage( $ticks{ $time }, "tick" );
+            $damage += calc_mitigated_damage( $ticks{ $time }, "tick", 1 );
             if(defined $items{"spear"}) {
                 $spear_stacks++;
                 $spear_end = $time + 5000;
@@ -799,13 +833,9 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "sol" and $time == $stellar_burst_detonate_time) {
             # second blast, the time is probably not 100 but it's before the next attack
-            my $eff_magical_power = $magical_power;
-            if ( $opts{ 'g' } eq "sol" ) {
-                $eff_magical_power *= int(0.25 * $heat / 100);
-            }
-
-            my $pre_prot_damage = $stellar_burst_damage[ $stellar_burst_level ] + 0.35 * $eff_magical_power;
-            $damage += calc_mitigated_damage( $pre_prot_damage, "stellar burst" );
+            my $pre_prot_damage = $stellar_burst_damage[ $stellar_burst_level ] +
+                    0.35 * get_eff_power();
+            $damage += calc_mitigated_damage( $pre_prot_damage, "stellar burst", 1 );
 
             if(defined $items{"spear"}) {
                 $spear_stacks++;
@@ -830,13 +860,8 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "medusa" and $time == -1) {
             # start combo with ult
-            my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
-
-            if ($has_initiative) {
-                $eff_physical_power *= 1.3;
-            }
-            my $pre_prot_damage = 700 + $eff_physical_power;
-            $damage += calc_mitigated_damage($pre_prot_damage, "petrify");
+            my $pre_prot_damage = 700 + get_eff_power();
+            $damage += calc_mitigated_damage($pre_prot_damage, "petrify", 1);
 
             $next_attack = 250;
         }
@@ -851,16 +876,11 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "awilix" and $time == 0) {
             # start combo with moonlight charge + Ult
-            my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
+            my $pre_prot_damage = 250 + 0.6 * get_eff_power();
+            $damage += calc_mitigated_damage($pre_prot_damage, "moonlight charge", 1);
 
-            if ($has_initiative) {
-                $eff_physical_power *= 1.3;
-            }
-            my $pre_prot_damage = 250 + 0.6 * $eff_physical_power;
-            $damage += calc_mitigated_damage($pre_prot_damage, "moonlight charge");
-
-            $pre_prot_damage = 400 + 0.8 * $eff_physical_power;
-            $damage += calc_mitigated_damage($pre_prot_damage, "gravity surge");
+            $pre_prot_damage = 400 + 0.8 * get_eff_power();
+            $damage += calc_mitigated_damage($pre_prot_damage, "gravity surge", 1);
 
             $has_initiative = 1;
             $initiative_end = $time + 2500;
@@ -883,13 +903,9 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "awilix" and $feather_step_cooldown < $time and $num_attacks == 2) {
             # time to feather step
-            my $eff_physical_power = $physical_power + 10 * $ichaival_stacks;
-            if ($has_initiative) {
-                $eff_physical_power *= 1.3;
-            }
-            my $pre_prot_damage = 360 + $eff_physical_power;
+            my $pre_prot_damage = 360 + get_eff_power();
 
-            $damage += calc_mitigated_damage($pre_prot_damage, "feather step");
+            $damage += calc_mitigated_damage($pre_prot_damage, "feather step", 1);
 
             # reset attack chain
             $next_attack_chain = 0;
@@ -905,36 +921,8 @@ while ( $iteration < $max_iterations ) {
         #################################################################################
         if ( $time == $next_attack ) {
 
-            my $pre_prot_damage = 0;
-
-            my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
-
-            if ($has_initiative) {
-                $eff_physical_power *= 1.3;
-            }
-
-	    my $eff_physical_base_dmg  = ($base_stats{ "auto_damage" }->{ $opts{ 'g' } }
-                    + $char_level * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
-                    + $eff_physical_power)
-                    * ${attack_chain_progression}[ $next_attack_chain ];
-
-            my $eff_magical_power = $magical_power;
-            if ( $opts{ 'g' } eq "sol" ) {
-                $eff_magical_power *= int(0.25 * $heat / 100);
-            }
-
-            my $eff_magical_base_dmg = ($base_stats{ "auto_damage" }->{ $opts{ 'g' } }
-                    + $char_level * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
-                    + 0.2 * $eff_magical_power)
-                    * ${attack_chain_progression}[ $next_attack_chain ];
-
-            # base damage
-            if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
-                $pre_prot_damage += $eff_physical_base_dmg;
-            } else {
-                $pre_prot_damage += $eff_magical_base_dmg;
-            }
-
+            my $pre_prot_damage = get_basic_attack_damage();
+            
             # crit chance
             my $total_crit_chance = $base_crit_chance;
 
@@ -953,9 +941,9 @@ while ( $iteration < $max_iterations ) {
             my $rng = rand();
             if ( $rng < $total_crit_chance ) {
                 # critical hit
-                $pre_prot_damage += $eff_physical_base_dmg;
+                $pre_prot_damage += get_basic_attack_damage();
                 if (defined $items{ "deathbringer" }) {
-                    $pre_prot_damage += $eff_physical_base_dmg * 0.4;
+                    $pre_prot_damage += get_basic_attack_damage() * 0.4;
                 }
                 $crits++;
 
@@ -979,20 +967,20 @@ while ( $iteration < $max_iterations ) {
 
             # ability buffs
             if ($has_pulse) {
-                $pre_prot_damage += 60 + 0.15 * $eff_magical_power;
+                $pre_prot_damage += 60 + 0.15 * get_eff_power();
             }
 
             if ($has_irradiate) {
-                $pre_prot_damage += 100 + 0.25 * $eff_magical_power;
+                $pre_prot_damage += 100 + 0.25 * get_eff_power();
             }
 
             # apply sol's bonus only to her base damage, not to polynomicon / telkhines / etc.
             if ( $opts{ 'g' } eq "sol" and $heat == 100 ) { $pre_prot_damage *= 1.25; }
 
             if ($has_polynomicon_buff) {
-                $pre_prot_damage += 0.6 * $eff_magical_power;
+                $pre_prot_damage += 0.6 * get_eff_power();
                 $polynomicon_procs++;
-                $polynomicon_damage += 0.6 * $eff_magical_power;
+                $polynomicon_damage += 0.6 * get_eff_power();
                 $has_polynomicon_buff = 0;
                 $polynomicon_time = $time + 3000;
             }
@@ -1000,7 +988,7 @@ while ( $iteration < $max_iterations ) {
             # add viper shot extra damage
             if ($viper_shots_left > 0) {
                 $viper_shots_left--;
-                my $pre_prot_damage = 30 + $eff_physical_power * 0.1;
+                my $pre_prot_damage = 30 + get_eff_power() * 0.1;
                 my $i = 0;
                 # this ability has ticks, schedule them
                 while ( $i < 3 ) {
@@ -1021,7 +1009,7 @@ while ( $iteration < $max_iterations ) {
 
             if ($opts{ 'g' } eq "sol" and $time >= $stellar_burst_time) { # stellar burst
                 $pre_prot_damage += $stellar_burst_damage[ $stellar_burst_level ]
-                        + 0.35 * $eff_magical_power;
+                        + 0.35 * get_eff_power();
                 if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
                     $has_polynomicon_buff = 1;
                 }
@@ -1038,8 +1026,8 @@ while ( $iteration < $max_iterations ) {
             }
 
             # all damage calcs done, execute the attack
-            $damage += calc_mitigated_damage($pre_prot_damage, "attack");
-            $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack");
+            $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1);
+            $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0);
 
             # get ready for next attack
             if (defined $items{"spear"} and ($has_irradiate or $has_pulse)) {
@@ -1107,16 +1095,10 @@ while ( $iteration < $max_iterations ) {
                 and $time == $next_malice_proc and $malice_procs_left > 0 )
         {
             $total_malice_procs++;
-            # TODO duplicating this eff_physical_power in a lot of places
-            my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
+            my $pre_prot_damage = 0.25 * get_basic_attack_damage();
 
-            if ($has_initiative) {
-                $eff_physical_power *= 1.3;
-            }
-            my $pre_prot_damage = 0.25 * $eff_physical_power; # effected by ichaival?
-
-            $damage += calc_mitigated_damage($pre_prot_damage, "malice");
-            $malice_damage += calc_mitigated_damage($pre_prot_damage, "malice");
+            $damage += calc_mitigated_damage($pre_prot_damage, "malice", 1);
+            $malice_damage += calc_mitigated_damage($pre_prot_damage, "malice", 0);
 
             $malice_procs_left -= 1;
             $next_malice_proc += 1000;
