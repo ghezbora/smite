@@ -450,12 +450,6 @@ if (defined $items{"jotunns"}) {
     $gold += 2440;
 }
 
-if (defined $items{"fatalis"}) {
-    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.3;
-    $gold += 2140;
-}
-
-
 # transcendence
 if (defined $items{"transcendence"}) {
     $mana += 1050;
@@ -761,9 +755,9 @@ sub get_next_skill() {
 #################################################################################
 
 
-print "magical power $magical_power\n";
 print "effective power " . get_eff_power() . "\n";
 print "base attack damage " . get_basic_attack_damage() . "\n";
+print "base attack rate $attack_rate\n";
 
 
 while ( $iteration < $max_iterations ) {
@@ -1165,14 +1159,15 @@ foreach my $key (keys %messages_to_print) {
         print $key . " " . $messages_to_print{ $key} . "\n";
 }
 
-print "Base attack rate $attack_rate\n";
 printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
 printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$max_time/1000));
 printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($damage - $attack_damage)/$max_iterations);
 if ( defined $items{ "polynomicon" } ) {
     print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
 }
-printf "Num crits: %d total crit chance %.2f\n", $crits/$max_iterations, ($crits / $total_attacks);
+if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
+    printf "Num crits: %d total crit chance %.2f\n", $crits/$max_iterations, ($crits / $total_attacks);
+}
 if (defined $items{ "malice" }) {
     printf  "Total Malice procs %d Malice procs/crit %.2f Malice damage %.2f Malice bonus damage per crit %.2f\n", $total_malice_procs/$max_iterations, ($total_malice_procs/$crits), $malice_damage/$max_iterations, ($malice_damage)/($crits);
 }
