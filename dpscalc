@@ -670,7 +670,8 @@ sub get_eff_power() {
     {
         my $eff_magical_power = $magical_power;
         if ( $opts{ 'g' } eq "sol" ) {
-            $eff_magical_power *= int(0.25 * $heat / 100);
+            $eff_magical_power *= (1 + 0.25 * $heat / 100);
+            $eff_magical_power = int( $eff_magical_power );
         }
         return $eff_magical_power;
     }
@@ -758,6 +759,12 @@ sub get_next_skill() {
 #################################################################################
 # main loop
 #################################################################################
+
+
+print "magical power $magical_power\n";
+print "effective power " . get_eff_power() . "\n";
+print "base attack damage " . get_basic_attack_damage() . "\n";
+
 
 while ( $iteration < $max_iterations ) {
 
