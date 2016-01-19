@@ -767,7 +767,7 @@ while ( $iteration < $max_iterations ) {
                 }
                 my $eff_magical_power = $magical_power;
                 if ( $opts{ 'g' } eq "sol" ) {
-                    $eff_magical_power *= int(0.25 * $heat / 100);
+                    $eff_magical_power *= (1 + 0.25 * $heat / 100);
                 }
 
                 my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
@@ -829,7 +829,7 @@ while ( $iteration < $max_iterations ) {
             # second blast, the time is probably not 100 but it's before the next attack
             my $eff_magical_power = $magical_power;
             if ( $opts{ 'g' } eq "sol" ) {
-                $eff_magical_power *= int(0.25 * $heat / 100);
+                $eff_magical_power *= (1 + 0.25 * $heat / 100);
             }
 
             my $pre_prot_damage = $stellar_burst_damage[ $stellar_burst_level ] + 0.35 * $eff_magical_power;
@@ -960,7 +960,7 @@ while ( $iteration < $max_iterations ) {
 
             my $eff_magical_power = $magical_power;
             if ( $opts{ 'g' } eq "sol" ) {
-                $eff_magical_power *= int(0.25 * $heat / 100);
+                $eff_magical_power *= (1 + 0.25 * $heat / 100);
             }
 
             my $eff_magical_base_dmg = ($base_stats{ "auto_damage" }->{ $opts{ 'g' } }
