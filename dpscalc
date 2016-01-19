@@ -179,6 +179,16 @@ my %ability_stats = (
         "siphon_darkness" => 2,
         "shadow_step" => 0,
         "night_terror" => 0,
+
+        "astral_strike" => 0,
+        "pick_me_up" => 0,
+        "rolling_assault" => 0,
+        "astral_barrage" => 0,
+
+        "bladed_arrow" => 0,
+        "expose_weakness" => 0,
+        "hail_of_arrows" => 0,
+        "wield_bow" => 0,
     },
 );
 
@@ -194,6 +204,8 @@ my %abilities = (
     "awilix" => [ "summon_suku", "feather_step", "moonlight_charge", "gravity_surge" ],
     "medusa" => [ "viper_shot", "acid_spray", "lacerate", "petrify" ],
     "xbal" => [ "branching_bolas", "poison_darts", "rising_jaguar", "darkest_of_nights" ],
+    "rama" => [ "astral_strike", "pick_me_up", "rolling_assault", "astral_barrage" ],
+    "ullr" => [ "bladed_arrow", "expose_weakness", "hail_of_arrows", "wield_bow" ],
 );
 
 
@@ -212,6 +224,8 @@ my %base_stats = (
         "awilix" => "physical",
         "medusa" => "physical",
         "xbal" => "physical",
+        "rama" => "physical",
+        "ullr" => "physical",
     },
     "attack_rate" => {
         "freya" => 0.95,
@@ -223,6 +237,8 @@ my %base_stats = (
         "awilix" => 1,
         "medusa" => 0.95,
         "xbal" => 0.95,
+        "rama" => 0.95,
+        "ullr" => 0.95,
     },
     "attack_rate_level_scaling" => {
         "freya" => 0.0195,
@@ -234,6 +250,8 @@ my %base_stats = (
         "awilix" => 0.0189,
         "medusa" => 0.014,
         "xbal" => 0.01,
+        "rama" => 0.017,
+        "ullr" => 0.015,
     },
     "auto_damage" => {
         "freya" => 35,
@@ -245,6 +263,8 @@ my %base_stats = (
         "awilix" => 38,
         "medusa" => 38,
         "xbal" => 37,
+        "rama" => 40,
+        "ullr" => 38,
     },
     "auto_level_scaling" => {
         "freya" => 1.5,
@@ -256,6 +276,8 @@ my %base_stats = (
         "awilix" => 2.16,
         "medusa" => 2.6,
         "xbal" => 2.5,
+        "rama" => 2.5,
+        "ullr" => 2.4,
     },
     "mana" => {
         "freya" => 220,
@@ -267,6 +289,8 @@ my %base_stats = (
         "awilix" => 220,
         "medusa" => 220,
         "xbal" => 220,
+        "rama" => 205,
+        "ullr" => 230,
     },
     "mana_level_scaling" => {
         "freya" => 37,
@@ -278,6 +302,8 @@ my %base_stats = (
         "awilix" => 38,
         "medusa" => 34,
         "xbal" => 37,
+        "rama" => 34,
+        "ullr" => 40,
     },
     "attack_chain_progression" => {
         "freya" => [ 1 ],
@@ -289,6 +315,8 @@ my %base_stats = (
         "awilix" => [ 1, 0.75, 1.25 ],
         "medusa" => [ 1 ],
         "xbal" => [ 1 ],
+        "rama" => [ 1 ],
+        "ullr" => [ 1 ],
     },
 );
 
@@ -449,12 +477,6 @@ if (defined $items{"jotunns"}) {
     $cdr += 0.25;
     $gold += 2440;
 }
-
-if (defined $items{"fatalis"}) {
-    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.3;
-    $gold += 2140;
-}
-
 
 # transcendence
 if (defined $items{"transcendence"}) {
@@ -650,9 +672,15 @@ sub calc_mitigated_damage( $ $ ) {
 # buffs and stacks
 #################################################################################
 
+my $expose_weakness = 0;
+my $expose_weakness_end = 0;
 my $viper_shots_left = 0;
 my $vengeful_assault = 0;
 my $vengeful_assault_end = 0;
+my $astral_strike = 0;
+my $astral_arrows = 0;
+my $pick_me_up = 0;
+my $pick_me_up_end = 0;
 my $gravity_surge = 0;
 my $gravity_surge_end = 0;
 my $has_initiative = 0;
@@ -841,6 +869,18 @@ while ( $iteration < $max_iterations ) {
             $next_attack = 250;
         }
 
+        if ($opts{'g'} eq "rama" and $time == 0) {
+            $pick_me_up = 1;
+            $pick_me_up_end = $time + 5000;
+            $astral_strike = 1;
+            $astral_arrows = 5;
+        }
+
+        if ($opts{'g'} eq "ullr" and $time == 0) {
+            $expose_weakness = 1;
+            $expose_weakness_end = $time + 5000;
+        }
+
         if ($opts{'g'} eq "artemis" and $time == 0) {
             # start with tusky
             #my $pre_prot_damage = 450 + $base_damage;
@@ -933,6 +973,13 @@ while ( $iteration < $max_iterations ) {
                 $pre_prot_damage += $eff_physical_base_dmg;
             } else {
                 $pre_prot_damage += $eff_magical_base_dmg;
+            }
+
+            if($expose_weakness or $has_branching_bolas) { $pre_prot_damage += 50; }
+
+            if($astral_strike and $astral_arrows > 0) {
+                $pre_prot_damage += 50;
+                $astral_arrows--;
             }
 
             # crit chance
@@ -1077,8 +1124,15 @@ while ( $iteration < $max_iterations ) {
                         $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * ($heat * 0.25 * 0.012);
                 $messages_to_print{ "heat effective attack rate" } = $eff_attack_rate;
             }
+            if ( $opts{'g'} eq "ullr" ) {
+                # wield bow
+                $eff_attack_rate = $attack_rate + 0.25 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
+            }
             if ( $vengeful_assault ) {
                 $eff_attack_rate = $attack_rate + 0.75 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
+            }
+            if ( $pick_me_up ) { 
+                $eff_attack_rate = $attack_rate + 0.5 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
             if ($viper_shots_left > 0) {
                 $eff_attack_rate = $attack_rate +
@@ -1123,6 +1177,8 @@ while ( $iteration < $max_iterations ) {
         }
 
         if ($time == $still_target_end) { $still_target_stacks = 0; }
+        if ($time == $expose_weakness_end) { $expose_weakness = 0; }
+        if ($time == $pick_me_up_end) { $pick_me_up = 0; }
         if ($time == $vengeful_assault_end) { $vengeful_assault = 0; }
         if ($time == $gravity_surge_end) { $gravity_surge = 0; }
         if ($time == $executioner_end ) { $executioner_stacks = 0; }
@@ -1164,6 +1220,8 @@ while ( $iteration < $max_iterations ) {
     $feather_step_cooldown = 0;
     $vengeful_assault_end = 0;
     $gravity_surge_end = 0;
+    $viper_shots_left = 0;
+    %ticks = ();
 
     $iteration++;
 
