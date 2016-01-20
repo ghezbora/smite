@@ -639,6 +639,12 @@ if (defined $items{"deathbringer"} or defined $items{ "db" }) {
     $gold += 3150;
 }
 
+if (defined $items{"hydras"}) {
+    $cdr += 0.15;
+    $physical_power += 30;
+}
+my $has_hydras_buff = 0;
+
 
 
 #################################################################################
@@ -717,6 +723,10 @@ my @stellar_burst_damage = ( 0, 40, 70, 100, 130, 160 );
 my $polynomicon_procs = 0;
 my $polynomicon_damage = 0;
 my $polynomicon_time = 0;
+
+my $hydras_procs = 0;
+my $hydras_damage = 0;
+my $hydras_time = 0;
 
 my $shadow_lock_ticks_left = 0;
 my $shadow_lock_next_tick = 0;
@@ -926,6 +936,13 @@ while ( $iteration < $max_iterations ) {
                     $serqet_poisons++;
                 }
 
+                if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
+                    $has_polynomicon_buff = 1;
+                }
+                if (defined $items{"hydras"} and $hydras_time <= $time) {
+                    $has_hydras_buff = 1;
+                }
+
                 $ability_stats{ "time" }->{ $next_skill } = $time +
                         (1000*($ability_stats{ "cooldown" }->{ $next_skill } * (1 - $cdr)));
 
@@ -940,6 +957,7 @@ while ( $iteration < $max_iterations ) {
             if ( $ticks{ $time }->[ 2 ] == 0 ) {
                 $damage += calc_mitigated_damage( $ticks{ $time }->[0], $ticks{ $time }->[1], 1 );
             } else {
+                # true damage; here for last breath
                 $damage += $ticks{ $time }->[0];
                 if ( $verbose ) {
                     printf "time %d %s damage %d\n", $time, $ticks{ $time }->[1], $ticks{ $time }->[0];
@@ -959,7 +977,6 @@ while ( $iteration < $max_iterations ) {
             $pulse_end = $time + 5000;
             if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
                 $has_polynomicon_buff = 1;
-                $polynomicon_time = $time + 3000;
             }
         }
 
@@ -1020,6 +1037,7 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "awilix" and $time == 0) {
             # start combo with moonlight charge + Ult
+            # TODO use normal combo logic for this
             my $pre_prot_damage = 250 + 0.6 * get_eff_power();
             $damage += calc_mitigated_damage($pre_prot_damage, "moonlight charge", 1);
 
@@ -1028,6 +1046,10 @@ while ( $iteration < $max_iterations ) {
 
             $has_initiative = 1;
             $initiative_end = $time + 2500;
+
+            if (defined $items{"hydras"} and $hydras_time <= $time) {
+                $has_hydras_buff = 1;
+            }
 
             $next_attack = 250;
         }
@@ -1041,6 +1063,10 @@ while ( $iteration < $max_iterations ) {
                 $messages_to_print{ "overcapping viper attack rate" } = 1;
                 $viper_attack_rate = 2.5;
             }
+            if (defined $items{"hydras"} and $hydras_time <= $time) {
+                $has_hydras_buff = 1;
+            }
+
             my $viper_attack_duration = int(1000 / $viper_attack_rate);
             $next_attack = $time + $viper_attack_duration;
         }
@@ -1055,6 +1081,10 @@ while ( $iteration < $max_iterations ) {
             # reset attack chain
             $next_attack_chain = 0;
             $next_attack = $time + 250; # don't know actual AA cancel durations
+
+            if (defined $items{"hydras"} and $hydras_time <= $time) {
+                $has_hydras_buff = 1;
+            }
 
             $ability_stats{ "time" }->{ "feather_step" } = $time +
                     (1000*($ability_stats{ "cooldown" }->{ "feather_step" } * (1 - $cdr)));
@@ -1138,14 +1168,6 @@ while ( $iteration < $max_iterations ) {
             # apply sol's bonus only to her base damage, not to polynomicon / telkhines / etc.
             if ( $opts{ 'g' } eq "sol" and $heat == 100 ) { $pre_prot_damage *= 1.25; }
 
-            if ($has_polynomicon_buff) {
-                $pre_prot_damage += 0.6 * get_eff_power();
-                $polynomicon_procs++;
-                $polynomicon_damage += 0.6 * get_eff_power();
-                $has_polynomicon_buff = 0;
-                $polynomicon_time = $time + 3000;
-            }
-
             # add viper shot extra damage
             if ($viper_shots_left > 0) {
                 $viper_shots_left--;
@@ -1164,6 +1186,23 @@ while ( $iteration < $max_iterations ) {
 
 
             # item buffs
+
+            if($has_hydras_buff) {
+                $hydras_damage += 0.25 * get_basic_attack_damage();
+                $hydras_procs++;
+                $pre_prot_damage += 0.25 * get_basic_attack_damage();
+                $has_hydras_buff = 0;
+                $hydras_time = $time + 3000;
+            }
+
+            if ($has_polynomicon_buff) {
+                $pre_prot_damage += 0.6 * get_eff_power();
+                $polynomicon_procs++;
+                $polynomicon_damage += 0.6 * get_eff_power();
+                $has_polynomicon_buff = 0;
+                $polynomicon_time = $time + 3000;
+            }
+
             if (defined $items{"telkhines_ring"}) {
                 $pre_prot_damage += 40;
             }
@@ -1342,6 +1381,9 @@ printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$ma
 if ( defined $items{ "polynomicon" } ) {
     print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
 }
+if ( defined $items{ "hydras" } ) {
+    print "Hydras procs $hydras_procs hydras damage $hydras_damage\n";
+}
 if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
     printf "Num crits: %d total crit chance %.2f\n", $crits/$max_iterations, ($crits / $total_attacks);
 }
@@ -1349,6 +1391,6 @@ if (defined $items{ "malice" }) {
     printf  "Total Malice procs %d Malice procs/crit %.2f Malice damage %.2f Malice bonus damage per crit %.2f\n", $total_malice_procs/$max_iterations, ($total_malice_procs/$crits), $malice_damage/$max_iterations, ($malice_damage)/($crits);
 }
 printf "Total lifesteal %.2f\n", ($damage * $lifesteal)/$max_iterations;
-printf "Total gold %d damage/gold %.2f\n", $gold, $damage / $gold;
+printf "Total gold %d damage/gold %.2f\n", $gold, ($damage/$max_iterations) / $gold;
 
 
