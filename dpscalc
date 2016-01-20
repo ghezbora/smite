@@ -52,6 +52,12 @@ my %ability_stats = (
         "night_terror" => 90,
 
         "feather_step" => 8,
+
+        "deathbane" => 10,
+        "cobras_kiss" => 18,
+        "ambush" => 15,
+        "last_breath" => 90,
+
     },
     "time" => { # will be updated with cooldown when used
         "crush" => 0,
@@ -65,6 +71,12 @@ my %ability_stats = (
         "night_terror" => 0,
 
         "feather_step" => 0,
+
+        "deathbane" => 0,
+        "cobras_kiss" => 0,
+        "ambush" => 0,
+        "last_breath" => 0,
+
     },
     "damage" => {
         "crush" => [ 0, 90, 140, 190, 240, 290 ],
@@ -76,6 +88,29 @@ my %ability_stats = (
         "siphon_darkness" => [ 0, 90, 160, 230, 300, 370 ],
         "shadow_step" => [ 0, 70, 110, 150, 190, 230 ],
         "night_terror" => [ 0, 200, 250, 300, 350, 400 ],
+
+        "deathbane" => [ 0, 60, 80, 100, 120, 140 ],
+        "cobras_kiss" => [ 0, 50, 70, 90, 110, 130 ],
+        "ambush" => [ 0, 80, 140, 200, 260, 320 ],
+        "last_breath" => [ 0, 0, 0, 0, 0, 0 ],
+
+    },
+    "hits" => {
+        "crush" => 1,
+        "sic_em" => 1,
+        "sentinel" => 0,
+        "im_a_monster" => 1,
+
+        "shadow_lock" => 0,
+        "siphon_darkness" => 1,
+        "shadow_step" => 1,
+        "night_terror" => 1,
+
+        "deathbane" => 3,
+        "cobras_kiss" => 2,
+        "ambush" => 0,
+        "last_breath" => 0,
+
     },
     "tick_damage" => {
         "crush" => [ 0, 0, 0, 0, 0, 0 ],
@@ -87,6 +122,12 @@ my %ability_stats = (
         "siphon_darkness" => [ 0, 0, 0, 0, 0, 0 ],
         "shadow_step" => [ 0, 0, 0, 0, 0, 0 ],
         "night_terror" => [ 0, 20, 25, 30, 35, 40 ],
+
+        "deathbane" => [ 0, 0, 0, 0, 0, 0 ],
+        "cobras_kiss" => [ 0, 0, 0, 0, 0, 0 ],
+        "ambush" => [ 0, 0, 0, 0, 0, 0 ],
+        "last_breath" => [ 0, 46, 68, 91, 114, 137 ],
+
     },
     "scaling" => {
         "crush" => 0.8,
@@ -98,6 +139,12 @@ my %ability_stats = (
         "siphon_darkness" => 1,
         "shadow_step" => 0.4,
         "night_terror" => .6,
+
+        "deathbane" => .45,
+        "cobras_kiss" => .4,
+        "ambush" => .5,
+        "last_breath" => 0,
+
     },
     "tick_scaling" => {
         "crush" => 0,
@@ -109,6 +156,12 @@ my %ability_stats = (
         "siphon_darkness" => 0,
         "shadow_step" => 0,
         "night_terror" => .05,
+
+        "deathbane" => 0,
+        "cobras_kiss" => 0,
+        "ambush" => 0,
+        "last_breath" => 0,
+
     },
     "tick_duration" => {
         "crush" => 0,
@@ -120,6 +173,12 @@ my %ability_stats = (
         "siphon_darkness" => 0,
         "shadow_step" => 0,
         "night_terror" => 1,
+
+        "deathbane" => 0,
+        "cobras_kiss" => 0,
+        "ambush" => 0,
+        "last_breath" => 1,
+
     },
     "num_ticks" => {
         "crush" => 0,
@@ -131,6 +190,12 @@ my %ability_stats = (
         "siphon_darkness" => 0,
         "shadow_step" => 0,
         "night_terror" => 5,
+
+        "deathbane" => 0,
+        "cobras_kiss" => 0,
+        "ambush" => 0,
+        "last_breath" => 5,
+
     },
     "level" => {
         "crush" => 5,
@@ -142,6 +207,12 @@ my %ability_stats = (
         "siphon_darkness" => 5,
         "shadow_step" => 5,
         "night_terror" => 5,
+
+        "deathbane" => 5,
+        "cobras_kiss" => 5,
+        "ambush" => 5,
+        "last_breath" => 5,
+
     },
 );
 
@@ -157,6 +228,7 @@ my %combos = (
     "awilix" => [ ],
     "medusa" => [ ],
     "xbal" => [ ],
+    "serqet" => [ "cobras_kiss", "deathbane", "last_breath" ],
 );
 
 
@@ -173,6 +245,7 @@ my %abilities = (
     "xbal" => [ "branching_bolas", "poison_darts", "rising_jaguar", "darkest_of_nights" ],
     "rama" => [ "astral_strike", "pick_me_up", "rolling_assault", "astral_barrage" ],
     "ullr" => [ "bladed_arrow", "expose_weakness", "hail_of_arrows", "wield_bow" ],
+    "serqet" => [ "cobras_kiss", "deathbane", "ambush", "last_breath" ],
 );
 
 
@@ -193,6 +266,7 @@ my %base_stats = (
         "xbal" => "physical",
         "rama" => "physical",
         "ullr" => "physical",
+        "serqet" => "physical",
     },
     "attack_rate" => {
         "freya" => 0.95,
@@ -206,6 +280,7 @@ my %base_stats = (
         "xbal" => 0.95,
         "rama" => 0.95,
         "ullr" => 0.95,
+        "serqet" => 1,
     },
     "attack_rate_level_scaling" => {
         "freya" => 0.0195,
@@ -219,6 +294,7 @@ my %base_stats = (
         "xbal" => 0.01,
         "rama" => 0.017,
         "ullr" => 0.015,
+        "serqet" => 0.0216,
     },
     "auto_damage" => {
         "freya" => 35,
@@ -232,6 +308,7 @@ my %base_stats = (
         "xbal" => 37,
         "rama" => 40,
         "ullr" => 38,
+        "serqet" => 39,
     },
     "auto_level_scaling" => {
         "freya" => 1.5,
@@ -245,6 +322,7 @@ my %base_stats = (
         "xbal" => 2.5,
         "rama" => 2.5,
         "ullr" => 2.4,
+        "serqet" => 2.25,
     },
     "mana" => {
         "freya" => 220,
@@ -258,6 +336,7 @@ my %base_stats = (
         "xbal" => 220,
         "rama" => 205,
         "ullr" => 230,
+        "serqet" => 240,
     },
     "mana_level_scaling" => {
         "freya" => 37,
@@ -271,6 +350,7 @@ my %base_stats = (
         "xbal" => 37,
         "rama" => 34,
         "ullr" => 40,
+        "serqet" => 40,
     },
     "attack_chain_progression" => {
         "freya" => [ 1 ],
@@ -284,6 +364,7 @@ my %base_stats = (
         "xbal" => [ 1 ],
         "rama" => [ 1 ],
         "ullr" => [ 1 ],
+        "serqet" => [ 1, 0.75, 1.25 ],
     },
 );
 
@@ -317,7 +398,7 @@ my $lifesteal = 0;
 if ( $opts{ 'g' } eq "freya" ) { $lifesteal += 0.15; }
 my $cdr = 0;
 
-my $their_protection = 30 + 18 + 20 + 50 + 50; # athena with HW, Sov, Void Stone
+my $their_protection = 9 + 2.6 * 20 + 40; # Sol with MoR
 if ( defined $opts{'p'} ) {
     $their_protection = $opts{'p'};
 }
@@ -362,7 +443,7 @@ if (defined $items{"demonic_grip"}) {
 my $demonic_grip_stacks = 0;
 my $demonic_grip_end = 0;
 
-if (defined $items{"telkhines_ring"}) {
+if (defined $items{"telkhines_ring"} or defined $items{ "telkhines" }) {
     $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.1;
     $magical_power += 45;
     $gold += 2125;
@@ -437,7 +518,7 @@ if (defined $items{"gem"} ) {
 #################################################################################
 
 # jotunn's wrath
-if (defined $items{"jotunns"}) {
+if (defined $items{"jotunns"} or defined $items{ "jotunns_wrath" }) {
     $physical_power += 40;
     $flat_pen += 11;
     $mana += 150;
@@ -475,7 +556,7 @@ if (defined $items{"brawlers"}) {
 }
 
 # titan's bane
-if (defined $items{"titans"}) {
+if (defined $items{"titans"} or defined $items{"titans_bane"}) {
     $percent_pen += 0.33;
     $gold += 2050;
 }
@@ -552,7 +633,7 @@ my $next_malice_proc = 0;
 my $malice_procs_left = 0;
 
 # deathbringer
-if (defined $items{"deathbringer"}) {
+if (defined $items{"deathbringer"} or defined $items{ "db" }) {
     $base_crit_chance += 0.2;
     $physical_power += 50;
     $gold += 3150;
@@ -587,7 +668,7 @@ my $max_iterations = 1000;
 if ( $base_stats{ "type" }->{ $opts{ 'g'} } eq "magical" ) {
     $max_iterations = 1; # no crit, no rng
 }
-my $max_time = 5000;
+my $max_time = 5100;
 if (defined $opts{'t'}) { $max_time = $opts{'t'}; }
 
 
@@ -597,6 +678,7 @@ if (defined $opts{'t'}) { $max_time = $opts{'t'}; }
 # buffs and stacks
 #################################################################################
 
+my $serqet_poisons = 0;
 my $expose_weakness = 0;
 my $expose_weakness_end = 0;
 my $viper_shots_left = 0;
@@ -651,6 +733,36 @@ my $next_skill;
 #################################################################################
 # calculations
 #################################################################################
+
+sub ability_crits($) {
+    my $pre_prot_damage = shift;
+
+    # some abilities can crit, but they do not proc rage
+    # not sure if the crit chance for abilities is affected by rage stacks TODO
+
+    # crit chance
+    my $total_crit_chance = $base_crit_chance;
+
+    my $rng = rand();
+    if ( $rng < $total_crit_chance ) {
+        # critical hit
+        $pre_prot_damage *= 2;
+        if (defined $items{ "deathbringer" }) {
+            $pre_prot_damage *= 1.2; # 240%
+        }
+
+        # handle malice
+        if ($malice_procs_left == 0) {
+            # no procs, set next proc for 1 sec from now, otherwise just refresh count
+            $next_malice_proc = $time + 1000;
+        }
+        $malice_procs_left = 3;
+    }
+
+    return $pre_prot_damage;
+}
+
+
 sub get_eff_power() {
     
     if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
@@ -773,13 +885,21 @@ while ( $iteration < $max_iterations ) {
                 my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
                         $ability_stats{ "level" }->{ $next_skill } ] +
                         (get_eff_power() * $ability_stats{ "scaling" }->{ $next_skill });
-                if( $pre_prot_damage > 0 ) { 
-                    $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1 );
-                    if(defined $items{"spear"}) {
-                        $spear_stacks++;
-                        $spear_end = $time + 5000;
-                        if ($spear_stacks > 2) { $spear_stacks = 2; }
+                my $hit = 0;
+                while ( $hit < $ability_stats{ "hits" }->{ $next_skill } ) {
+                    if( $pre_prot_damage > 0 ) { 
+                        if ( $next_skill eq "deathbane" ) {
+                            # deathbane can crit
+                            $pre_prot_damage = ability_crits( $pre_prot_damage );
+                        }
+                        $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1 );
+                        if(defined $items{"spear"}) {
+                            $spear_stacks++;
+                            $spear_end = $time + 5000;
+                            if ($spear_stacks > 2) { $spear_stacks = 2; }
+                        }
                     }
+                    $hit++;
                 }
 
                 $pre_prot_damage = $ability_stats{ "tick_damage" }->{ $next_skill }->[
@@ -792,10 +912,18 @@ while ( $iteration < $max_iterations ) {
 
                         my $tick_time = $time + ($i + 1) * $ability_stats{ "tick_duration" }->{ $next_skill } * 1000;
                         while ( defined $ticks{ $tick_time } ) { $tick_time++; }
-                        $ticks{ $tick_time } = $pre_prot_damage;
+                        if ( $next_skill ne "last_breath" ) {
+                            $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 0 ];
+                        } else {
+                            $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 1 ];
+                        }
 
                         $i++;
                     }
+                }
+
+                if ( $opts{ 'g' } eq "serqet" ) {
+                    $serqet_poisons++;
                 }
 
                 $ability_stats{ "time" }->{ $next_skill } = $time +
@@ -809,7 +937,14 @@ while ( $iteration < $max_iterations ) {
         }
 
         if ( defined $ticks{ $time } ) {
-            $damage += calc_mitigated_damage( $ticks{ $time }, "tick", 1 );
+            if ( $ticks{ $time }->[ 2 ] == 0 ) {
+                $damage += calc_mitigated_damage( $ticks{ $time }->[0], $ticks{ $time }->[1], 1 );
+            } else {
+                $damage += $ticks{ $time }->[0];
+                if ( $verbose ) {
+                    printf "time %d %s damage %d\n", $time, $ticks{ $time }->[1], $ticks{ $time }->[0];
+                }
+            }
             if(defined $items{"spear"}) {
                 $spear_stacks++;
                 $spear_end = $time + 5000;
@@ -913,7 +1048,7 @@ while ( $iteration < $max_iterations ) {
         if ($opts{'g'} eq "awilix" and $next_attack_chain == 2 and
                 $ability_stats{ "time" }->{ "feather_step" } <= $time ) {
             # time to feather step
-            my $pre_prot_damage = 360 + get_eff_power();
+            my $pre_prot_damage = 360 + get_eff_power(); # TODO use hashed scaling/damage
 
             $damage += calc_mitigated_damage($pre_prot_damage, "feather step", 1);
 
@@ -992,6 +1127,14 @@ while ( $iteration < $max_iterations ) {
                 $pre_prot_damage += 100 + 0.25 * get_eff_power();
             }
 
+            if ($serqet_poisons >= 2) {
+                $pre_prot_damage += $their_health * 0.1;
+                if ($serqet_poisons == 3) {
+                    $pre_prot_damage += $their_health * 0.1;
+                }
+            }
+            $serqet_poisons = 0;
+
             # apply sol's bonus only to her base damage, not to polynomicon / telkhines / etc.
             if ( $opts{ 'g' } eq "sol" and $heat == 100 ) { $pre_prot_damage *= 1.25; }
 
@@ -1013,7 +1156,7 @@ while ( $iteration < $max_iterations ) {
                     # viper shot 3 ticks at 0.5 seconds
                     my $tick_time = $time + ($i + 1) * 0.5 * 1000;
                     while ( defined $ticks{ $tick_time } ) { $tick_time++; }
-                    $ticks{ $tick_time } = $pre_prot_damage;
+                    $ticks{ $tick_time } = +[ $pre_prot_damage, "viper shot tick", 0 ];
 
                     $i++;
                 }
@@ -1154,7 +1297,9 @@ while ( $iteration < $max_iterations ) {
         # reset all cooldowns
         $ability_stats{ "time" }->{ $ability } = 0;
     }
+    %ticks = ();
     $time = 0;
+    $combo_idx = 0;
     $next_attack = 0;
     $next_attack_chain = 0;
     $total_attacks += $num_attacks;
@@ -1178,7 +1323,7 @@ while ( $iteration < $max_iterations ) {
     $vengeful_assault_end = 0;
     $gravity_surge_end = 0;
     $viper_shots_left = 0;
-    %ticks = ();
+    $serqet_poisons = 0;
 
     $iteration++;
 
