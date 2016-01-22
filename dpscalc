@@ -4,7 +4,7 @@
 # Wish list
 # divide magical and physical protection
 #
-# add bastet
+# add mercury
 #
 
 use strict;
@@ -19,7 +19,7 @@ use Getopt::Std;
 
 my %opts;
 
-getopts('vl:t:p:h:g:i:', \%opts);
+getopts('vl:t:p:h:g:i:e:', \%opts);
 
 my $char_level = 20;
 if (defined $opts{'l'} ) { $char_level = $opts{'l'}; }
@@ -35,6 +35,29 @@ foreach my $item (@items) {
     $items{ $item } = 1;
 }
 
+
+
+
+my %protection_stats = (
+    "physical_protection" => {
+        "bastet" => (12 + 20 * 2.9 + 40), # bastet with spirit robe
+        "sol" => (9 + 20 * 2.6), # sol
+        "khepri" => (19 + 3 * 20 + 50 + 20 + 60), # khepri with Sov, Heartward, and Midgardian
+        "bellona" => (18 + 3 * 20 + 20 + 60), # bellona with mystical mail and full passive
+    },
+    "magical_protection" => {
+        "bastet" => (30 + 20 * 0.9 + 40), # bastet with spirit robe
+        "sol" => 30,
+        "khepri" => (30 + 20 * 0.9 + 20 + 60), # khepri with Sov, Heartward
+        "bellona" => (30 + 20 * 0.9 + 20 + 70), #bellona with gaia and full passive
+    },
+    "health" => {
+        "bastet" => (415 + 20 * 80),
+        "sol" => (400 + 75 * 20),
+        "khepri" => (510 + 90*20 + 200 + 200 + 350),
+        "bellona" => (480 + 85 * 20 + 200 + 100 ),
+    },
+);
 
 
 
@@ -67,6 +90,7 @@ my %ability_stats = (
 
         "unchained" => 15,
         "brutalize" => 14,
+        "ragnarok" => 90,
         
         "pounce" => 12,
         "razor_whip" => 15,
@@ -99,6 +123,7 @@ my %ability_stats = (
 
         "unchained" => 0,
         "brutalize" => 0,
+        "ragnarok" => 0,
 
         "pounce" => 12,
         "razor_whip" => 15,
@@ -129,6 +154,7 @@ my %ability_stats = (
 
         "unchained" => [ 0, 95, 155, 215, 275, 335 ],
         "brutalize" => [ 0, 45, 75, 105, 135, 165 ],
+        "ragnarok" => [ 0, 200, 275, 350, 425, 500 ],
 
         "pounce" => [ 0, 80, 145, 210, 275, 340 ],
         "razor_whip" => [ 0, 0, 0, 0, 0, 0 ],
@@ -159,6 +185,7 @@ my %ability_stats = (
 
         "unchained" => 1,
         "brutalize" => 4,
+        "ragnarok" => 1,
 
         "pounce" => 1,
         "razor_whip" => 0,
@@ -189,11 +216,12 @@ my %ability_stats = (
 
         "unchained" => [ 0, 0, 0, 0, 0, 0 ],
         "brutalize" => [ 0, 0, 0, 0, 0, 0 ],
+        "ragnarok" => [ 0, 0, 0, 0, 0, 0 ],
 
         "pounce" => [ 0, 0, 0, 0, 0, 0 ],
         "razor_whip" => [ 0, 25, 45, 65, 85, 105 ],
         "declaw" => [ 0, 0, 0, 0, 0, 0 ],
-        "cat_call" => [ 0, 0, 0, 0, 0, 0 ],
+        "cat_call" => [ 0, 75, 105, 135, 165, 195 ],
 
     },
     "scaling" => {
@@ -219,6 +247,7 @@ my %ability_stats = (
 
         "unchained" => .8,
         "brutalize" => .5,
+        "ragnarok" => 1.2,
 
         "pounce" => 1,
         "razor_whip" => 0,
@@ -249,11 +278,12 @@ my %ability_stats = (
 
         "unchained" => 0,
         "brutalize" => 0,
+        "ragnarok" => 0,
 
         "pounce" => 0,
         "razor_whip" => 0.25,
         "declaw" => 0,
-        "cat_call" => 0,
+        "cat_call" => 0.6,
 
     },
     "tick_duration" => {
@@ -279,11 +309,12 @@ my %ability_stats = (
 
         "unchained" => 0,
         "brutalize" => 0,
+        "ragnarok" => 0,
 
         "pounce" => 0,
         "razor_whip" => 1,
         "declaw" => 0,
-        "cat_call" => 0,
+        "cat_call" => 1,
 
     },
     "num_ticks" => {
@@ -309,11 +340,12 @@ my %ability_stats = (
 
         "unchained" => 0,
         "brutalize" => 0,
+        "ragnarok" => 0,
 
         "pounce" => 0,
         "razor_whip" => 4,
         "declaw" => 0,
-        "cat_call" => 0,
+        "cat_call" => 10,
 
     },
     "next_action" => { # time to next action
@@ -340,6 +372,7 @@ my %ability_stats = (
 
         "unchained" => .5,
         "brutalize" => 2,
+        "ragnarok" => 2,
 
         "pounce" => 0.5,
         "razor_whip" => 0.5,
@@ -370,6 +403,7 @@ my %ability_stats = (
 
         "unchained" => 5,
         "brutalize" => 5,
+        "ragnarok" => 5,
 
         "pounce" => 5,
         "razor_whip" => 5,
@@ -391,9 +425,10 @@ my %combos = (
     "awilix" => [ ],
     "medusa" => [ ],
     "xbal" => [ ],
+    "rama" => [ ],
     "serqet" => [ "cobras_kiss", "deathbane", "last_breath" ],
     "thor" => [ "anvil_of_dawn", "mjolnirs_attunement", "tectonic_rift", "spin_to_win" ],
-    "fenrir" => [ "unchained", "brutalize" ],
+    "fenrir" => [ "unchained", "ragnarok", "brutalize" ],
     "bastet" => [ "pounce", "razor_whip", "cat_call" ],
 );
 
@@ -589,12 +624,20 @@ my $lifesteal = 0;
 if ( $opts{ 'g' } eq "freya" ) { $lifesteal += 0.15; }
 my $cdr = 0;
 
-my $their_protection = 9 + 2.6 * 20 + 40; # Sol with MoR
+my $enemy_god = "bastet";
+if ( defined $opts{ 'e' } ) { $enemy_god = $opts{ 'e' }; }
+
+my $their_protection;
+if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
+    $their_protection = $protection_stats{ "physical_protection" }->{ $enemy_god };
+} else {
+    $their_protection = $protection_stats{ "magical_protection" }->{ $enemy_god };
+}
 if ( defined $opts{'p'} ) {
     $their_protection = $opts{'p'};
 }
 
-my $their_health = 400 + 20 * 75 + 250; #sol with MoR
+my $their_health = $protection_stats{ "health" }->{ $enemy_god };
 if ( defined $opts{ 'h' } ) {
     $their_health = $opts{ 'h' };
 }
@@ -684,7 +727,7 @@ if (defined $items{"chronos"}) {
     $gold += 2400;
 }
 
-if (defined $items{"pythagorems"}) {
+if (defined $items{"pythagorems"} or defined $items{"pythags"}) {
     $magical_power += 90;
     $lifesteal += .25;
     $cdr += 0.1;
@@ -748,6 +791,7 @@ if (defined $items{"brawlers"}) {
 
 # titan's bane
 if (defined $items{"titans"} or defined $items{"titans_bane"}) {
+    $physical_power += 30;
     $percent_pen += 0.33;
     $gold += 2050;
 }
