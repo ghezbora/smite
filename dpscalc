@@ -2,11 +2,17 @@
 
 
 # Wish list
+#
 # divide magical and physical protection
 #
 # add mercury
-# add apollo
-# add neith
+# add audacity for apollo
+# add hou yi
+# add poison darts for xbal
+# add kali
+# add arachne
+# add nemesis
+# add ne zha
 #
 
 use strict;
@@ -100,6 +106,10 @@ my %ability_stats = (
         "cat_call" => 90,
 
         "spirit_arrow" => 15,
+
+        "thrown_axe" => 14,
+        "hail_of_arrows" => 15,
+        "bladed_arrow" => 14,
     },
     "time" => { # will be updated with cooldown when used
         "crush" => 0,
@@ -134,6 +144,10 @@ my %ability_stats = (
         "cat_call" => 90,
 
         "spirit_arrow" => 0,
+
+        "thrown_axe" => 0,
+        "hail_of_arrows" => 0,
+        "bladed_arrow" => 0,
     },
     "damage" => {
         "crush" => [ 0, 90, 140, 190, 240, 290 ],
@@ -166,6 +180,10 @@ my %ability_stats = (
         "cat_call" => [ 0, 0, 0, 0, 0, 0 ],
 
         "spirit_arrow" => [ 0, 180, 310, 440, 570, 700 ],
+
+        "thrown_axe" => [ 0, 60, 90, 120, 150, 180 ],
+        "hail_of_arrows" => [ 0, 80, 120, 160, 200, 240 ],
+        "bladed_arrow" => [ 0, 70, 120, 170, 220, 270 ],
     },
     "hits" => {
         "crush" => 1,
@@ -198,6 +216,10 @@ my %ability_stats = (
         "cat_call" => 0,
 
         "spirit_arrow" => 1,
+
+        "thrown_axe" => 1,
+        "hail_of_arrows" => 1,
+        "bladed_arrow" => 1,
     },
     "tick_damage" => {
         "crush" => [ 0, 0, 0, 0, 0, 0 ],
@@ -230,6 +252,11 @@ my %ability_stats = (
         "cat_call" => [ 0, 75, 105, 135, 165, 195 ],
 
         "spirit_arrow" => [ 0, 0, 0, 0, 0, 0 ],
+
+        "thrown_axe" => [ 0, 0, 0, 0, 0, 0 ],
+        "hail_of_arrows" => [ 0, 0, 0, 0, 0, 0 ],
+        "bladed_arrow" => [ 0, 0, 0, 0, 0, 0 ],
+
     },
     "scaling" => {
         "crush" => 0.8,
@@ -262,6 +289,10 @@ my %ability_stats = (
         "cat_call" => 0,
 
         "spirit_arrow" => 1.8,
+
+        "thrown_axe" => 0.6,
+        "hail_of_arrows" => 1.2,
+        "bladed_arrow" => 0.7,
     },
     "tick_scaling" => {
         "crush" => 0,
@@ -294,6 +325,10 @@ my %ability_stats = (
         "cat_call" => 0.6,
 
         "spirit_arrow" => 0,
+
+        "thrown_axe" => 0,
+        "hail_of_arrows" => 0,
+        "bladed_arrow" => 0,
     },
     "tick_duration" => {
         "crush" => 0,
@@ -326,6 +361,10 @@ my %ability_stats = (
         "cat_call" => 1,
 
         "spirit_arrow" => 0,
+
+        "thrown_axe" => 0,
+        "hail_of_arrows" => 0,
+        "bladed_arrow" => 0,
     },
     "num_ticks" => {
         "crush" => 0,
@@ -358,6 +397,10 @@ my %ability_stats = (
         "cat_call" => 10,
 
         "spirit_arrow" => 0,
+
+        "thrown_axe" => 0,
+        "hail_of_arrows" => 0,
+        "bladed_arrow" => 0,
     },
     "next_action" => { # time to next action
         # these are mostly guesses
@@ -391,6 +434,10 @@ my %ability_stats = (
         "cat_call" => 0.5,
 
         "spirit_arrow" => 0.5,
+
+        "thrown_axe" => 0.5,
+        "hail_of_arrows" => 0.5,
+        "bladed_arrow" => 0.5,
     },
     "level" => {
         "crush" => 5,
@@ -423,6 +470,10 @@ my %ability_stats = (
         "cat_call" => 5,
 
         "spirit_arrow" => 5,
+
+        "thrown_axe" => 5,
+        "hail_of_arrows" => 5,
+        "bladed_arrow" => 5,
     },
 );
 
@@ -445,6 +496,7 @@ my %combos = (
     "bastet" => [ "pounce", "razor_whip", "cat_call" ],
     "apollo" => [ ],
     "neith" => [ "spirit_arrow", ],
+    "ullr" => [ "thrown_axe", "hail_of_arrows", "bladed_arrow" ],
 );
 
 
