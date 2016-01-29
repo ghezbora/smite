@@ -48,22 +48,25 @@ foreach my $item (@items) {
 
 my %protection_stats = (
     "physical_protection" => {
-        "bastet" => (12 + 20 * 2.9 + 40), # bastet with spirit robe
+        "bastet" => (12 + 20 * 2.9 + 75), # bastet with breastplate of valor
         "sol" => (9 + 20 * 2.6), # sol
-        "khepri" => (19 + 3 * 20 + 50 + 20 + 60), # khepri with Sov, Heartward, and Midgardian
-        "bellona" => (18 + 3 * 20 + 20 + 60), # bellona with mystical mail and full passive
+        "khepri" => (19 + 3 * 20 + 65 + 80), # khepri with Urchin and Spectral Armor
+        "bellona" => (18 + 3 * 20 + 20 + 30), # bellona with mystical mail and full passive
+        "hercules" => (18 + 3 * 20 + 30), # herc with mystical mail
     },
     "magical_protection" => {
-        "bastet" => (30 + 20 * 0.9 + 40), # bastet with spirit robe
+        "bastet" => (30 + 20 * 0.9), # bastet with breastplate of valor
         "sol" => 30,
-        "khepri" => (30 + 20 * 0.9 + 20 + 60), # khepri with Sov, Heartward
-        "bellona" => (30 + 20 * 0.9 + 20 + 70), #bellona with gaia and full passive
+        "khepri" => (30 + 20 * 0.9 + 65 + 60), # khepri with urchin and bulwark
+        "bellona" => (30 + 20 * 0.9 + 20 + 60), #bellona with bulwark and full passive
+        "hercules" => (30 + 20 * 0.9 + 60), #herc with bulwark of hope
     },
     "health" => {
         "bastet" => (415 + 20 * 80),
         "sol" => (400 + 75 * 20),
         "khepri" => (510 + 90*20 + 200 + 200 + 350),
         "bellona" => (480 + 85 * 20 + 200 + 100 ),
+        "hercules" => (480 + 86 * 20 + 200 + 300 + 350 + 400), #herc with mystical, bulwark, thebes, and gaia
     },
 );
 
@@ -778,9 +781,14 @@ if (defined $items{"demonic_grip"}) {
 }
 
 if (defined $items{"telkhines_ring"} or defined $items{ "telkhines" }) {
-    $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.1;
+    $attack_rate += 0.3 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $magical_power += 45;
     $gold += 2125;
+}
+
+if (defined $items{ "spear_of_desolation" }) {
+    $magical_power += 130;
+    $flat_pen += 20;
 }
 
 if (defined $items{"fatalis"}) {
@@ -831,18 +839,23 @@ if (defined $items{"pythagorems"} or defined $items{"pythags"}) {
     $gold += 2600;
 }
 
-if (defined $items{"book"}) {
-    $mana += 875;
-    $magical_power += 100 + 0.03 * $mana;
-    $gold += 2650;
-}
-
 if (defined $items{"gem"} ) {
     $magical_power += 70;
     $mana += 250;
     $gold += 2850;
 }
 
+if (defined $items{"doom_orb"} ){
+    $magical_power += 140; #assume full stacks
+    $mana += 200;
+    $gold += 2050;
+}
+
+if (defined $items{"book"}) {
+    $mana += 875;
+    $magical_power += 100 + 0.03 * $mana; # TODO having this last computes bonus right... probably?
+    $gold += 2650;
+}
 
 #################################################################################
 # physical items
@@ -851,25 +864,17 @@ if (defined $items{"gem"} ) {
 # jotunn's wrath
 if (defined $items{"jotunns"} or defined $items{ "jotunns_wrath" }) {
     $physical_power += 40;
-    $flat_pen += 11;
+    $flat_pen += 10;
     $mana += 150;
-    $cdr += 0.25;
+    $cdr += 0.20;
     $gold += 2440;
-}
-
-# transcendence
-if (defined $items{"transcendence"}) {
-    $mana += 1050;
-    $physical_power += 35;
-    $physical_power += 0.03 * $mana;
-    $gold += 2600;
 }
 
 # qin's sais
 if (defined $items{"qins"}) {
     $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
-    $physical_power += 30;
-    $gold += 2850;
+    $physical_power += 40;
+    $gold += 2700;
 }
 
 # asi
@@ -911,7 +916,7 @@ if (defined $items{"ninja_tabi"}) {
 # executioner
 if (defined $items{"executioner"}) {
     $physical_power += 30;
-    $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+    $attack_rate += 0.25 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $gold += 2250;
 }
 
@@ -925,16 +930,38 @@ if (defined $items{"ichaival"}) {
 # dev's gloves
 if (defined $items{"devs_gloves"}) {
     $physical_power += 55;
-    $lifesteal += 0.25;
+    $lifesteal += 0.25; # assume full stacks
     $gold += 2050;
 }
 
 # soul eater
 if (defined $items{"soul_eater"}) {
-    $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
-    $physical_power += 15;
-    $lifesteal += 0.2;
+    $attack_rate += 0.30 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+    $lifesteal += 0.3; # assume full stacks
+    $item_mvmt_speed += 0.1;
     $gold += 2000;
+}
+
+# stone cutting sword
+if (defined $items{"stone_cutting_sword"}) {
+    $physical_power += 50;
+    $item_mvmt_speed += .1;
+    $gold += 2900;
+}
+
+# masamune
+if (defined $items{"masamune"}) {
+    $physical_power += 30;
+    $item_mvmt_speed += .1;
+    $gold += 2200;
+}
+
+# heartseeker
+if (defined $items{ "heartseeker" }) {
+    $physical_power += 25;
+    $item_mvmt_speed += 0.1;
+    $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } }; # assume stacked
+    #TODO deal with heartseeker stacks
 }
 
 # golden bow
@@ -947,16 +974,16 @@ if (defined $items{"golden_bow"}) {
 
 # rage
 if (defined $items{"rage"}) {
-    $base_crit_chance += 0.3;
+    $base_crit_chance += 0.2;
     $physical_power += 30;
-    $gold += 2755;
+    $gold += 2600;
 }
 
 # malice
 if (defined $items{"malice"}) {
     $base_crit_chance += 0.2;
     $physical_power += 50;
-    $gold += 2900;
+    $gold += 3000;
 }
 my $total_malice_procs = 0;
 my $next_malice_proc = 0;
@@ -966,12 +993,21 @@ my $malice_procs_left = 0;
 if (defined $items{"deathbringer"} or defined $items{ "db" }) {
     $base_crit_chance += 0.2;
     $physical_power += 50;
-    $gold += 3150;
+    $gold += 3200;
 }
 
+# hydras lament
 if (defined $items{"hydras"}) {
     $cdr += 0.15;
     $physical_power += 30;
+}
+
+# transcendence
+if (defined $items{"transcendence"}) {
+    $mana += 1050;
+    $physical_power += 35;
+    $physical_power += 0.03 * $mana; # TODO having this last computes bonus right... probably?
+    $gold += 2600;
 }
 
 
@@ -1015,9 +1051,9 @@ if (defined $opts{'t'}) { $max_time = $opts{'t'}; }
 
 my %buffs = (
     "max" => {
-        "rage" => 5,
-        "executioner" => 3, # really a debuff on the target
-        "demonic_grip" => 3, # really a debuff on the target
+        "rage" => 6,
+        "executioner" => 4, # really a debuff on the target
+        "demonic_grip" => 4, # really a debuff on the target
         "spear" => 2, # really a debuff on the target
         "still_target" => 3,
         "xbal_passive" => 6,
@@ -1036,6 +1072,7 @@ my %buffs = (
         "irradiate" => 1,
         "pulse" => 1,
         "astral_strike" => 1,
+        "stone_cutting_sword" => 3, # both a buff and a debuff
     },
     "current" => {
         "rage" => 0,
@@ -1059,6 +1096,7 @@ my %buffs = (
         "irradiate" => 0,
         "pulse" => 0,
         "astral_strike" => 0,
+        "stone_cutting_sword" => 0, # both a buff and a debuff
     },
     "time" => { # end time for buffs, cooldown time for hydras / polynomicon
         "rage" => 0,
@@ -1082,6 +1120,7 @@ my %buffs = (
         "irradiate" => 0,
         "pulse" => 0,
         "astral_strike" => 0,
+        "stone_cutting_sword" => 0, # both a buff and a debuff
     },
     "duration" => {
         "rage" => 0,
@@ -1105,6 +1144,7 @@ my %buffs = (
         "irradiate" => 5000,
         "pulse" => 5000,
         "astral_strike" => 0,
+        "stone_cutting_sword" => 3000, # both a buff and a debuff
     },
 );
 
@@ -1122,6 +1162,8 @@ my @stellar_burst_damage = ( 0, 40, 70, 100, 130, 160 );
 
 my $polynomicon_procs = 0;
 my $polynomicon_damage = 0;
+
+my $telkhines_damage = 0;
 
 my $hydras_procs = 0;
 my $hydras_damage = 0;
@@ -1189,6 +1231,12 @@ sub get_eff_power() {
         my $eff_physical_power = $physical_power
                 + 5 * $buffs{ "current" }->{ "xbal_passive" }
                 + 10 * $buffs{ "current" }->{ "ichaival" };
+        if (defined $items{ "masamune" }) {
+            # TODO does masamune work this way? or is it more like telkhines?
+            my $bonus = int(0.1 * ($their_health - 2000)); # 1 for every 10 health diff
+            if ($bonus > 50) { $bonus = 50; }
+            $eff_physical_power += $bonus;
+        }
         if ($buffs{ "current" }->{ "initiative" } > 0) {
             $eff_physical_power *= 1.3;
         }
@@ -1237,13 +1285,12 @@ sub calc_mitigated_damage( $ $ $ ) {
 
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
-    $their_eff_prot *= (1 - 0.1*$buffs{ "current" }->{ "spear" });
-    $their_eff_prot *= (1 - 0.07*$buffs{ "current" }->{ "demonic_grip" });
+    $their_eff_prot *= (1 - 0.1 * $buffs{ "current" }->{ "spear" });
+    $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "demonic_grip" });
     $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "executioner" });
     $their_eff_prot -= $flat_reduction;
-    $their_eff_prot -= 10*$buffs{ "current" }->{ "spear" };
-    $their_eff_prot -= 6 * $buffs{ "current" }->{ "executioner" };
-    $their_eff_prot -= 5*$buffs{ "current" }->{ "demonic_grip" };
+    $their_eff_prot -= 10 * $buffs{ "current" }->{ "spear" };
+    $their_eff_prot -= 10 * $buffs{ "current" }->{ "stone_cutting_sword" };
     $their_eff_prot *= (1 - $percent_pen);
     $their_eff_prot -= $flat_pen;
     if ($their_eff_prot < 0) { $their_eff_prot = 0; }
@@ -1263,6 +1310,9 @@ sub calc_mitigated_damage( $ $ $ ) {
         }
         if ( defined $items{ "executioner" } ) {
             printf " %d executioner stacks ", $buffs{ "current" }->{ "executioner" };
+        }
+        if ( defined $items{ "executioner" } ) {
+            printf " %d SCS stacks ", $buffs{ "current" }->{ "stone_cutting_sword" };
         }
         #if ( $opts{'g'} eq "sol" ) {
         #    print " $heat heat ";
@@ -1634,15 +1684,17 @@ while ( $iteration < $max_iterations ) {
             }
 
             if ($buffs{ "current" }->{ "polynomicon" }) {
-                $damage += calc_mitigated_damage( 0.6 * get_eff_power(), "polynomicon", 1 );
+                $damage += calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 1 );
                 $polynomicon_procs++;
-                $polynomicon_damage += 0.6 * get_eff_power();
+                $polynomicon_damage = int(calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 0 ));
                 $buffs{ "current" }->{ "polynomicon" } = 0;
                 reset_buff_time("polynomicon");
             }
 
             if (defined $items{"telkhines_ring"}) {
-                $pre_prot_damage += 40;
+                #$pre_prot_damage += 35;
+                $damage += calc_mitigated_damage( 35, "telkhines", 1 );
+                $telkhines_damage += calc_mitigated_damage( 35, "telkhines", 0 );
             }
 
             if ($opts{ 'g' } eq "sol" and $time >= $stellar_burst_time) { # stellar burst
@@ -1795,6 +1847,9 @@ printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max
 printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($damage - $attack_damage)/$max_iterations);
 if ( defined $items{ "polynomicon" } ) {
     print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
+}
+if ( defined $items{ "telkhines" } or defined $items{ "telkhines_ring" } ) {
+    printf "Telkhines damage %.2f\n", $telkhines_damage;
 }
 if ( defined $items{ "hydras" } ) {
     print "Hydras procs $hydras_procs hydras damage $hydras_damage\n";
