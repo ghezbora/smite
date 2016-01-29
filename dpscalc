@@ -27,7 +27,7 @@ use Getopt::Std;
 
 my %opts;
 
-getopts('vl:t:p:h:g:i:e:', \%opts);
+getopts('vl:t:p:h:g:i:e:r:', \%opts);
 
 my $char_level = 20;
 if (defined $opts{'l'} ) { $char_level = $opts{'l'}; }
@@ -491,10 +491,12 @@ my %combos = (
     "xbal" => [ ],
     "rama" => [ ],
     "serqet" => [ "cobras_kiss", "deathbane", "last_breath" ],
-    "thor" => [ "anvil_of_dawn", "mjolnirs_attunement", "tectonic_rift", "spin_to_win" ],
+    #"thor" => [ "anvil_of_dawn", "mjolnirs_attunement", "tectonic_rift", "spin_to_win" ],
+    "thor" => [ "spin_to_win" ],
     "fenrir" => [ "unchained", "ragnarok", "brutalize" ],
     "bastet" => [ "pounce", "razor_whip", "cat_call" ],
     "apollo" => [ ],
+    "mercury" => [ ],
     "neith" => [ "spirit_arrow", ],
     "ullr" => [ "thrown_axe", "hail_of_arrows", "bladed_arrow" ],
 );
@@ -541,6 +543,10 @@ my %base_stats = (
         "bastet" => "physical",
         "apollo" => "physical",
         "neith" => "physical",
+        "mercury" => "physical",
+    },
+    "mvmt_speed" => {
+        "mercury" => 375,
     },
     "attack_rate" => {
         "freya" => 0.95,
@@ -560,6 +566,7 @@ my %base_stats = (
         "bastet" => 1,
         "apollo" => 0.95,
         "neith" => 0.95,
+        "mercury" => 1,
     },
     "attack_rate_level_scaling" => {
         "freya" => 0.0195,
@@ -579,6 +586,7 @@ my %base_stats = (
         "bastet" => 0.0198,
         "apollo" => 0.017,
         "neith" => 0.016,
+        "mercury" => 0.024,
     },
     "auto_damage" => {
         "freya" => 35,
@@ -598,6 +606,7 @@ my %base_stats = (
         "bastet" => 38,
         "apollo" => 40,
         "neith" => 35,
+        "mercury" => 38,
     },
     "auto_level_scaling" => {
         "freya" => 1.5,
@@ -617,6 +626,7 @@ my %base_stats = (
         "bastet" => 2.13,
         "apollo" => 2.6,
         "neith" => 2.3,
+        "mercury" => 2.13,
     },
     "mana" => {
         "freya" => 220,
@@ -636,6 +646,7 @@ my %base_stats = (
         "bastet" => 215,
         "apollo" => 225,
         "neith" => 230,
+        "mercury" => 200,
     },
     "mana_level_scaling" => {
         "freya" => 37,
@@ -655,6 +666,7 @@ my %base_stats = (
         "bastet" => 39,
         "apollo" => 40,
         "neith" => 39,
+        "mercury" => 40,
     },
     "attack_chain_progression" => {
         "freya" => [ 1 ],
@@ -674,6 +686,7 @@ my %base_stats = (
         "bastet" => [ 1, 0.7, 1.3 ],
         "apollo" => [ 1 ],
         "neith" => [ 1 ],
+        "mercury" => [ 1, 0.75, 1.25 ],
     },
 );
 
@@ -706,6 +719,7 @@ my $magical_power = 0;
 my $lifesteal = 0;
 if ( $opts{ 'g' } eq "freya" ) { $lifesteal += 0.15; }
 my $cdr = 0;
+my $item_mvmt_speed = 0;
 
 my $enemy_god = "bastet";
 if ( defined $opts{ 'e' } ) { $enemy_god = $opts{ 'e' }; }
@@ -723,6 +737,11 @@ if ( defined $opts{'p'} ) {
 my $their_health = $protection_stats{ "health" }->{ $enemy_god };
 if ( defined $opts{ 'h' } ) {
     $their_health = $opts{ 'h' };
+}
+
+my $their_flat_reduction = 0;
+if ( defined $opts{ 'r' } ) {
+    $their_flat_reduction = $opts{ 'r' };
 }
 
 my $flat_pen = 0;
@@ -883,6 +902,7 @@ if (defined $items{"titans"} or defined $items{"titans_bane"}) {
 if (defined $items{"warrior_tabi"}) {
     $physical_power += 40;
     $gold += 1550;
+    $item_mvmt_speed += 0.18;
 }
 
 # ninja tabi
@@ -890,6 +910,7 @@ if (defined $items{"ninja_tabi"}) {
     $physical_power += 20;
     $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $gold += 1500;
+    $item_mvmt_speed += 0.18;
 }
 
 # executioner
@@ -930,6 +951,7 @@ if (defined $items{"golden_bow"}) {
     $base_crit_chance += 0.1;
     $physical_power += 35;
     $gold += 2330;
+    $item_mvmt_speed += 0.05;
 }
 
 # rage
@@ -1024,6 +1046,8 @@ if ( $opts{'g'} eq "xbal" ) {
 }
 my $still_target_stacks = 0;
 my $still_target_end = 0;
+my $has_maximum_velocity = 0;
+my $maximum_velocity_end = 0;
 
 my $has_irradiate = 0;
 my $has_pulse = 0;
@@ -1046,11 +1070,6 @@ my $polynomicon_time = 0;
 my $hydras_procs = 0;
 my $hydras_damage = 0;
 my $hydras_time = 0;
-
-my $shadow_lock_ticks_left = 0;
-my $shadow_lock_next_tick = 0;
-my $night_terror_ticks_left = 0;
-my $night_terror_next_tick = 0;
 
 my %ticks = ();
 
@@ -1112,6 +1131,11 @@ sub get_eff_power() {
     }
 }
 
+sub get_mvmt_speed() {
+    my $mvmt_speed = $base_stats{ "mvmt_speed" }->{ $opts{'g'} } * ($item_mvmt_speed + 0.4); # assume sprint is active TODO handle sprint duration
+    return $mvmt_speed;
+}
+
 sub get_basic_attack_damage() {
 
     if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
@@ -1125,7 +1149,7 @@ sub get_basic_attack_damage() {
     {
         my $eff_magical_base_dmg = ($base_stats{ "auto_damage" }->{ $opts{ 'g' } }
                 + $char_level * $base_stats{ "auto_level_scaling" }->{ $opts{ 'g' } }
-                + 0.2 * get_eff_power())
+                + 0.2 * get_eff_power()) # TODO is magical power scaling always 0.2?
                 * ${attack_chain_progression}[ $next_attack_chain ];
         return $eff_magical_base_dmg;
     }
@@ -1152,10 +1176,11 @@ sub calc_mitigated_damage( $ $ $ ) {
 
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
+    $damage -= $their_flat_reduction;
 
     if ( $verbose and $print ) {
         printf "time %6d %16s prot %4d -> %4d damage %4d -> %4d ",
-                $time, $damage_source, $their_protection, $their_eff_prot, $pre_prot_damage, int(( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage);
+                $time, $damage_source, $their_protection, $their_eff_prot, $pre_prot_damage, $damage;
         if ( defined $items{ "spear" } ) {
             print " $spear_stacks spear stacks "
         }
@@ -1336,7 +1361,12 @@ while ( $iteration < $max_iterations ) {
             $has_branching_bolas = 1;
         }
 
-        if ($opts{'g'} eq "medusa" and $time == -1) {
+        if ($opts{'g'} eq 'mercury' and $time == 0) {
+            $has_maximum_velocity = 1;
+            $maximum_velocity_end = $time + 5000;
+        }
+
+        if ($opts{'g'} eq "medusa" and $time == 0) {
             # start combo with ult
             my $pre_prot_damage = 700 + get_eff_power();
             $damage += calc_mitigated_damage($pre_prot_damage, "petrify", 1);
@@ -1435,6 +1465,15 @@ while ( $iteration < $max_iterations ) {
                 $astral_arrows--;
             }
 
+            if ( $opts{'g'} eq "mercury" and $num_attacks == 0 ) {
+                # assume passiv is procced on first auto
+                $pre_prot_damage += get_eff_power() * 0.75;
+            }
+
+            if ( $opts{'g'} eq "mercury" ) {
+                $pre_prot_damage += 0.3 * get_mvmt_speed();
+            }
+
             # crit chance
             my $total_crit_chance = $base_crit_chance;
 
@@ -1525,7 +1564,7 @@ while ( $iteration < $max_iterations ) {
             }
 
             if ($has_polynomicon_buff) {
-                $pre_prot_damage += 0.6 * get_eff_power();
+                $damage += calc_mitigated_damage( 0.6 * get_eff_power(), "polynomicon", 1 );
                 $polynomicon_procs++;
                 $polynomicon_damage += 0.6 * get_eff_power();
                 $has_polynomicon_buff = 0;
@@ -1603,6 +1642,9 @@ while ( $iteration < $max_iterations ) {
             }
             if ( $pick_me_up ) { 
                 $eff_attack_rate = $attack_rate + 0.5 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
+            }
+            if ( $has_maximum_velocity ) {
+                $eff_attack_rate = $attack_rate + 0.7 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
             if ($viper_shots_left > 0) {
                 $eff_attack_rate = $attack_rate +
