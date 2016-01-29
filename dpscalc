@@ -776,8 +776,6 @@ if (defined $items{"demonic_grip"}) {
     $magical_power += 60;
     $gold += 2280;
 }
-my $demonic_grip_stacks = 0;
-my $demonic_grip_end = 0;
 
 if (defined $items{"telkhines_ring"} or defined $items{ "telkhines" }) {
     $attack_rate += $base_stats{ "attack_rate" }->{ $opts{ 'g' } }* 0.1;
@@ -796,15 +794,12 @@ if (defined $items{"polynomicon"}) {
     $lifesteal += .1;
     $gold += 2300;
 }
-my $has_polynomicon_buff = 0;
 
 if (defined $items{"spear"}) {
     $magical_power += 45;
     $flat_pen += 15;
     $gold += 2150;
 }
-my $spear_stacks = 0;
-my $spear_end = 0;
 
 if (defined $items{"shard"}) {
     $magical_power += 70;
@@ -919,8 +914,6 @@ if (defined $items{"executioner"}) {
     $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $gold += 2250;
 }
-my $executioner_stacks = 0;
-my $executioner_end = 0;
 
 # ichaival
 if (defined $items{"ichaival"}) {
@@ -928,8 +921,6 @@ if (defined $items{"ichaival"}) {
     $flat_pen += 10;
     $gold += 1700;
 }
-my $ichaival_stacks = 0;
-my $ichaival_end = 0;
 
 # dev's gloves
 if (defined $items{"devs_gloves"}) {
@@ -960,7 +951,6 @@ if (defined $items{"rage"}) {
     $physical_power += 30;
     $gold += 2755;
 }
-my $rage_stacks = 0;
 
 # malice
 if (defined $items{"malice"}) {
@@ -983,7 +973,6 @@ if (defined $items{"hydras"}) {
     $cdr += 0.15;
     $physical_power += 30;
 }
-my $has_hydras_buff = 0;
 
 
 
@@ -1024,35 +1013,103 @@ if (defined $opts{'t'}) { $max_time = $opts{'t'}; }
 # buffs and stacks
 #################################################################################
 
-my $open_wound = 0;
-my $serqet_poisons = 0;
-my $expose_weakness = 0;
-my $expose_weakness_end = 0;
-my $viper_shots_left = 0;
-my $vengeful_assault = 0;
-my $vengeful_assault_end = 0;
-my $astral_strike = 0;
-my $astral_arrows = 0;
-my $pick_me_up = 0;
-my $pick_me_up_end = 0;
-my $gravity_surge = 0;
-my $gravity_surge_end = 0;
-my $has_initiative = 0;
-my $initiative_end = 0;
-my $has_branching_bolas = 0;
-my $xbal_passive_stacks = 0;
-if ( $opts{'g'} eq "xbal" ) {
-    $xbal_passive_stacks = 6;
-}
-my $still_target_stacks = 0;
-my $still_target_end = 0;
-my $has_maximum_velocity = 0;
-my $maximum_velocity_end = 0;
+my %buffs = (
+    "max" => {
+        "rage" => 5,
+        "executioner" => 3, # really a debuff on the target
+        "demonic_grip" => 3, # really a debuff on the target
+        "spear" => 2, # really a debuff on the target
+        "still_target" => 3,
+        "xbal_passive" => 6,
+        "initiative" => 1,
+        "vengeful_assault" => 1,
+        "expose_weakness" => 1,
+        "pick_me_up" => 1,
+        "gravity_surge" => 1,
+        "maximum_velocity" => 1,
+        "branching_bolas" => 1,
+        "open_wound" => 1, # really a debuff on the target
+        "serqet_poisons" => 3, # really a debuff on the target
+        "hydras_lament" => 1,
+        "polynomicon" => 1,
+        "ichaival" => 3, # both a buff and a debuff
+        "irradiate" => 1,
+        "pulse" => 1,
+        "astral_strike" => 1,
+    },
+    "current" => {
+        "rage" => 0,
+        "executioner" => 0, # really a debuff on the target
+        "demonic_grip" => 0, # really a debuff on the target
+        "spear" => 0, # really a debuff on the target
+        "still_target" => 0,
+        "xbal_passive" => 0,
+        "initiative" => 0,
+        "vengeful_assault" => 0,
+        "expose_weakness" => 0,
+        "pick_me_up" => 0,
+        "gravity_surge" => 0,
+        "maximum_velocity" => 0,
+        "branching_bolas" => 0,
+        "open_wound" => 0, # really a debuff on the target
+        "serqet_poisons" => 0, # really a debuff on the target
+        "hydras_lament" => 0,
+        "polynomicon" => 0,
+        "ichaival" => 0, # both a buff and a debuff
+        "irradiate" => 0,
+        "pulse" => 0,
+        "astral_strike" => 0,
+    },
+    "time" => { # end time for buffs, cooldown time for hydras / polynomicon
+        "rage" => 0,
+        "executioner" => 0, # really a debuff on the target
+        "demonic_grip" => 0, # really a debuff on the target
+        "spear" => 0, # really a debuff on the target
+        "still_target" => 0,
+        "xbal_passive" => 0,
+        "initiative" => 0,
+        "vengeful_assault" => 0,
+        "expose_weakness" => 0,
+        "pick_me_up" => 0,
+        "gravity_surge" => 0,
+        "maximum_velocity" => 0,
+        "branching_bolas" => 0,
+        "open_wound" => 0, # really a debuff on the target
+        "serqet_poisons" => 0, # really a debuff on the target
+        "hydras_lament" => 0,
+        "polynomicon" => 0,
+        "ichaival" => 0, # both a buff and a debuff
+        "irradiate" => 0,
+        "pulse" => 0,
+        "astral_strike" => 0,
+    },
+    "duration" => {
+        "rage" => 0,
+        "executioner" => 3000, # really a debuff on the target
+        "demonic_grip" => 3000, # really a debuff on the target
+        "spear" => 5000, # really a debuff on the target
+        "still_target" => 4000,
+        "xbal_passive" => 0,
+        "initiative" => 2500,
+        "vengeful_assault" => 5000,
+        "expose_weakness" => 5000,
+        "pick_me_up" => 5000,
+        "gravity_surge" => 6000,
+        "maximum_velocity" => 5000,
+        "branching_bolas" => 0,
+        "open_wound" => 0, # really a debuff on the target
+        "serqet_poisons" => 20000, # really a debuff on the target
+        "hydras_lament" => 3000, # cooldown time
+        "polynomicon" => 3000, # cooldown time
+        "ichaival" => 3000, # both a buff and a debuff
+        "irradiate" => 5000,
+        "pulse" => 5000,
+        "astral_strike" => 0,
+    },
+);
 
-my $has_irradiate = 0;
-my $has_pulse = 0;
-my $irradiate_end = 0;
-my $pulse_end = 0;
+my $viper_shots_left = 0;
+my $astral_arrows = 0;
 
 my $heat = 0;
 my $radiance_time = 0;
@@ -1065,11 +1122,9 @@ my @stellar_burst_damage = ( 0, 40, 70, 100, 130, 160 );
 
 my $polynomicon_procs = 0;
 my $polynomicon_damage = 0;
-my $polynomicon_time = 0;
 
 my $hydras_procs = 0;
 my $hydras_damage = 0;
-my $hydras_time = 0;
 
 my %ticks = ();
 
@@ -1081,6 +1136,23 @@ my $next_skill;
 #################################################################################
 # calculations
 #################################################################################
+
+sub add_stack($) {
+    my $buff = shift;
+    $buffs{ "current" }->{ $buff } += 1;
+    if ( $buffs{ "current" }->{ $buff } > $buffs{ "max" }->{ $buff } ) {
+        $buffs{ "current" }->{ $buff } = $buffs{ "max" }->{ $buff };
+    }
+}
+
+
+sub reset_buff_time($) {
+    my $buff = shift;
+    if ( $buffs{ "duration" }->{ $buff } != 0 ) {
+        $buffs{ "time" }->{ $buff } = $time + $buffs{ "duration" }->{ $buff };
+    }
+}
+
 
 sub ability_crits($) {
     my $pre_prot_damage = shift;
@@ -1114,8 +1186,10 @@ sub ability_crits($) {
 sub get_eff_power() {
     
     if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
-        my $eff_physical_power = $physical_power + 5 * $xbal_passive_stacks + 10 * $ichaival_stacks;
-        if ($has_initiative) {
+        my $eff_physical_power = $physical_power
+                + 5 * $buffs{ "current" }->{ "xbal_passive" }
+                + 10 * $buffs{ "current" }->{ "ichaival" };
+        if ($buffs{ "current" }->{ "initiative" } > 0) {
             $eff_physical_power *= 1.3;
         }
         return $eff_physical_power
@@ -1163,13 +1237,13 @@ sub calc_mitigated_damage( $ $ $ ) {
 
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
-    $their_eff_prot *= (1 - 0.1*$spear_stacks);
-    $their_eff_prot *= (1 - 0.07*$demonic_grip_stacks);
-    $their_eff_prot *= (1 - 0.08 * $executioner_stacks);
+    $their_eff_prot *= (1 - 0.1*$buffs{ "current" }->{ "spear" });
+    $their_eff_prot *= (1 - 0.07*$buffs{ "current" }->{ "demonic_grip" });
+    $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "executioner" });
     $their_eff_prot -= $flat_reduction;
-    $their_eff_prot -= 10*$spear_stacks;
-    $their_eff_prot -= 6 * $executioner_stacks;
-    $their_eff_prot -= 5*$demonic_grip_stacks;
+    $their_eff_prot -= 10*$buffs{ "current" }->{ "spear" };
+    $their_eff_prot -= 6 * $buffs{ "current" }->{ "executioner" };
+    $their_eff_prot -= 5*$buffs{ "current" }->{ "demonic_grip" };
     $their_eff_prot *= (1 - $percent_pen);
     $their_eff_prot -= $flat_pen;
     if ($their_eff_prot < 0) { $their_eff_prot = 0; }
@@ -1182,13 +1256,13 @@ sub calc_mitigated_damage( $ $ $ ) {
         printf "time %6d %16s prot %4d -> %4d damage %4d -> %4d ",
                 $time, $damage_source, $their_protection, $their_eff_prot, $pre_prot_damage, $damage;
         if ( defined $items{ "spear" } ) {
-            print " $spear_stacks spear stacks "
+            printf " %d spear stacks ", $buffs{ "current" }->{ "spear" };
         }
         if ( defined $items{ "demonic_grip" } ) {
-            print " $demonic_grip_stacks grip stacks";
+            printf " %d grip stacks ", $buffs{ "current" }->{ "demonic_grip" };
         }
         if ( defined $items{ "executioner" } ) {
-            print " $executioner_stacks executioner stacks";
+            printf " %d executioner stacks ", $buffs{ "current" }->{ "executioner" };
         }
         #if ( $opts{'g'} eq "sol" ) {
         #    print " $heat heat ";
@@ -1240,7 +1314,7 @@ while ( $iteration < $max_iterations ) {
                         $ability_stats{ "level" }->{ $next_skill } ] +
                         (get_eff_power() * $ability_stats{ "scaling" }->{ $next_skill });
                 my $hit = 0;
-                if ( $open_wound ) { $pre_prot_damage *= 1.15; }
+                if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
                 while ( $hit < $ability_stats{ "hits" }->{ $next_skill } ) {
                     if( $pre_prot_damage > 0 ) { 
                         if ( $next_skill eq "deathbane" ) {
@@ -1249,9 +1323,8 @@ while ( $iteration < $max_iterations ) {
                         }
                         $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1 );
                         if(defined $items{"spear"}) {
-                            $spear_stacks++;
-                            $spear_end = $time + 5000;
-                            if ($spear_stacks > 2) { $spear_stacks = 2; }
+                            reset_buff_time("spear");
+                            add_stack("spear");
                         }
                     }
                     $hit++;
@@ -1260,7 +1333,7 @@ while ( $iteration < $max_iterations ) {
                 $pre_prot_damage = $ability_stats{ "tick_damage" }->{ $next_skill }->[
                         $ability_stats{ "level" }->{ $next_skill } ] +
                         (get_eff_power() * $ability_stats{ "tick_scaling" }->{ $next_skill });
-                if ( $open_wound ) { $pre_prot_damage *= 1.15; }
+                if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
                 if( $pre_prot_damage > 0 ) { 
                     # this ability has ticks, schedule them
                     my $i = 0;
@@ -1278,21 +1351,21 @@ while ( $iteration < $max_iterations ) {
                     }
                 }
 
-                if ( $open_wound ) {
-                    $open_wound = 0;
+                if ( $buffs{ "current" }->{ "open_wound" } ) {
+                    $buffs{ "current" }->{ "open_wound" } = 0;
                 } elsif ( $opts{'g'} eq "bastet" ) {
-                    $open_wound = 1;
+                    $buffs{ "current" }->{ "open_wound" } = 1;
                 }
 
                 if ( $opts{ 'g' } eq "serqet" ) {
-                    $serqet_poisons++;
+                    add_stack( "serqet_poisons" );
                 }
 
-                if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-                    $has_polynomicon_buff = 1;
+                if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
+                    $buffs{ "current" }->{ "polynomicon" } = 1;
                 }
-                if (defined $items{"hydras"} and $hydras_time <= $time) {
-                    $has_hydras_buff = 1;
+                if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
+                    $buffs{ "current" }->{ "hydras_lament" } = 1;
                 }
 
                 $ability_stats{ "time" }->{ $next_skill } = $time +
@@ -1318,19 +1391,18 @@ while ( $iteration < $max_iterations ) {
                 }
             }
             if(defined $items{"spear"}) {
-                $spear_stacks++;
-                $spear_end = $time + 5000;
-                if ($spear_stacks > 2) { $spear_stacks = 2; }
+                reset_buff_time("spear");
+                add_stack("spear");
             }
         }
         
         if ($opts{'g'} eq "freya" and $time == 0) {
-            $has_irradiate = 1;
-            $has_pulse = 1;
-            $irradiate_end = $time + 5000;
-            $pulse_end = $time + 5000;
-            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-                $has_polynomicon_buff = 1;
+            reset_buff_time( "irradiate" );
+            reset_buff_time( "pulse" );
+            add_stack( "irradiate" );
+            add_stack( "pulse" );
+            if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
+                $buffs{ "current" }->{ "polynomicon" } = 1;
             }
         }
 
@@ -1341,9 +1413,8 @@ while ( $iteration < $max_iterations ) {
             $damage += calc_mitigated_damage( $pre_prot_damage, "stellar burst", 1 );
 
             if(defined $items{"spear"}) {
-                $spear_stacks++;
-                $spear_end = $time + 5000;
-                if ($spear_stacks > 2) { $spear_stacks = 2; }
+                reset_buff_time("spear");
+                add_stack("spear");
             }
 
             $heat += 10;
@@ -1351,19 +1422,19 @@ while ( $iteration < $max_iterations ) {
 
         if ($opts{'g'} eq "sol" and $time == $radiance_time) {
             $heat += $radiance_heat_amount[ $radiance_level ];
-            if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-                $has_polynomicon_buff = 1;
+            if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
+                $buffs{ "current" }->{ "polynomicon" } = 1;
             }
             $radiance_time += 15000;
         }
 
         if ($opts{'g'} eq 'xbal' and $time == 0) {
-            $has_branching_bolas = 1;
+            $buffs{ "current" }->{ "branching_bolas" }= 1;
         }
 
         if ($opts{'g'} eq 'mercury' and $time == 0) {
-            $has_maximum_velocity = 1;
-            $maximum_velocity_end = $time + 5000;
+            $buffs{ "current" }->{ "maximum_velocity" }= 1;
+            $buffs{ "end" }->{ "maximum_velocity" } = $time + 5000;
         }
 
         if ($opts{'g'} eq "medusa" and $time == 0) {
@@ -1375,23 +1446,24 @@ while ( $iteration < $max_iterations ) {
         }
 
         if ($opts{'g'} eq "rama" and $time == 0) {
-            $pick_me_up = 1;
-            $pick_me_up_end = $time + 5000;
-            $astral_strike = 1;
+            reset_buff_time("pick_me_up");
+            add_stack("pick_me_up");
+            reset_buff_time("astral_strike");
+            add_stack("astral_strike");
             $astral_arrows = 5;
         }
 
         if ($opts{'g'} eq "ullr" and $time == 0) {
-            $expose_weakness = 1;
-            $expose_weakness_end = $time + 5000;
+            add_stack("expose_weakness");
+            reset_buff_time( "expose_weakness" );
         }
 
         if ($opts{'g'} eq "artemis" and $time == 0) {
             # start with tusky
             #my $pre_prot_damage = 450 + $base_damage;
             #$damage += calc_mitigated_damage($pre_prot_damage);
-            $vengeful_assault = 1;
-            $vengeful_assault_end = $time + 5000;
+            add_stack("vengeful_assault");
+            reset_buff_time("vengeful_assault");
         }
 
         if ($opts{'g'} eq "awilix" and $time == 0) {
@@ -1403,11 +1475,11 @@ while ( $iteration < $max_iterations ) {
             $pre_prot_damage = 400 + 0.8 * get_eff_power();
             $damage += calc_mitigated_damage($pre_prot_damage, "gravity surge", 1);
 
-            $has_initiative = 1;
-            $initiative_end = $time + 2500;
+            $buffs{ "current" }->{ "initiative" } = 1;
+            $buffs{ "end" }->{ "initiative" }= $time + 2500;
 
-            if (defined $items{"hydras"} and $hydras_time <= $time) {
-                $has_hydras_buff = 1;
+            if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
+                $buffs{ "current" }->{ "hydras_lament" }= 1;
             }
 
             $next_attack = 250;
@@ -1422,8 +1494,8 @@ while ( $iteration < $max_iterations ) {
                 $messages_to_print{ "overcapping viper attack rate" } = 1;
                 $viper_attack_rate = 2.5;
             }
-            if (defined $items{"hydras"} and $hydras_time <= $time) {
-                $has_hydras_buff = 1;
+            if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
+                $buffs{ "current" }->{ "hydras_lament" }= 1;
             }
 
             my $viper_attack_duration = int(1000 / $viper_attack_rate);
@@ -1441,8 +1513,8 @@ while ( $iteration < $max_iterations ) {
             $next_attack_chain = 0;
             $next_attack = $time + 250; # don't know actual AA cancel durations
 
-            if (defined $items{"hydras"} and $hydras_time <= $time) {
-                $has_hydras_buff = 1;
+            if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
+                $buffs{ "current" }->{ "hydras_lament" }= 1;
             }
 
             $ability_stats{ "time" }->{ "feather_step" } = $time +
@@ -1458,9 +1530,11 @@ while ( $iteration < $max_iterations ) {
 
             my $pre_prot_damage = get_basic_attack_damage();
             
-            if($expose_weakness or $has_branching_bolas) { $pre_prot_damage += 50; }
+            if($buffs{ "current" }->{ "expose_weakness" } or $buffs{ "current" }->{ "branching_bolas" }) {
+                $pre_prot_damage += 50;
+            }
 
-            if($astral_strike and $astral_arrows > 0) {
+            if($buffs{ "current" }->{ "astral_strike" } and $astral_arrows > 0) {
                 $pre_prot_damage += 50;
                 $astral_arrows--;
             }
@@ -1478,15 +1552,14 @@ while ( $iteration < $max_iterations ) {
             my $total_crit_chance = $base_crit_chance;
 
             if ($opts{ 'g' } eq "artemis") {
-                $total_crit_chance += 0.05 * $still_target_stacks;
+                $total_crit_chance += 0.05 * $buffs{ "current" }->{ "still_target" };
 
-                $still_target_stacks += 1;
-                if ($still_target_stacks > 3) {$still_target_stacks = 3;}
-                $still_target_end = $time + 4000;
+                add_stack( "still_target" );
+                reset_buff_time( "still_target" );
             }
 
             if (defined $items{ "rage" }) {
-                $total_crit_chance += 0.1 * $rage_stacks;
+                $total_crit_chance += 0.1 * $buffs{ "current" }->{ "rage" };
             }
 
             my $rng = rand();
@@ -1499,7 +1572,7 @@ while ( $iteration < $max_iterations ) {
                 $crits++;
 
                 # handle rage
-                $rage_stacks = 0;
+                $buffs{ "current" }->{ "rage" } = 0;
 
                 # handle malice
                 if ($malice_procs_left == 0) {
@@ -1510,28 +1583,25 @@ while ( $iteration < $max_iterations ) {
             }
             else
             {
-                # handle rage
-                if ( $rage_stacks < 5 ) {
-                    $rage_stacks++;
-                }
+                add_stack( "rage" );
             }
 
             # ability buffs
-            if ($has_pulse) {
+            if ($buffs{ "current" }->{ "pulse" }) {
                 $pre_prot_damage += 60 + 0.15 * get_eff_power();
             }
 
-            if ($has_irradiate) {
+            if ($buffs{ "current" }->{ "irradiate" }) {
                 $pre_prot_damage += 100 + 0.25 * get_eff_power();
             }
 
-            if ($serqet_poisons >= 2) {
+            if ($buffs{ "current" }->{ "serqet_poisons" } >= 2) {
                 $pre_prot_damage += $their_health * 0.1;
-                if ($serqet_poisons == 3) {
+                if ($buffs{ "current" }->{ "serqet_poisons" } == 3) {
                     $pre_prot_damage += $their_health * 0.1;
                 }
             }
-            $serqet_poisons = 0;
+            $buffs{ "current" }->{ "serqet_poisons" } = 0;
 
             # apply sol's bonus only to her base damage, not to polynomicon / telkhines / etc.
             if ( $opts{ 'g' } eq "sol" and $heat == 100 ) { $pre_prot_damage *= 1.25; }
@@ -1555,20 +1625,20 @@ while ( $iteration < $max_iterations ) {
 
             # item buffs
 
-            if($has_hydras_buff) {
+            if($buffs{ "current" }->{ "hydras_lament" }) {
                 $hydras_damage += 0.25 * get_basic_attack_damage();
                 $hydras_procs++;
                 $pre_prot_damage += 0.25 * get_basic_attack_damage();
-                $has_hydras_buff = 0;
-                $hydras_time = $time + 3000;
+                $buffs{ "current" }->{ "hydras_lament" } = 0;
+                reset_buff_time( "hydras_lament" );
             }
 
-            if ($has_polynomicon_buff) {
+            if ($buffs{ "current" }->{ "polynomicon" }) {
                 $damage += calc_mitigated_damage( 0.6 * get_eff_power(), "polynomicon", 1 );
                 $polynomicon_procs++;
                 $polynomicon_damage += 0.6 * get_eff_power();
-                $has_polynomicon_buff = 0;
-                $polynomicon_time = $time + 3000;
+                $buffs{ "current" }->{ "polynomicon" } = 0;
+                reset_buff_time("polynomicon");
             }
 
             if (defined $items{"telkhines_ring"}) {
@@ -1578,15 +1648,14 @@ while ( $iteration < $max_iterations ) {
             if ($opts{ 'g' } eq "sol" and $time >= $stellar_burst_time) { # stellar burst
                 $pre_prot_damage += $stellar_burst_damage[ $stellar_burst_level ]
                         + 0.35 * get_eff_power();
-                if (defined $items{"polynomicon"} and $polynomicon_time <= $time) {
-                    $has_polynomicon_buff = 1;
+                if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
+                    $buffs{ "current" }->{ "polynomicon" } = 1;
                 }
                 if(defined $items{"spear"}) {
-                    $spear_end = $time + 5000;
-                    $spear_stacks++;
-                    if ($spear_stacks > 2) { $spear_stacks = 2; }
+                    reset_buff_time( "spear" );
+                    add_stack("spear");
                 }
-                $stellar_burst_time += 12000;
+                $stellar_burst_time += 12000; # TODO use normal cooldown logic
             }
 
             if (defined $items{ "qins" }) {
@@ -1598,32 +1667,25 @@ while ( $iteration < $max_iterations ) {
             $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0);
 
             # get ready for next attack
-            if (defined $items{"spear"} and ($has_irradiate or $has_pulse)) {
-                $spear_end = $time + 5000;
-                $spear_stacks++;
-                if ($spear_stacks > 2) { $spear_stacks = 2; }
+            if (defined $items{"spear"} and
+                    ($buffs{ "current" }->{ "pulse" } or $buffs{ "current" }->{ "irradiate" })) {
+                reset_buff_time( "spear" );
+                add_stack("spear");
             }
 
             if (defined $items{"demonic_grip"}) {
-                $demonic_grip_end = $time + 3000;
-                $demonic_grip_stacks++;
-                if ($demonic_grip_stacks > 3) { $demonic_grip_stacks = 3; }
+                reset_buff_time( "demonic_grip" );
+                add_stack("demonic_grip");
             }
 
             if (defined $items{ "ichaival" }) {
-                $ichaival_stacks += 1;
-                if ($ichaival_stacks > 3) {
-                    $ichaival_stacks = 3;
-                }
-                $ichaival_end = $time + 3000;
+                reset_buff_time( "ichaival" );
+                add_stack("ichaival");
             }
 
             if (defined $items{ "executioner" }) {
-                $executioner_stacks += 1;
-                if ($executioner_stacks > 3) {
-                    $executioner_stacks = 3;
-                }
-                $executioner_end = $time + 3000;
+                reset_buff_time( "executioner" );
+                add_stack("executioner");
             }
 
             # attack chain progression
@@ -1637,13 +1699,13 @@ while ( $iteration < $max_iterations ) {
                 # wield bow
                 $eff_attack_rate = $attack_rate + 0.25 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
-            if ( $vengeful_assault ) {
+            if ( $buffs{ "current" }->{ "vengeful_assault" } ) {
                 $eff_attack_rate = $attack_rate + 0.75 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
-            if ( $pick_me_up ) { 
+            if ( $buffs{ "current" }->{ "pick_me_up" } ) { 
                 $eff_attack_rate = $attack_rate + 0.5 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
-            if ( $has_maximum_velocity ) {
+            if ( $buffs{ "current" }->{ "maximum_velocity" } ) {
                 $eff_attack_rate = $attack_rate + 0.7 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
             if ($viper_shots_left > 0) {
@@ -1682,18 +1744,12 @@ while ( $iteration < $max_iterations ) {
             $next_malice_proc += 1000;
         }
 
-        if ($time == $still_target_end) { $still_target_stacks = 0; }
-        if ($time == $expose_weakness_end) { $expose_weakness = 0; }
-        if ($time == $pick_me_up_end) { $pick_me_up = 0; }
-        if ($time == $vengeful_assault_end) { $vengeful_assault = 0; }
-        if ($time == $gravity_surge_end) { $gravity_surge = 0; }
-        if ($time == $executioner_end ) { $executioner_stacks = 0; }
-        if ($time == $ichaival_end ) { $ichaival_stacks = 0; }
-        if ($time == $initiative_end ) { $has_initiative = 0; }
-        if ($time == $spear_end) { $spear_stacks = 0; }
-        if ($time == $demonic_grip_end) { $demonic_grip_stacks = 0; }
-        if ($time == $pulse_end) { $has_pulse = 0; }
-        if ($time == $irradiate_end) { $has_irradiate = 0; }
+        foreach my $buff (keys $buffs{ "time" } ) {
+            if ( $time == $buffs{ "time" }->{ $buff } and $time != 0 ) {
+                # time's up, reset stacks for this buff
+                $buffs{ "current" }->{ $buff } = 0;
+            }
+        }
 
         $time++;
 
@@ -1707,6 +1763,11 @@ while ( $iteration < $max_iterations ) {
         # reset all cooldowns
         $ability_stats{ "time" }->{ $ability } = 0;
     }
+    foreach my $buff ( keys $buffs{ "time" } ) {
+        # reset all buffs
+        $buffs{ "time" }->{ $buff } = 0;
+        $buffs{ "current" }->{ $buff } = 0;
+    }
     %ticks = ();
     $time = 0;
     $combo_idx = 0;
@@ -1714,26 +1775,9 @@ while ( $iteration < $max_iterations ) {
     $next_attack_chain = 0;
     $total_attacks += $num_attacks;
     $num_attacks = 0;
-    $spear_stacks = 0;
-    $spear_end = 0;
-    $demonic_grip_stacks = 0;
-    $demonic_grip_end = 0;
-    $executioner_stacks = 0;
-    $executioner_end = 0;
-    $still_target_stacks = 0;
-    $still_target_end = 0;
-    $rage_stacks = 0;
     $malice_procs_left = 0;
     $next_malice_proc = 0;
-    $time = 0;
-    $next_attack = 0;
-    $next_attack_chain = 0;
-    $total_attacks += $num_attacks;
-    $num_attacks = 0;
-    $vengeful_assault_end = 0;
-    $gravity_surge_end = 0;
     $viper_shots_left = 0;
-    $serqet_poisons = 0;
 
     $iteration++;
 
