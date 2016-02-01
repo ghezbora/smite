@@ -763,7 +763,7 @@ if (defined $items{"pen_boots"}) {
 
 if (defined $items{"cooldown_boots"}) {
     $magical_power += 30;
-    $cdr += 0.15;
+    $cdr += 0.10;
     $mana += 250;
     $gold += 1600;
 }
@@ -787,8 +787,9 @@ if (defined $items{"telkhines_ring"} or defined $items{ "telkhines" }) {
 }
 
 if (defined $items{ "spear_of_desolation" }) {
-    $magical_power += 130;
+    $magical_power += 120;
     $flat_pen += 20;
+    $gold += 3800;
 }
 
 if (defined $items{"fatalis"}) {
@@ -828,7 +829,7 @@ if (defined $items{"rod"}) {
 
 if (defined $items{"chronos"}) {
     $magical_power += 75;
-    $cdr += 0.25;
+    $cdr += 0.20;
     $gold += 2400;
 }
 
