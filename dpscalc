@@ -32,7 +32,14 @@ use Getopt::Std;
 
 my %opts;
 
-getopts('vl:t:p:h:g:i:e:r:', \%opts);
+getopts('vl:t:p:h:g:i:e:r:a:', \%opts);
+
+my $action = "kill";
+if ( defined $opts{ 'a' } ) {
+    if ( $opts{ 'a' } eq "clear" ) {
+        $action = "clear";
+    }
+}
 
 my $char_level = 20;
 if (defined $opts{'l'} ) { $char_level = $opts{'l'}; }
@@ -96,6 +103,12 @@ my %ability_stats = (
         "shadow_step" => 15,
         "night_terror" => 90,
 
+        "acid_spray" => 14,
+        "viper_shot" => 10,
+
+        "suppress_the_insolent" => 10,
+        "vengeful_assault" => 14, # TODO this cooldown scales
+
         "feather_step" => 8,
 
         "deathbane" => 10,
@@ -134,6 +147,12 @@ my %ability_stats = (
 
         "irradiate" => 0,
         "pulse" => 0,
+
+        "acid_spray" => 0,
+        "viper_shot" => 0,
+
+        "suppress_the_insolent" => 0,
+        "vengeful_assault" => 0,
 
         "shadow_lock" => 0,
         "siphon_darkness" => 0,
@@ -178,6 +197,12 @@ my %ability_stats = (
 
         "stellar_burst" => [ 0, 40, 70, 100, 130, 160 ],
 
+        "acid_spray" => [ 0, 90, 135, 180, 225, 270 ],
+        "viper_shot" => [ 0, 0, 0, 0, 0, 0 ],
+
+        "suppress_the_insolent" => [ 0, 80, 130, 180, 230, 280 ],
+        "vengeful_assault" => [ 0, 0, 0, 0, 0, 0 ],
+
         "shadow_lock" => [ 0, 0, 0, 0, 0, 0 ],
         "siphon_darkness" => [ 0, 90, 160, 230, 300, 370 ],
         "shadow_step" => [ 0, 70, 110, 150, 190, 230 ],
@@ -209,6 +234,10 @@ my %ability_stats = (
         "bladed_arrow" => [ 0, 70, 120, 170, 220, 270 ],
         "expose_weakness" => [ 0, 10, 20, 30, 40, 50 ],
     },
+    "aoe" => {
+        "suppress_the_insolent" => 3,
+        "acid_spray" => 6,
+    },
     "hits" => {
         "crush" => 1,
         "sic_em" => 1,
@@ -216,6 +245,12 @@ my %ability_stats = (
         "im_a_monster" => 1,
 
         "stellar_burst" => 2,
+
+        "acid_spray" => 1,
+        "viper_shot" => 0,
+
+        "suppress_the_insolent" => 1,
+        "vengeful_assault" => 0,
 
         "shadow_lock" => 0,
         "siphon_darkness" => 1,
@@ -267,6 +302,12 @@ my %ability_stats = (
         "im_a_monster" => 1.2,
 
         "stellar_burst" => 0.35,
+
+        "acid_spray" => 0.7,
+        "viper_shot" => 0,
+
+        "suppress_the_insolent" => 0.4,
+        "vengeful_assault" => 0,
 
         "shadow_lock" => 0,
         "siphon_darkness" => 1,
@@ -330,6 +371,12 @@ my %ability_stats = (
 
         "stellar_burst" => 0,
 
+        "acid_spray" => 0,
+        "viper_shot" => 0,
+
+        "suppress_the_insolent" => 0,
+        "vengeful_assault" => 0,
+
         "shadow_lock" => 4,
         "siphon_darkness" => 0,
         "shadow_step" => 0,
@@ -368,6 +415,12 @@ my %ability_stats = (
         "im_a_monster" => 1,
 
         "stellar_burst" => 0.5,
+
+        "acid_spray" => 0.5,
+        "viper_shot" => 0.5,
+
+        "suppress_the_insolent" => 0.5,
+        "vengeful_assault" => 0.5,
 
         "shadow_lock" => 2,
         "siphon_darkness" => 0.5,
@@ -421,6 +474,9 @@ my %ability_stats = (
 
         "suppress_the_insolent" =>  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "vengeful_assault" =>       [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+
+        "viper_shot" =>             [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "acid_spray" =>             [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
 
         "shadow_lock" => 5,
         "siphon_darkness" => 5,
@@ -478,6 +534,12 @@ my %combos = (
     "mercury" => [ ],
     "neith" => [ "spirit_arrow", ],
     "ullr" => [ "thrown_axe", "hail_of_arrows", "bladed_arrow" ],
+);
+
+
+my %clear_skills = (
+    "medusa" => [ "acid_spray" ],
+    "artemis" => [ "suppress_the_insolent" ],
 );
 
 
@@ -712,6 +774,7 @@ if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
 if ( defined $opts{'p'} ) {
     $their_protection = $opts{'p'};
 }
+if ( $action eq "clear" ) { $their_protection = 0; }
 
 my $their_health = $protection_stats{ "health" }->{ $enemy_god };
 if ( defined $opts{ 'h' } ) {
@@ -721,6 +784,11 @@ if ( defined $opts{ 'h' } ) {
 my $their_flat_reduction = 0;
 if ( defined $opts{ 'r' } ) {
     $their_flat_reduction = $opts{ 'r' };
+}
+
+my $their_percent_reduction = 0;
+if ( $action eq "clear" ) {
+    $their_percent_reduction = 0.1; # at the start of the match
 }
 
 my $flat_pen = 0;
@@ -1249,11 +1317,12 @@ sub get_basic_attack_damage() {
     }
 }
 
-sub calc_mitigated_damage( $ $ $ ) {
+sub calc_mitigated_damage( $ $ $ $ ) {
 
     my $pre_prot_damage = shift;
     my $damage_source = shift;
     my $print = shift;
+    my $num_targets = shift;
 
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
@@ -1270,6 +1339,7 @@ sub calc_mitigated_damage( $ $ $ ) {
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
     $damage -= $their_flat_reduction;
+    $damage *= (1 - $their_percent_reduction);
 
     if ( $verbose and $print ) {
         printf "time %6d %16s prot %4d -> %4d damage %4d -> %4d ",
@@ -1292,7 +1362,7 @@ sub calc_mitigated_damage( $ $ $ ) {
         print "\n";
     }
     
-    return $damage;
+    return ($num_targets * $damage);
 
 }
 
@@ -1301,13 +1371,25 @@ sub calc_mitigated_damage( $ $ $ ) {
 # skill ordering and cooldowns
 #################################################################################
 sub get_next_skill() {
-    if ( scalar( $combos{ $opts{'g'} } ) == 0 ) {
-        return undef;
+    if ( $action eq "clear" ) {
+        if ( scalar( $clear_skills{ $opts{'g'} } ) == 0 ) {
+            return undef;
+        }
+        if ( scalar( $clear_skills{ $opts{'g'} } ) < $combo_idx ) {
+            $combo_idx = 0;
+        }
+        return $clear_skills{ $opts{ 'g' } }->[ $combo_idx ];
     }
-    if ( scalar( $combos{ $opts{'g'} } ) < $combo_idx ) {
-        $combo_idx = 0;
+    else
+    {
+        if ( scalar( $combos{ $opts{'g'} } ) == 0 ) {
+            return undef;
+        }
+        if ( scalar( $combos{ $opts{'g'} } ) < $combo_idx ) {
+            $combo_idx = 0;
+        }
+        return $combos{ $opts{ 'g' } }->[ $combo_idx ];
     }
-    return $combos{ $opts{ 'g' } }->[ $combo_idx ];
 }
 
 #################################################################################
@@ -1343,7 +1425,8 @@ while ( $iteration < $max_iterations ) {
                             # deathbane can crit
                             $pre_prot_damage = ability_crits( $pre_prot_damage );
                         }
-                        $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1 );
+                        $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
+                                $ability_stats{ "aoe" }->{ $next_skill } );
                         if(defined $items{"spear"}) {
                             reset_buff_time("spear");
                             add_stack("spear");
@@ -1407,7 +1490,12 @@ while ( $iteration < $max_iterations ) {
         #################################################################################
         if ( defined $ticks{ $time } ) {
             if ( $ticks{ $time }->[ 2 ] == 0 ) {
-                $damage += calc_mitigated_damage( $ticks{ $time }->[0], $ticks{ $time }->[1], 1 );
+                if ( defined $ability_stats{ "aoe" }->{ $ticks{ $time }->[1] } ) {
+                    $damage += calc_mitigated_damage( $ticks{ $time }->[0], $ticks{ $time }->[1], 1,
+                            $ability_stats{ "aoe" }->{ $ticks{ $time }->[1] } );
+                } else {
+                    $damage += calc_mitigated_damage( $ticks{ $time }->[0], $ticks{ $time }->[1], 1, 1 );
+                }
             } else {
                 # true damage; here for last breath
                 $damage += $ticks{ $time }->[0];
@@ -1479,10 +1567,10 @@ while ( $iteration < $max_iterations ) {
             # TODO use normal combo logic for this
             # TODO use normal ability stats logic
             my $pre_prot_damage = 250 + 0.6 * get_eff_power();
-            $damage += calc_mitigated_damage($pre_prot_damage, "moonlight charge", 1);
+            $damage += calc_mitigated_damage($pre_prot_damage, "moonlight charge", 1, 1);
 
             $pre_prot_damage = 400 + 0.8 * get_eff_power();
-            $damage += calc_mitigated_damage($pre_prot_damage, "gravity surge", 1);
+            $damage += calc_mitigated_damage($pre_prot_damage, "gravity surge", 1, 1);
 
             $buffs{ "current" }->{ "initiative" } = 1;
             $buffs{ "end" }->{ "initiative" }= $time + 2500;
@@ -1521,7 +1609,7 @@ while ( $iteration < $max_iterations ) {
             # time to feather step
             my $pre_prot_damage = 360 + get_eff_power(); # TODO use hashed scaling/damage
 
-            $damage += calc_mitigated_damage($pre_prot_damage, "feather step", 1);
+            $damage += calc_mitigated_damage($pre_prot_damage, "feather step", 1, 1);
 
             # reset attack chain
             $next_attack_chain = 0;
@@ -1659,17 +1747,17 @@ while ( $iteration < $max_iterations ) {
             }
 
             if ($buffs{ "current" }->{ "polynomicon" }) {
-                $damage += calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 1 );
+                $damage += calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 1, 1 );
                 $polynomicon_procs++;
-                $polynomicon_damage = int(calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 0 ));
+                $polynomicon_damage = int(calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 0, 1 ));
                 $buffs{ "current" }->{ "polynomicon" } = 0;
                 reset_buff_time("polynomicon");
             }
 
             if (defined $items{"telkhines_ring"} or defined $items{ "telkhines" }) {
                 #$pre_prot_damage += 35;
-                $damage += calc_mitigated_damage( 35, "telkhines", 1 );
-                $telkhines_damage += calc_mitigated_damage( 35, "telkhines", 0 );
+                $damage += calc_mitigated_damage( 35, "telkhines", 1, 1 );
+                $telkhines_damage += calc_mitigated_damage( 35, "telkhines", 0, 1 );
             }
 
             if (defined $items{ "qins" }) {
@@ -1677,8 +1765,15 @@ while ( $iteration < $max_iterations ) {
             }
 
             # all damage calcs done, execute the attack
-            $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1);
-            $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0);
+            if ( $action eq "clear" and defined $items{ "golden_bow" } ) {
+                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
+                $damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 1, 2);
+                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
+                $attack_damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 0, 2);
+            } else {
+                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
+                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
+            }
 
             # get ready for next attack
             if (defined $items{"spear"} and
@@ -1760,8 +1855,8 @@ while ( $iteration < $max_iterations ) {
             $total_malice_procs++;
             my $pre_prot_damage = 0.25 * get_basic_attack_damage();
 
-            $damage += calc_mitigated_damage($pre_prot_damage, "malice", 1);
-            $malice_damage += calc_mitigated_damage($pre_prot_damage, "malice", 0);
+            $damage += calc_mitigated_damage($pre_prot_damage, "malice", 1, 1);
+            $malice_damage += calc_mitigated_damage($pre_prot_damage, "malice", 0, 1);
 
             $malice_procs_left -= 1;
             $next_malice_proc += 1000;
