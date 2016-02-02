@@ -248,45 +248,17 @@ my %ability_stats = (
         "bladed_arrow" => 1,
     },
     "tick_damage" => {
-        "crush" => [ 0, 0, 0, 0, 0, 0 ],
-        "sic_em" => [ 0, 0, 0, 0, 0, 0 ],
-        "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
-        "im_a_monster" => [ 0, 0, 0, 0, 0, 0 ],
-
-        "stellar_burst" => [ 0, 0, 0, 0, 0, 0 ],
-
         "viper_shot" => [ 0, 10, 15, 20, 25, 30 ],
 
         "shadow_lock" => [ 0, 30, 40, 50, 60, 70 ],
-        "siphon_darkness" => [ 0, 0, 0, 0, 0, 0 ],
-        "shadow_step" => [ 0, 0, 0, 0, 0, 0 ],
         "night_terror" => [ 0, 20, 25, 30, 35, 40 ],
 
-        "deathbane" => [ 0, 0, 0, 0, 0, 0 ],
-        "cobras_kiss" => [ 0, 0, 0, 0, 0, 0 ],
-        "ambush" => [ 0, 0, 0, 0, 0, 0 ],
         "last_breath" => [ 0, 46, 68, 91, 114, 137 ],
 
-        "mjolnirs_attunement" => [ 0, 0, 0, 0, 0, 0 ],
-        "tectonic_rift" => [ 0, 0, 0, 0, 0, 0 ],
         "spin_to_win" => [ 0, 20, 40, 60, 80, 100 ],
-        "anvil_of_dawn" => [ 0, 0, 0, 0, 0, 0 ],
 
-        "unchained" => [ 0, 0, 0, 0, 0, 0 ],
-        "brutalize" => [ 0, 0, 0, 0, 0, 0 ],
-        "ragnarok" => [ 0, 0, 0, 0, 0, 0 ],
-
-        "pounce" => [ 0, 0, 0, 0, 0, 0 ],
         "razor_whip" => [ 0, 25, 45, 65, 85, 105 ],
-        "declaw" => [ 0, 0, 0, 0, 0, 0 ],
         "cat_call" => [ 0, 75, 105, 135, 165, 195 ],
-
-        "spirit_arrow" => [ 0, 0, 0, 0, 0, 0 ],
-
-        "thrown_axe" => [ 0, 0, 0, 0, 0, 0 ],
-        "hail_of_arrows" => [ 0, 0, 0, 0, 0, 0 ],
-        "bladed_arrow" => [ 0, 0, 0, 0, 0, 0 ],
-
     },
     "scaling" => {
         "crush" => 0.8,
@@ -327,82 +299,28 @@ my %ability_stats = (
         "bladed_arrow" => 0.7,
     },
     "tick_scaling" => {
-        "crush" => 0,
-        "sic_em" => 0,
-        "sentinel" => 0,
-        "im_a_monster" => 0,
-
-        "stellar_burst" => 0,
-
         "viper_shot" => 0.1,
 
         "shadow_lock" => 0.2,
-        "siphon_darkness" => 0,
-        "shadow_step" => 0,
         "night_terror" => .05,
 
-        "deathbane" => 0,
-        "cobras_kiss" => 0,
-        "ambush" => 0,
         "last_breath" => 0,
 
-        "mjolnirs_attunement" => 0,
-        "tectonic_rift" => 0,
         "spin_to_win" => 0.45,
-        "anvil_of_dawn" => 0,
 
-        "unchained" => 0,
-        "brutalize" => 0,
-        "ragnarok" => 0,
-
-        "pounce" => 0,
         "razor_whip" => 0.25,
-        "declaw" => 0,
         "cat_call" => 0.6,
-
-        "spirit_arrow" => 0,
-
-        "thrown_axe" => 0,
-        "hail_of_arrows" => 0,
-        "bladed_arrow" => 0,
     },
     "tick_duration" => {
-        "crush" => 0,
-        "sic_em" => 0,
-        "sentinel" => 0,
-        "im_a_monster" => 0,
-
-        "stellar_burst" => 0,
-
         "shadow_lock" => .5,
-        "siphon_darkness" => 0,
-        "shadow_step" => 0,
         "night_terror" => 1,
 
-        "deathbane" => 0,
-        "cobras_kiss" => 0,
-        "ambush" => 0,
         "last_breath" => 1,
 
-        "mjolnirs_attunement" => 0,
-        "tectonic_rift" => 0,
         "spin_to_win" => 0.4,
-        "anvil_of_dawn" => 0,
 
-        "unchained" => 0,
-        "brutalize" => 0,
-        "ragnarok" => 0,
-
-        "pounce" => 0,
         "razor_whip" => 1,
-        "declaw" => 0,
         "cat_call" => 1,
-
-        "spirit_arrow" => 0,
-
-        "thrown_axe" => 0,
-        "hail_of_arrows" => 0,
-        "bladed_arrow" => 0,
     },
     "num_ticks" => {
         "crush" => 0,
@@ -1434,11 +1352,11 @@ while ( $iteration < $max_iterations ) {
                     $hit++;
                 }
 
-                $pre_prot_damage = $ability_stats{ "tick_damage" }->{ $next_skill }->[
-                        $ability_stats{ "level" }->{ $next_skill }->[ $char_level ] ] +
-                        (get_eff_power() * $ability_stats{ "tick_scaling" }->{ $next_skill });
-                if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
-                if( $pre_prot_damage > 0 ) { 
+                if ( 0 < $ability_stats{ "num_ticks" }->{ $next_skill } ) {
+                    $pre_prot_damage = $ability_stats{ "tick_damage" }->{ $next_skill }->[
+                            $ability_stats{ "level" }->{ $next_skill }->[ $char_level ] ] +
+                            (get_eff_power() * $ability_stats{ "tick_scaling" }->{ $next_skill });
+                    if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
                     # this ability has ticks, schedule them
                     my $i = 0;
                     while ( $i < $ability_stats{ "num_ticks" }->{ $next_skill } ) {
@@ -1801,7 +1719,7 @@ while ( $iteration < $max_iterations ) {
                 $eff_attack_rate = $attack_rate + 
                 $ability_stats{ "attack_speed_buff" }->{ "vengeful_assault" }->[
                         $ability_stats{ "level" }->{ "vengeful_assault" }->[ $char_level ] ]
-                 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
+                        * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
             if ( $buffs{ "current" }->{ "pick_me_up" } ) { 
                 $eff_attack_rate = $attack_rate + 0.5 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
@@ -1815,7 +1733,7 @@ while ( $iteration < $max_iterations ) {
                 $eff_attack_rate = $attack_rate +
                         $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 
                         $ability_stats{ "attack_speed_buff" }->{ "vengeful_assault" }->[
-                            $ability_stats{ "level" }->{ "vengeful_assault" }->[ $char_level ] ];
+                        $ability_stats{ "level" }->{ "vengeful_assault" }->[ $char_level ] ];
             }
 
             if ( $eff_attack_rate > 2.5 ) { $eff_attack_rate = 2.5; }
