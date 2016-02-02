@@ -5,6 +5,12 @@
 #
 # divide magical and physical protection
 #
+# finish ability logic for other gods
+#
+# add logic to calculate wave clear (aoe)
+#
+# add bluestone pendant
+#
 # add audacity for apollo
 # add hou yi
 # add poison darts for xbal
@@ -63,8 +69,8 @@ my %protection_stats = (
     "health" => {
         "bastet" => (415 + 20 * 80),
         "sol" => (400 + 75 * 20),
-        "khepri" => (510 + 90*20 + 200 + 200),
-        "bellona" => (480 + 85 * 20 + 200 + 100 ),
+        "khepri" => (510 + 90*20 + 200 + 200), # khepri with urchin and bulwark
+        "bellona" => (480 + 85 * 20 + 200 + 100 ), # TODO wrong?
         "hercules" => (480 + 86 * 20 + 200 + 300 + 350 + 400), #herc with mystical, bulwark, thebes, and gaia
     },
 );
@@ -201,6 +207,7 @@ my %ability_stats = (
         "thrown_axe" => [ 0, 60, 90, 120, 150, 180 ],
         "hail_of_arrows" => [ 0, 80, 120, 160, 200, 240 ],
         "bladed_arrow" => [ 0, 70, 120, 170, 220, 270 ],
+        "expose_weakness" => [ 0, 10, 20, 30, 40, 50 ],
     },
     "hits" => {
         "crush" => 1,
@@ -247,6 +254,8 @@ my %ability_stats = (
         "im_a_monster" => [ 0, 0, 0, 0, 0, 0 ],
 
         "stellar_burst" => [ 0, 0, 0, 0, 0, 0 ],
+
+        "viper_shot" => [ 0, 10, 15, 20, 25, 30 ],
 
         "shadow_lock" => [ 0, 30, 40, 50, 60, 70 ],
         "siphon_darkness" => [ 0, 0, 0, 0, 0, 0 ],
@@ -324,6 +333,8 @@ my %ability_stats = (
         "im_a_monster" => 0,
 
         "stellar_burst" => 0,
+
+        "viper_shot" => 0.1,
 
         "shadow_lock" => 0.2,
         "siphon_darkness" => 0,
@@ -470,6 +481,13 @@ my %ability_stats = (
         "hail_of_arrows" => 0.5,
         "bladed_arrow" => 0.5,
     },
+    "attack_speed_buff" => {
+        "vengeful_assault" => [ 0, 0.35, 0.45, 0.55, 0.65, 0.75 ],
+
+        "wield_bow" => [ 0, 0.05, 0.10, 0.15, 0.20, 0.25 ],
+
+        "viper_shot" => [ 0, 0.40, 0.50, 0.60, 0.70, 0.80 ],
+    },
     "level" => {
         # character level           [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20 ],
         "crush" =>                  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
@@ -482,6 +500,9 @@ my %ability_stats = (
 
         "stellar_burst" =>          [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "radiance" =>               [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+
+        "suppress_the_insolent" =>  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "vengeful_assault" =>       [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
 
         "shadow_lock" => 5,
         "siphon_darkness" => 5,
@@ -509,9 +530,11 @@ my %ability_stats = (
 
         "spirit_arrow" => 5,
 
-        "thrown_axe" => 5,
-        "hail_of_arrows" => 5,
-        "bladed_arrow" => 5,
+        "thrown_axe" =>             [ 0, 0, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "bladed_arrow" =>           [ 0, 0, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "expose_weakness" =>        [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 4, 5, 5 ],
+        "hail_of_arrows" =>         [ 0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "weild_bow" =>              [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
     },
 );
 
@@ -1536,6 +1559,7 @@ while ( $iteration < $max_iterations ) {
         if ($opts{'g'} eq "awilix" and $time == 0) {
             # start combo with moonlight charge + Ult
             # TODO use normal combo logic for this
+            # TODO use normal ability stats logic
             my $pre_prot_damage = 250 + 0.6 * get_eff_power();
             $damage += calc_mitigated_damage($pre_prot_damage, "moonlight charge", 1);
 
@@ -1559,7 +1583,9 @@ while ( $iteration < $max_iterations ) {
             # start viper shot after the first AA for AA cancel benefit
             $viper_shots_left = 3;
             my $viper_attack_rate = $attack_rate +
-                    $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 0.8;
+                    $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 
+                    $ability_stats{ "attack_speed_buff" }->{ "viper_shot" }->[
+                        $ability_stats{ "level" }->{ "viper_shot" }->[ $char_level ] ];
             if ($viper_attack_rate > 2.5) {
                 $messages_to_print{ "overcapping viper attack rate" } = 1;
                 $viper_attack_rate = 2.5;
@@ -1600,13 +1626,20 @@ while ( $iteration < $max_iterations ) {
 
             my $pre_prot_damage = get_basic_attack_damage();
             
-            if($buffs{ "current" }->{ "expose_weakness" } or $buffs{ "current" }->{ "branching_bolas" }) {
-                $pre_prot_damage += 50;
+            if($buffs{ "current" }->{ "expose_weakness" }) { 
+                $pre_prot_damage += $ability_stats{ "damage" }->{ "expose_weakness" }->[
+                        $ability_stats{ "level" }->{ "expose_weakness" }->[ $char_level ] ];
+            }
+
+            if($buffs{ "current" }->{ "branching_bolas" }) { 
+                $pre_prot_damage += $ability_stats{ "damage" }->{ "branching_bolas" }->[
+                        $ability_stats{ "level" }->{ "branching_bolas" }->[ $char_level ] ];
             }
 
             if($buffs{ "current" }->{ "astral_strike" } and $astral_arrows > 0) {
-                $pre_prot_damage += 50;
                 $astral_arrows--;
+                $pre_prot_damage += $ability_stats{ "damage" }->{ "astral_strike" }->[
+                        $ability_stats{ "level" }->{ "astral_strike" }->[ $char_level ] ];
             }
 
             if ( $opts{'g'} eq "mercury" and $num_attacks == 0 ) {
@@ -1681,7 +1714,9 @@ while ( $iteration < $max_iterations ) {
             # add viper shot extra damage
             if ($viper_shots_left > 0) {
                 $viper_shots_left--;
-                my $pre_prot_damage = 30 + get_eff_power() * 0.1;
+                my $pre_prot_damage = $ability_stats{ "tick_damage" }->{ "viper_shot" }->[
+                        $ability_stats{ "level" }->{ "viper_shot" }->[ $char_level ] ]
+                         + get_eff_power() * $ability_stats{ "tick_scaling" }->{ "viper_shot" };
                 my $i = 0;
                 # this ability has ticks, schedule them
                 while ( $i < 3 ) {
@@ -1757,21 +1792,30 @@ while ( $iteration < $max_iterations ) {
                 $messages_to_print{ "heat effective attack rate" } = $eff_attack_rate;
             }
             if ( $opts{'g'} eq "ullr" ) {
-                # wield bow
-                $eff_attack_rate = $attack_rate + 0.25 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
+                $eff_attack_rate = $attack_rate +
+                        $ability_stats{ "attack_speed_buff" }->{ "wield_bow" }->[
+                        $ability_stats{ "level" }->{ "wield_bow" }->[ $char_level ] ]
+                        * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
             if ( $buffs{ "current" }->{ "vengeful_assault" } ) {
-                $eff_attack_rate = $attack_rate + 0.75 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
+                $eff_attack_rate = $attack_rate + 
+                $ability_stats{ "attack_speed_buff" }->{ "vengeful_assault" }->[
+                        $ability_stats{ "level" }->{ "vengeful_assault" }->[ $char_level ] ]
+                 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
             }
             if ( $buffs{ "current" }->{ "pick_me_up" } ) { 
                 $eff_attack_rate = $attack_rate + 0.5 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
+                # TODO use normal stats logic
             }
             if ( $buffs{ "current" }->{ "maximum_velocity" } ) {
                 $eff_attack_rate = $attack_rate + 0.7 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
+                # TODO use normal stats logic
             }
             if ($viper_shots_left > 0) {
                 $eff_attack_rate = $attack_rate +
-                        $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 0.8;
+                        $base_stats{ "attack_rate" }->{ $opts{ 'g' } } * 
+                        $ability_stats{ "attack_speed_buff" }->{ "vengeful_assault" }->[
+                            $ability_stats{ "level" }->{ "vengeful_assault" }->[ $char_level ] ];
             }
 
             if ( $eff_attack_rate > 2.5 ) { $eff_attack_rate = 2.5; }
