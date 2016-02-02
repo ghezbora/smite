@@ -5,7 +5,6 @@
 #
 # divide magical and physical protection
 #
-# add mercury
 # add audacity for apollo
 # add hou yi
 # add poison darts for xbal
@@ -50,27 +49,25 @@ my %protection_stats = (
     "physical_protection" => {
         "bastet" => (12 + 20 * 2.9 + 75), # bastet with breastplate of valor
         "sol" => (9 + 20 * 2.6), # sol
-        "khepri" => (19 + 3 * 20 + 65 + 80), # khepri with Urchin and Spectral Armor
+        "khepri" => (19 + 3 * 20 + 65 + 40 + 60), # khepri with Urchin and spirit robe and cloak of US
         "bellona" => (18 + 3 * 20 + 20 + 30), # bellona with mystical mail and full passive
         "hercules" => (18 + 3 * 20 + 30), # herc with mystical mail
     },
     "magical_protection" => {
         "bastet" => (30 + 20 * 0.9), # bastet with breastplate of valor
         "sol" => 30,
-        "khepri" => (30 + 20 * 0.9 + 65 + 60), # khepri with urchin and bulwark
+        "khepri" => (30 + 20 * 0.9 + 65 + 60 + 40 + 60), # khepri with urchin, bulwark, spirit robe and COUS
         "bellona" => (30 + 20 * 0.9 + 20 + 60), #bellona with bulwark and full passive
         "hercules" => (30 + 20 * 0.9 + 60), #herc with bulwark of hope
     },
     "health" => {
         "bastet" => (415 + 20 * 80),
         "sol" => (400 + 75 * 20),
-        "khepri" => (510 + 90*20 + 200 + 200 + 350),
+        "khepri" => (510 + 90*20 + 200 + 200),
         "bellona" => (480 + 85 * 20 + 200 + 100 ),
         "hercules" => (480 + 86 * 20 + 200 + 300 + 350 + 400), #herc with mystical, bulwark, thebes, and gaia
     },
 );
-
-
 
 
 
@@ -81,6 +78,8 @@ my %ability_stats = (
         "sic_em" => 10,
         "sentinel" => 15,
         "im_a_monster" => 90,
+
+        "stellar_burst" => 12,
 
         "shadow_lock" => 10,
         "siphon_darkness" => 15,
@@ -120,6 +119,8 @@ my %ability_stats = (
         "sentinel" => 0,
         "im_a_monster" => 0,
 
+        "stellar_burst" => 0,
+
         "shadow_lock" => 0,
         "siphon_darkness" => 0,
         "shadow_step" => 0,
@@ -158,6 +159,8 @@ my %ability_stats = (
         "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
         "im_a_monster" => [ 0, 400, 500, 600, 700, 800 ],
 
+        "stellar_burst" => [ 0, 40, 70, 100, 130, 160 ],
+
         "shadow_lock" => [ 0, 0, 0, 0, 0, 0 ],
         "siphon_darkness" => [ 0, 90, 160, 230, 300, 370 ],
         "shadow_step" => [ 0, 70, 110, 150, 190, 230 ],
@@ -194,6 +197,8 @@ my %ability_stats = (
         "sentinel" => 0,
         "im_a_monster" => 1,
 
+        "stellar_burst" => 2,
+
         "shadow_lock" => 0,
         "siphon_darkness" => 1,
         "shadow_step" => 1,
@@ -229,6 +234,8 @@ my %ability_stats = (
         "sic_em" => [ 0, 0, 0, 0, 0, 0 ],
         "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
         "im_a_monster" => [ 0, 0, 0, 0, 0, 0 ],
+
+        "stellar_burst" => [ 0, 0, 0, 0, 0, 0 ],
 
         "shadow_lock" => [ 0, 30, 40, 50, 60, 70 ],
         "siphon_darkness" => [ 0, 0, 0, 0, 0, 0 ],
@@ -267,6 +274,8 @@ my %ability_stats = (
         "sentinel" => 0,
         "im_a_monster" => 1.2,
 
+        "stellar_burst" => 0.35,
+
         "shadow_lock" => 0,
         "siphon_darkness" => 1,
         "shadow_step" => 0.4,
@@ -302,6 +311,8 @@ my %ability_stats = (
         "sic_em" => 0,
         "sentinel" => 0,
         "im_a_monster" => 0,
+
+        "stellar_burst" => 0,
 
         "shadow_lock" => 0.2,
         "siphon_darkness" => 0,
@@ -339,6 +350,8 @@ my %ability_stats = (
         "sentinel" => 0,
         "im_a_monster" => 0,
 
+        "stellar_burst" => 0,
+
         "shadow_lock" => .5,
         "siphon_darkness" => 0,
         "shadow_step" => 0,
@@ -374,6 +387,8 @@ my %ability_stats = (
         "sic_em" => 0,
         "sentinel" => 0,
         "im_a_monster" => 0,
+
+        "stellar_burst" => 0,
 
         "shadow_lock" => 4,
         "siphon_darkness" => 0,
@@ -412,6 +427,8 @@ my %ability_stats = (
         "sentinel" => 0.5,
         "im_a_monster" => 1,
 
+        "stellar_burst" => 0.5,
+
         "shadow_lock" => 2,
         "siphon_darkness" => 0.5,
         "shadow_step" => 0.5,
@@ -447,6 +464,8 @@ my %ability_stats = (
         "sic_em" => 5,
         "sentinel" => 5,
         "im_a_monster" => 5,
+
+        "stellar_burst" => 5,
 
         "shadow_lock" => 5,
         "siphon_darkness" => 5,
@@ -486,7 +505,7 @@ my %combos = (
     "scylla" => [ "sic_em", "crush", "im_a_monster" ],
     "nox" => [ "shadow_lock", "siphon_darkness", "night_terror" ],
     "freya" => [ ],
-    "sol" => [ ],
+    "sol" => [ "stellar_burst" ],
     "artemis" => [ ],
     #"awilix" => [ "moonlight_charge", "gravity_surge" ],
     "awilix" => [ ],
@@ -881,6 +900,7 @@ if (defined $items{"qins"}) {
 # asi
 if (defined $items{"asi"}) {
     $flat_pen += 15;
+    $lifesteal += 0.15;
     $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
     $gold += 1780;
 }
@@ -1431,6 +1451,9 @@ while ( $iteration < $max_iterations ) {
             }
         }
 
+        #################################################################################
+        # execute ticks
+        #################################################################################
         if ( defined $ticks{ $time } ) {
             if ( $ticks{ $time }->[ 2 ] == 0 ) {
                 $damage += calc_mitigated_damage( $ticks{ $time }->[0], $ticks{ $time }->[1], 1 );
@@ -1447,6 +1470,9 @@ while ( $iteration < $max_iterations ) {
             }
         }
         
+        #################################################################################
+        # execute buffs TODO can we merge these into the general skill logic?
+        #################################################################################
         if ($opts{'g'} eq "freya" and $time == 0) {
             reset_buff_time( "irradiate" );
             reset_buff_time( "pulse" );
@@ -1457,26 +1483,12 @@ while ( $iteration < $max_iterations ) {
             }
         }
 
-        if ($opts{'g'} eq "sol" and $time == $stellar_burst_detonate_time) {
-            # second blast, the time is probably not 100 but it's before the next attack
-            my $pre_prot_damage = $stellar_burst_damage[ $stellar_burst_level ] +
-                    0.35 * get_eff_power();
-            $damage += calc_mitigated_damage( $pre_prot_damage, "stellar burst", 1 );
-
-            if(defined $items{"spear"}) {
-                reset_buff_time("spear");
-                add_stack("spear");
-            }
-
-            $heat += 10;
-        }
-
         if ($opts{'g'} eq "sol" and $time == $radiance_time) {
             $heat += $radiance_heat_amount[ $radiance_level ];
             if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
                 $buffs{ "current" }->{ "polynomicon" } = 1;
             }
-            $radiance_time += 15000;
+            $radiance_time += 15000; # TODO use regular cooldown logic
         }
 
         if ($opts{'g'} eq 'xbal' and $time == 0) {
@@ -1484,16 +1496,8 @@ while ( $iteration < $max_iterations ) {
         }
 
         if ($opts{'g'} eq 'mercury' and $time == 0) {
-            $buffs{ "current" }->{ "maximum_velocity" }= 1;
-            $buffs{ "end" }->{ "maximum_velocity" } = $time + 5000;
-        }
-
-        if ($opts{'g'} eq "medusa" and $time == 0) {
-            # start combo with ult
-            my $pre_prot_damage = 700 + get_eff_power();
-            $damage += calc_mitigated_damage($pre_prot_damage, "petrify", 1);
-
-            $next_attack = 250;
+            reset_buff_time("maximum_velocity");
+            add_stack("maximum_velocity");
         }
 
         if ($opts{'g'} eq "rama" and $time == 0) {
@@ -1536,6 +1540,9 @@ while ( $iteration < $max_iterations ) {
             $next_attack = 250;
         }
 
+        #################################################################################
+        # execute attack-chain dependent skills
+        #################################################################################
         if ($opts{'g'} eq "medusa" and $num_attacks == 1 and $viper_shots_left == 0) {
             # start viper shot after the first AA for AA cancel benefit
             $viper_shots_left = 3;
@@ -1692,23 +1699,10 @@ while ( $iteration < $max_iterations ) {
                 reset_buff_time("polynomicon");
             }
 
-            if (defined $items{"telkhines_ring"}) {
+            if (defined $items{"telkhines_ring"} or defined $items{ "telkhines" }) {
                 #$pre_prot_damage += 35;
                 $damage += calc_mitigated_damage( 35, "telkhines", 1 );
                 $telkhines_damage += calc_mitigated_damage( 35, "telkhines", 0 );
-            }
-
-            if ($opts{ 'g' } eq "sol" and $time >= $stellar_burst_time) { # stellar burst
-                $pre_prot_damage += $stellar_burst_damage[ $stellar_burst_level ]
-                        + 0.35 * get_eff_power();
-                if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
-                    $buffs{ "current" }->{ "polynomicon" } = 1;
-                }
-                if(defined $items{"spear"}) {
-                    reset_buff_time( "spear" );
-                    add_stack("spear");
-                }
-                $stellar_burst_time += 12000; # TODO use normal cooldown logic
             }
 
             if (defined $items{ "qins" }) {
@@ -1780,7 +1774,7 @@ while ( $iteration < $max_iterations ) {
         }
 
         #################################################################################
-        # get ready for next loop
+        # get ready for next tick of time
         #################################################################################
 
 
@@ -1809,7 +1803,7 @@ while ( $iteration < $max_iterations ) {
     }
 
     #################################################################################
-    # get ready for next loop
+    # get ready for next iteration
     #################################################################################
     foreach my $ability ( keys $ability_stats{ "time" } )
     {
