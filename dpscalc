@@ -80,6 +80,10 @@ my %ability_stats = (
         "im_a_monster" => 90,
 
         "stellar_burst" => 12,
+        "radiance" => 15,
+
+        "irradiate" => 11,
+        "pulse" => 11,
 
         "shadow_lock" => 10,
         "siphon_darkness" => 15,
@@ -120,6 +124,10 @@ my %ability_stats = (
         "im_a_monster" => 0,
 
         "stellar_burst" => 0,
+        "radiance" => 0,
+
+        "irradiate" => 0,
+        "pulse" => 0,
 
         "shadow_lock" => 0,
         "siphon_darkness" => 0,
@@ -158,6 +166,9 @@ my %ability_stats = (
         "sic_em" => [ 0, 60, 110, 160, 210, 260 ],
         "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
         "im_a_monster" => [ 0, 400, 500, 600, 700, 800 ],
+
+        "irradiate" => [ 0, 40, 55, 70, 85, 100 ],
+        "pulse" => [ 0, 20, 30, 40, 50, 60 ],
 
         "stellar_burst" => [ 0, 40, 70, 100, 130, 160 ],
 
@@ -460,12 +471,17 @@ my %ability_stats = (
         "bladed_arrow" => 0.5,
     },
     "level" => {
-        "crush" => 5,
-        "sic_em" => 5,
-        "sentinel" => 5,
-        "im_a_monster" => 5,
+        # character level           [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20 ],
+        "crush" =>                  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "sic_em" =>                 [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "sentinel" =>               [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "im_a_monster" =>           [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
-        "stellar_burst" => 5,
+        "irradiate" =>              [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "pulse" =>                  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+
+        "stellar_burst" =>          [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "radiance" =>               [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
 
         "shadow_lock" => 5,
         "siphon_darkness" => 5,
@@ -1041,10 +1057,10 @@ if ($cdr > 0.4) { $cdr = 0.4; }
 if ($attack_rate > 2.5) { $attack_rate = 2.5; }
 
 if ( $opts{'g'} eq "scylla" ) {
-    if ( $ability_stats{ "level" }->{ "crush" } == 5 ) { $magical_power += 20; }
-    if ( $ability_stats{ "level" }->{ "sic_em" } == 5 ) { $magical_power += 20; }
-    if ( $ability_stats{ "level" }->{ "im_a_monster" } == 5 ) { $magical_power += 20; }
-    if ( $ability_stats{ "level" }->{ "sentinel" } == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "crush" }->[ $char_level ] == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "sic_em" }->[ $char_level ] == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "im_a_monster" }->[ $char_level ] == 5 ) { $magical_power += 20; }
+    if ( $ability_stats{ "level" }->{ "sentinel" }->[ $char_level ] == 5 ) { $magical_power += 20; }
 }
 
 if (defined $items{"rod"}) { $magical_power *= 1.25; }
@@ -1173,13 +1189,7 @@ my $viper_shots_left = 0;
 my $astral_arrows = 0;
 
 my $heat = 0;
-my $radiance_time = 0;
-my $radiance_level = 5;
 my @radiance_heat_amount = ( 0, 40, 50, 60, 70, 80 );
-my $stellar_burst_time = 0;
-my $stellar_burst_detonate_time = $stellar_burst_time + 100;
-my $stellar_burst_level = 5;
-my @stellar_burst_damage = ( 0, 40, 70, 100, 130, 160 );
 
 my $polynomicon_procs = 0;
 my $polynomicon_damage = 0;
@@ -1382,7 +1392,7 @@ while ( $iteration < $max_iterations ) {
             if ( $time >= $ability_stats{ "time" }->{ $next_skill } ) {
                 # time to use next ability
                 my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
-                        $ability_stats{ "level" }->{ $next_skill } ] +
+                        $ability_stats{ "level" }->{ $next_skill }->[ $char_level ] ] +
                         (get_eff_power() * $ability_stats{ "scaling" }->{ $next_skill });
                 my $hit = 0;
                 if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
@@ -1402,7 +1412,7 @@ while ( $iteration < $max_iterations ) {
                 }
 
                 $pre_prot_damage = $ability_stats{ "tick_damage" }->{ $next_skill }->[
-                        $ability_stats{ "level" }->{ $next_skill } ] +
+                        $ability_stats{ "level" }->{ $next_skill }->[ $char_level ] ] +
                         (get_eff_power() * $ability_stats{ "tick_scaling" }->{ $next_skill });
                 if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
                 if( $pre_prot_damage > 0 ) { 
@@ -1483,12 +1493,14 @@ while ( $iteration < $max_iterations ) {
             }
         }
 
-        if ($opts{'g'} eq "sol" and $time == $radiance_time) {
-            $heat += $radiance_heat_amount[ $radiance_level ];
+        if ($opts{'g'} eq "sol" and $time >= $ability_stats{ "time" }->{ "radiance" }) {
+            $heat += $radiance_heat_amount[
+                   $ability_stats{ "level" }->{ "radiance" }->[ $char_level ] ];
             if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
                 $buffs{ "current" }->{ "polynomicon" } = 1;
             }
-            $radiance_time += 15000; # TODO use regular cooldown logic
+            $ability_stats{ "time" }->{ "radiance" } =
+                    $time + 1000 * $ability_stats{ "cooldown" }->{ "radiance" };
         }
 
         if ($opts{'g'} eq 'xbal' and $time == 0) {
@@ -1646,11 +1658,13 @@ while ( $iteration < $max_iterations ) {
 
             # ability buffs
             if ($buffs{ "current" }->{ "pulse" }) {
-                $pre_prot_damage += 60 + 0.15 * get_eff_power();
+                $pre_prot_damage += $ability_stats{ "damage" }->{ "pulse" }->[
+                        $ability_stats{ "level" }->{ "pulse" }->[ $char_level ] ] + 0.15 * get_eff_power();
             }
 
             if ($buffs{ "current" }->{ "irradiate" }) {
-                $pre_prot_damage += 100 + 0.25 * get_eff_power();
+                $pre_prot_damage += $ability_stats{ "damage" }->{ "irradiate" }->[
+                        $ability_stats{ "level" }->{ "irradiate" }->[ $char_level ] ] + 0.25 * get_eff_power();
             }
 
             if ($buffs{ "current" }->{ "serqet_poisons" } >= 2) {
