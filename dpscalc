@@ -18,6 +18,7 @@
 # add arachne
 # add nemesis
 # add ne zha
+# add kukulkan
 #
 
 use strict;
@@ -92,6 +93,11 @@ my %ability_stats = (
         "sentinel" => 15,
         "im_a_monster" => 90,
 
+        "whirlwind" => 15, # TODO scales
+        "zephyr" => 7,
+        "slipstream" => 15,
+        "nine_winds" => 80,
+
         "stellar_burst" => 12,
         "radiance" => 15,
 
@@ -141,6 +147,11 @@ my %ability_stats = (
         "sic_em" => 0,
         "sentinel" => 0,
         "im_a_monster" => 0,
+
+        "whirlwind" => 0,
+        "zephyr" => 0,
+        "slipstream" => 0,
+        "nine_winds" => 0,
 
         "stellar_burst" => 0,
         "radiance" => 0,
@@ -192,6 +203,11 @@ my %ability_stats = (
         "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
         "im_a_monster" => [ 0, 400, 500, 600, 700, 800 ],
 
+        "whirlwind" => [ 0, 0, 0, 0, 0, 0 ],
+        "zephyr" => [ 0, 60, 105, 150, 195, 240 ],
+        "slipstream" => [ 0, 0, 0, 0, 0, 0 ],
+        "nine_winds" => [ 0, 400, 500, 600, 700, 800 ],
+
         "irradiate" => [ 0, 40, 55, 70, 85, 100 ],
         "pulse" => [ 0, 20, 30, 40, 50, 60 ],
 
@@ -234,15 +250,63 @@ my %ability_stats = (
         "bladed_arrow" => [ 0, 70, 120, 170, 220, 270 ],
         "expose_weakness" => [ 0, 10, 20, 30, 40, 50 ],
     },
-    "aoe" => {
-        "suppress_the_insolent" => 3,
+    "aoe" => { # for clear calculations, how many minions hit
+        "crush" => 6,
+        "sic_em" => 1,
+        "sentinel" => 0,
+        "im_a_monster" => 0,
+
+        "whirlwind" => 6,
+        "zephyr" => 1,
+        "slipstream" => 0,
+        "nine_winds" => 0,
+
+        "stellar_burst" => 6,
+
         "acid_spray" => 6,
+
+        "suppress_the_insolent" => 3,
+
+        "shadow_lock" => 0,
+        "siphon_darkness" => 6,
+        "shadow_step" => 0,
+        "night_terror" => 0,
+
+        "deathbane" => 3,
+        "cobras_kiss" => 1,
+        "ambush" => 0,
+        "last_breath" => 0,
+
+        "mjolnirs_attunement" => 6,
+        "tectonic_rift" => 0,
+        "spin_to_win" => 3,
+        "anvil_of_dawn" => 0,
+
+        "unchained" => 3,
+        "brutalize" => 3,
+        "ragnarok" => 1,
+
+        "pounce" => 3,
+        "razor_whip" => 3,
+        "declaw" => 1,
+        "cat_call" => 0,
+
+        "spirit_arrow" => 6,
+
+        "thrown_axe" => 1, # TODO does this pierce?
+        "hail_of_arrows" => 3,
+        "bladed_arrow" => 6,
     },
     "hits" => {
         "crush" => 1,
         "sic_em" => 1,
         "sentinel" => 0,
         "im_a_monster" => 1,
+
+        "whirlwind" => 0,
+        "zephyr" => 1,
+        "slipstream" => 0,
+        "nine_winds" => 1,
 
         "stellar_burst" => 2,
 
@@ -285,6 +349,8 @@ my %ability_stats = (
     "tick_damage" => {
         "viper_shot" => [ 0, 10, 15, 20, 25, 30 ],
 
+        "whirlwind" => [ 0, 10, 20, 30, 40, 50 ],
+
         "shadow_lock" => [ 0, 30, 40, 50, 60, 70 ],
         "night_terror" => [ 0, 20, 25, 30, 35, 40 ],
 
@@ -300,6 +366,11 @@ my %ability_stats = (
         "sic_em" => 0.6,
         "sentinel" => 0,
         "im_a_monster" => 1.2,
+
+        "whirlwind" => 0,
+        "zephyr" => 0.6,
+        "slipstream" => 0,
+        "nine_winds" => 1.2,
 
         "stellar_burst" => 0.35,
 
@@ -342,6 +413,8 @@ my %ability_stats = (
     "tick_scaling" => {
         "viper_shot" => 0.1,
 
+        "whirlwind" => 0.15,
+
         "shadow_lock" => 0.2,
         "night_terror" => .05,
 
@@ -356,6 +429,8 @@ my %ability_stats = (
         "shadow_lock" => .5,
         "night_terror" => 1,
 
+        "whirlwind" => 0.5,
+
         "last_breath" => 1,
 
         "spin_to_win" => 0.4,
@@ -368,6 +443,11 @@ my %ability_stats = (
         "sic_em" => 0,
         "sentinel" => 0,
         "im_a_monster" => 0,
+
+        "whirlwind" => 5,
+        "zephyr" => 0,
+        "slipstream" => 0,
+        "nine_winds" => 0,
 
         "stellar_burst" => 0,
 
@@ -413,6 +493,11 @@ my %ability_stats = (
         "sic_em" => 0.5,
         "sentinel" => 0.5,
         "im_a_monster" => 1,
+
+        "whirlwind" => 0.5,
+        "zephyr" => 0.5,
+        "slipstream" => 0.5,
+        "nine_winds" => 0.5,
 
         "stellar_burst" => 0.5,
 
@@ -461,10 +546,16 @@ my %ability_stats = (
     },
     "level" => {
         # character level           [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20 ],
+
         "crush" =>                  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "sic_em" =>                 [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "sentinel" =>               [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
         "im_a_monster" =>           [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
+
+        "whirlwind" =>              [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "zephyr" =>                 [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "slipstream" =>             [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "nine_winds" =>             [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
         "irradiate" =>              [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "pulse" =>                  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
@@ -478,31 +569,31 @@ my %ability_stats = (
         "viper_shot" =>             [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "acid_spray" =>             [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
 
-        "shadow_lock" => 5,
-        "siphon_darkness" => 5,
-        "shadow_step" => 5,
-        "night_terror" => 5,
+        "siphon_darkness" =>        [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "shadow_lock" =>            [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "shadow_step" =>            [ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "night_terror" =>           [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
-        "deathbane" => 5,
-        "cobras_kiss" => 5,
-        "ambush" => 5,
-        "last_breath" => 5,
+        "deathbane" =>              [ 0, 1, 1, 1, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "cobras_kiss" =>            [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "ambush" =>                 [ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "last_breath" =>            [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
-        "mjolnirs_attunement" => 5,
-        "tectonic_rift" => 5,
-        "spin_to_win" => 5,
-        "anvil_of_dawn" => 5,
+        "mjolnirs_attunement" =>    [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "tectonic_rift" =>          [ 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "spin_to_win" =>            [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "anvil_of_dawn" =>          [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
-        "unchained" => 5,
-        "brutalize" => 5,
-        "ragnarok" => 5,
+        "brutalize" =>              [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "unchained" =>              [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "ragnarok" =>               [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
-        "pounce" => 5,
-        "razor_whip" => 5,
-        "declaw" => 5,
-        "cat_call" => 5,
+        "razor_whip" =>             [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "pounce" =>                 [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "declaw" =>                 [ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "cat_call" =>               [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
-        "spirit_arrow" => 5,
+        "spirit_arrow" =>           [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
 
         "thrown_axe" =>             [ 0, 0, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "bladed_arrow" =>           [ 0, 0, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
@@ -519,6 +610,7 @@ my %combos = (
     "nox" => [ "shadow_lock", "siphon_darkness", "night_terror" ],
     "freya" => [ ],
     "sol" => [ "stellar_burst" ],
+    "kukulkan" => [ "whirlwind", "zephyr" ],
     "artemis" => [ ],
     #"awilix" => [ "moonlight_charge", "gravity_surge" ],
     "awilix" => [ ],
@@ -540,27 +632,9 @@ my %combos = (
 my %clear_skills = (
     "medusa" => [ "acid_spray" ],
     "artemis" => [ "suppress_the_insolent" ],
+    "kukulkan" => [ "whirlwind" ],
+    "bastet" => [ "razor_whip" ],
 );
-
-
-
-
-#my %abilities = (
-#    "scylla" => [ "sic_em", "crush", "sentinel", "im_a_monster" ],
-#    "nox" => [ "shadow_lock", "siphon_darkness", "shadow_step", "night_terror" ],
-#    "freya" => [ "irradiate", "pulse", "banish", "valkyries_discretion" ],
-#    "sol" => [ "radiance", "stellar_burst", "disapparate", "supernova" ],
-#    "artemis" => [ "transgressors_fate", "vengeful_assault", "suppress_the_insolent", "calydonian_boar" ],
-#    "awilix" => [ "summon_suku", "feather_step", "moonlight_charge", "gravity_surge" ],
-#    "medusa" => [ "viper_shot", "acid_spray", "lacerate", "petrify" ],
-#    "xbal" => [ "branching_bolas", "poison_darts", "rising_jaguar", "darkest_of_nights" ],
-#    "rama" => [ "astral_strike", "pick_me_up", "rolling_assault", "astral_barrage" ],
-#    "ullr" => [ "bladed_arrow", "expose_weakness", "hail_of_arrows", "wield_bow" ],
-#    "serqet" => [ "cobras_kiss", "deathbane", "ambush", "last_breath" ],
-#    "thor" => [ "anvil_of_dawn", "mjolnirs_attunement", "tectonic_rift", "spin_to_win" ],
-#);
-
-
 
 
 
@@ -571,6 +645,7 @@ my %base_stats = (
         "sol" => "magical",
         "scylla" => "magical",
         "nox" => "magical",
+        "kukulkan" => "magical",
 
         "artemis" => "physical",
         "awilix" => "physical",
@@ -594,6 +669,7 @@ my %base_stats = (
         "sol" => 1,
         "scylla" => 1,
         "nox" => 1,
+        "kukulkan" => 0.87,
 
         "artemis" => 0.95,
         "awilix" => 1,
@@ -614,6 +690,7 @@ my %base_stats = (
         "sol" => 0.018,
         "scylla" => 0.008,
         "nox" => 0.008,
+        "kukulkan" => 0.0091,
 
         "artemis" => 0.014,
         "awilix" => 0.0189,
@@ -634,6 +711,7 @@ my %base_stats = (
         "sol" => 34,
         "scylla" => 34,
         "nox" => 34,
+        "kukulkan" => 34,
 
         "artemis" => 35,
         "awilix" => 38,
@@ -654,6 +732,7 @@ my %base_stats = (
         "sol" => 1.45,
         "scylla" => 1.45,
         "nox" => 1.5,
+        "kukulkan" => 1.45,
 
         "artemis" => 2.05,
         "awilix" => 2.16,
@@ -674,6 +753,7 @@ my %base_stats = (
         "sol" => 300,
         "scylla" => 298,
         "nox" => 250,
+        "kukulkan" => 265,
 
         "artemis" => 205,
         "awilix" => 220,
@@ -694,6 +774,7 @@ my %base_stats = (
         "sol" => 57,
         "scylla" => 56,
         "nox" => 38,
+        "kukulkan" => 45,
 
         "artemis" => 34,
         "awilix" => 38,
@@ -714,6 +795,7 @@ my %base_stats = (
         "sol" => [ 1 ],
         "scylla" => [ 1 ],
         "nox" => [ 1 ],
+        "kukulkan" => [ 1 ],
 
         "artemis" => [ 1 ],
         "awilix" => [ 1, 0.75, 1.25 ],
@@ -799,17 +881,28 @@ my $percent_reduction = 0;
 #################################################################################
 # magical items
 #################################################################################
+
+if (defined $items{"purple_pot"} ){
+    $magical_power += 50;
+    $gold += 450;
+}
+
+if (defined $items{"lost_artifact"} ){
+    $magical_power += 20;
+    $gold += 600;
+}
+
 if (defined $items{"pen_boots"}) {
     $magical_power += 45;
     $flat_pen += 10;
-    $gold += 1700;
+    $gold += 1600;
 }
 
 if (defined $items{"cooldown_boots"}) {
     $magical_power += 30;
     $cdr += 0.10;
     $mana += 250;
-    $gold += 1600;
+    $gold += 1500;
 }
 
 if (defined $items{"void_stone"}) {
@@ -905,6 +998,27 @@ if (defined $items{"book"}) {
 #################################################################################
 # physical items
 #################################################################################
+
+if (defined $items{"red_pot"} ){
+    $physical_power += 20;
+    $gold += 450;
+}
+
+if (defined $items{"throwing_dagger"} ){
+    $physical_power += 20;
+    $base_crit_chance += 0.1;
+    $gold += 1300;
+}
+
+if (defined $items{ "charged_morningstar" } ) {
+    $physical_power += 20;
+    $mana += 150;
+}
+
+if (defined $items{ "bluestone" } ) {
+    $physical_power += 15;
+    $mana += 100;
+}
 
 # jotunn's wrath
 if (defined $items{"jotunns"} or defined $items{ "jotunns_wrath" }) {
@@ -1072,7 +1186,11 @@ if ( $opts{'g'} eq "scylla" ) {
     if ( $ability_stats{ "level" }->{ "sentinel" }->[ $char_level ] == 5 ) { $magical_power += 20; }
 }
 
-if (defined $items{"rod"}) { $magical_power *= 1.25; }
+if ( $opts{ 'g' } eq "kukulkan" ) {
+    $magical_power += 0.05 * $mana;
+}
+
+if (defined $items{"rod"}) { $magical_power *= 1.25; } # does this multiply passives or only items? TODO
 
 
 
@@ -1083,6 +1201,9 @@ if (defined $items{"rod"}) { $magical_power *= 1.25; }
 my $iteration = 0;
 my $max_iterations = 1000;
 if ( $base_stats{ "type" }->{ $opts{ 'g'} } eq "magical" ) {
+    $max_iterations = 1; # no crit, no rng
+}
+if ( $base_crit_chance == 0 and $opts{ 'g' } ne "artemis" ) {
     $max_iterations = 1; # no crit, no rng
 }
 my $max_time = 5100;
@@ -1213,6 +1334,7 @@ my %ticks = ();
 my $combo_idx = 0;
 my $next_skill;
 
+my $bluestone_stacks = 0;
 
 
 #################################################################################
@@ -1425,11 +1547,31 @@ while ( $iteration < $max_iterations ) {
                             # deathbane can crit
                             $pre_prot_damage = ability_crits( $pre_prot_damage );
                         }
-                        $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
-                                $ability_stats{ "aoe" }->{ $next_skill } );
+                        if ( $action eq "clear" ) {
+                            $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
+                                    $ability_stats{ "aoe" }->{ $next_skill } );
+                        } else {
+                            $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1, 1 );
+                        }
                         if(defined $items{"spear"}) {
                             reset_buff_time("spear");
                             add_stack("spear");
+                        }
+                        if(defined $items{"bluestone"}) {
+                            # schedule ticks
+                            my $i = 0;
+                            my $aoe = 1;
+                            if ( $action eq "clear" ) {
+                                $aoe = $ability_stats{ "aoe" }->{ $next_skill };
+                            }
+                            while ( $i < 2 ) {
+
+                                my $tick_time = $time + ($i + 1) * 1000;
+                                while ( defined $ticks{ $tick_time } ) { $tick_time++; }
+                                $ticks{ $tick_time } = +[ 15, "bluestone tick", 0, $aoe ];
+
+                                $i++;
+                            }
                         }
                     }
                     $hit++;
@@ -1447,9 +1589,16 @@ while ( $iteration < $max_iterations ) {
                         my $tick_time = $time + ($i + 1) * $ability_stats{ "tick_duration" }->{ $next_skill } * 1000;
                         while ( defined $ticks{ $tick_time } ) { $tick_time++; }
                         if ( $next_skill ne "last_breath" ) {
-                            $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 0 ];
+                            # not true damage
+                            if ( $action eq "clear" and defined $ability_stats{ "aoe" }->{ $next_skill}) {
+                                # if clearing, use aoe coefficient
+                                $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 0,
+                                        $ability_stats{ "aoe" }->{ $next_skill} ];
+                            } else {
+                                $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 0, 1 ];
+                            }
                         } else {
-                            $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 1 ];
+                            $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 1, 1 ];
                         }
 
                         $i++;
@@ -1489,12 +1638,14 @@ while ( $iteration < $max_iterations ) {
         # execute ticks
         #################################################################################
         if ( defined $ticks{ $time } ) {
+
             if ( $ticks{ $time }->[ 2 ] == 0 ) {
-                if ( defined $ability_stats{ "aoe" }->{ $ticks{ $time }->[1] } ) {
-                    $damage += calc_mitigated_damage( $ticks{ $time }->[0], $ticks{ $time }->[1], 1,
-                            $ability_stats{ "aoe" }->{ $ticks{ $time }->[1] } );
-                } else {
-                    $damage += calc_mitigated_damage( $ticks{ $time }->[0], $ticks{ $time }->[1], 1, 1 );
+                # not true damage
+                $damage += calc_mitigated_damage(
+                        $ticks{ $time }->[3] * $ticks{ $time }->[0], $ticks{ $time }->[1], 1, 1 );
+
+                if ( $ticks{ $time }->[1] eq "bluestone" ) {
+                    $bluestone_stacks--;
                 }
             } else {
                 # true damage; here for last breath
@@ -1503,6 +1654,28 @@ while ( $iteration < $max_iterations ) {
                     printf "time %d %s damage %d\n", $time, $ticks{ $time }->[1], $ticks{ $time }->[0];
                 }
             }
+            
+            # remove " tick" from name before trying to look it up in ability stats hash
+            # TODO probably a cleaner way to do this
+            my $skill_name = $ticks{ $time }->[ 1 ];
+            $skill_name =~ s/\s+.*//;
+
+            if(defined $items{"bluestone"} and defined $ability_stats{ "tick_damage" }->{
+                        $skill_name } ) {
+                # if this tick is an ability, schedule bluestone ticks
+                # TODO only do this for 2 ticks!
+                my $aoe = $ticks{ $time }->[3]; # borrow aoe coefficient from parent tick
+                while ( $bluestone_stacks < 2 ) {
+
+                    my $tick_time = $time + ($bluestone_stacks + 1) * 1000;
+                    while ( defined $ticks{ $tick_time } ) { $tick_time++; }
+                    $ticks{ $tick_time } = +[ 15, "bluestone tick", 0, $aoe ];
+
+                    $bluestone_stacks++;
+                }
+            }
+
+
             if(defined $items{"spear"}) {
                 reset_buff_time("spear");
                 add_stack("spear");
@@ -1585,7 +1758,7 @@ while ( $iteration < $max_iterations ) {
         #################################################################################
         # execute attack-chain dependent skills
         #################################################################################
-        if ($opts{'g'} eq "medusa" and $num_attacks == 1 and $viper_shots_left == 0) {
+        if ($opts{'g'} eq "medusa" and $num_attacks == 1 and $viper_shots_left == 0 and $action ne "clear") {
             # start viper shot after the first AA for AA cancel benefit
             $viper_shots_left = 3;
             my $viper_attack_rate = $attack_rate +
@@ -1770,6 +1943,11 @@ while ( $iteration < $max_iterations ) {
                 $damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 1, 2);
                 $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
                 $attack_damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 0, 2);
+            } elsif ( $action eq "clear" and defined $items{ "throwing_dagger" } ) {
+                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
+                $damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 1, 2);
+                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
+                $attack_damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 0, 2);
             } else {
                 $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
                 $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
