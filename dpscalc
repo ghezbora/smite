@@ -1466,6 +1466,9 @@ sub calc_mitigated_damage( $ $ $ $ ) {
     if ( $verbose and $print ) {
         printf "time %6d %16s prot %4d -> %4d damage %4d -> %4d ",
                 $time, $damage_source, $their_protection, $their_eff_prot, $pre_prot_damage, $damage;
+        if ( $action eq "clear" ) {
+            printf " * %d -> %d ", $num_targets, ($num_targets * $damage);
+        }
         if ( defined $items{ "spear" } ) {
             printf " %d spear stacks ", $buffs{ "current" }->{ "spear" };
         }
@@ -1642,7 +1645,7 @@ while ( $iteration < $max_iterations ) {
             if ( $ticks{ $time }->[ 2 ] == 0 ) {
                 # not true damage
                 $damage += calc_mitigated_damage(
-                        $ticks{ $time }->[3] * $ticks{ $time }->[0], $ticks{ $time }->[1], 1, 1 );
+                        $ticks{ $time }->[0], $ticks{ $time }->[1], 1, $ticks{ $time }->[3] );
 
                 if ( $ticks{ $time }->[1] eq "bluestone" ) {
                     $bluestone_stacks--;
