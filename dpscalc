@@ -5,12 +5,6 @@
 #
 # divide magical and physical protection
 #
-# finish ability logic for other gods
-#
-# add logic to calculate wave clear (aoe)
-#
-# add bluestone pendant
-#
 # add audacity for apollo
 # add hou yi
 # add poison darts for xbal
@@ -18,7 +12,6 @@
 # add arachne
 # add nemesis
 # add ne zha
-# add kukulkan
 #
 
 use strict;
@@ -634,6 +627,7 @@ my %clear_skills = (
     "artemis" => [ "suppress_the_insolent" ],
     "kukulkan" => [ "whirlwind" ],
     "bastet" => [ "razor_whip" ],
+    "apollo" => [ ],
 );
 
 
@@ -1013,11 +1007,13 @@ if (defined $items{"throwing_dagger"} ){
 if (defined $items{ "charged_morningstar" } ) {
     $physical_power += 20;
     $mana += 150;
+    $gold += 1200;
 }
 
 if (defined $items{ "bluestone" } ) {
     $physical_power += 15;
     $mana += 100;
+    $gold += 800;
 }
 
 # jotunn's wrath
@@ -1335,6 +1331,8 @@ my $combo_idx = 0;
 my $next_skill;
 
 my $bluestone_stacks = 0;
+
+my $audacity_stacks = 0;
 
 
 #################################################################################
@@ -1738,6 +1736,10 @@ while ( $iteration < $max_iterations ) {
             reset_buff_time("vengeful_assault");
         }
 
+        if ($opts{'g'} eq "apollo" and $time == 0) {
+            $audacity_stacks = 5;
+        }
+
         if ($opts{'g'} eq "awilix" and $time == 0) {
             # start combo with moonlight charge + Ult
             # TODO use normal combo logic for this
@@ -2004,6 +2006,10 @@ while ( $iteration < $max_iterations ) {
             if ( $buffs{ "current" }->{ "maximum_velocity" } ) {
                 $eff_attack_rate = $attack_rate + 0.7 * $base_stats{ "attack_rate" }->{ $opts{'g'} };
                 # TODO use normal stats logic
+            }
+            if ( $audacity_stacks > 0) {
+                $eff_attack_rate = $attack_rate + $base_stats{ "attack_rate" }->{ $opts{'g'} };
+                $audacity_stacks--;
             }
             if ($viper_shots_left > 0) {
                 $eff_attack_rate = $attack_rate +
