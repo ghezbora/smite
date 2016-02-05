@@ -5,6 +5,8 @@
 #
 # divide magical and physical protection
 #
+# add verbosity levels
+#
 # add audacity for apollo
 # add hou yi
 # add poison darts for xbal
@@ -70,8 +72,8 @@ my %protection_stats = (
     "health" => {
         "bastet" => (415 + 20 * 80),
         "sol" => (400 + 75 * 20),
-        "khepri" => (510 + 90*20 + 200 + 200), # khepri with urchin and bulwark
-        "bellona" => (480 + 85 * 20 + 200 + 100 ), # TODO wrong?
+        "khepri" => (510 + 90*20 + 250 + 200), # khepri with urchin and bulwark
+        "bellona" => (480 + 85 * 20 + 200 + 300 ),
         "hercules" => (480 + 86 * 20 + 200 + 300 + 350 + 400), #herc with mystical, bulwark, thebes, and gaia
     },
 );
@@ -90,6 +92,10 @@ my %ability_stats = (
         "zephyr" => 7,
         "slipstream" => 15,
         "nine_winds" => 80,
+
+        "moonlight_charge" => 12,
+        "feather_step" => 8,
+        "gravity_surge" => 90,
 
         "stellar_burst" => 12,
         "radiance" => 15,
@@ -140,6 +146,10 @@ my %ability_stats = (
         "sic_em" => 0,
         "sentinel" => 0,
         "im_a_monster" => 0,
+
+        "moonlight_charge" => 0,
+        "feather_step" => 0,
+        "gravity_surge" => 0,
 
         "whirlwind" => 0,
         "zephyr" => 0,
@@ -201,6 +211,10 @@ my %ability_stats = (
         "slipstream" => [ 0, 0, 0, 0, 0, 0 ],
         "nine_winds" => [ 0, 400, 500, 600, 700, 800 ],
 
+        "moonlight_charge" => [ 0, 90, 130, 170, 210, 250],
+        "feather_step" => [ 0, 120, 180, 240, 300, 360],
+        "gravity_surge" => [ 0, 200, 250, 300, 350, 400],
+
         "irradiate" => [ 0, 40, 55, 70, 85, 100 ],
         "pulse" => [ 0, 20, 30, 40, 50, 60 ],
 
@@ -249,6 +263,10 @@ my %ability_stats = (
         "sentinel" => 0,
         "im_a_monster" => 0,
 
+        "moonlight_charge" => 6,
+        "feather_step" => 3,
+        "gravity_surge" => 0,
+
         "whirlwind" => 6,
         "zephyr" => 1,
         "slipstream" => 0,
@@ -295,6 +313,10 @@ my %ability_stats = (
         "sic_em" => 1,
         "sentinel" => 0,
         "im_a_monster" => 1,
+
+        "moonlight_charge" => 1,
+        "feather_step" => 1,
+        "gravity_surge" => 1,
 
         "whirlwind" => 0,
         "zephyr" => 1,
@@ -359,6 +381,10 @@ my %ability_stats = (
         "sic_em" => 0.6,
         "sentinel" => 0,
         "im_a_monster" => 1.2,
+
+        "moonlight_charge" => 0.6,
+        "feather_step" => 1,
+        "gravity_surge" => 0.8,
 
         "whirlwind" => 0,
         "zephyr" => 0.6,
@@ -437,6 +463,10 @@ my %ability_stats = (
         "sentinel" => 0,
         "im_a_monster" => 0,
 
+        "moonlight_charge" => 0,
+        "feather_step" => 0,
+        "gravity_surge" => 0,
+
         "whirlwind" => 5,
         "zephyr" => 0,
         "slipstream" => 0,
@@ -487,6 +517,10 @@ my %ability_stats = (
         "sentinel" => 0.5,
         "im_a_monster" => 1,
 
+        "moonlight_charge" => 0.5,
+        "feather_step" => 0.5,
+        "gravity_surge" => 0.5,
+
         "whirlwind" => 0.5,
         "zephyr" => 0.5,
         "slipstream" => 0.5,
@@ -530,12 +564,17 @@ my %ability_stats = (
         "hail_of_arrows" => 0.5,
         "bladed_arrow" => 0.5,
     },
+    "power_buff" => {
+        "gravity_surge" => [ 0, 20, 30, 40, 50, 60 ],
+    },
     "attack_speed_buff" => {
         "vengeful_assault" => [ 0, 0.35, 0.45, 0.55, 0.65, 0.75 ],
 
         "wield_bow" => [ 0, 0.05, 0.10, 0.15, 0.20, 0.25 ],
 
         "viper_shot" => [ 0, 0.40, 0.50, 0.60, 0.70, 0.80 ],
+
+        "gravity_surge" => [ 0, 0.3, 0.4, 0.5, 0.6, 0.7 ],
     },
     "level" => {
         # character level           [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20 ],
@@ -572,6 +611,10 @@ my %ability_stats = (
         "ambush" =>                 [ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
         "last_breath" =>            [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
+        "feather_step" =>           [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "moonlight_charge" =>       [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "gravity_surge" =>          [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
+
         "mjolnirs_attunement" =>    [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "tectonic_rift" =>          [ 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
         "spin_to_win" =>            [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
@@ -605,15 +648,15 @@ my %combos = (
     "sol" => [ "stellar_burst" ],
     "kukulkan" => [ "whirlwind", "zephyr" ],
     "artemis" => [ ],
-    #"awilix" => [ "moonlight_charge", "gravity_surge" ],
-    "awilix" => [ ],
+    "awilix" => [ "moonlight_charge", "gravity_surge" ],
     "medusa" => [ ],
     "xbal" => [ ],
     "rama" => [ ],
     "serqet" => [ "cobras_kiss", "deathbane", "last_breath" ],
-    #"thor" => [ "anvil_of_dawn", "mjolnirs_attunement", "tectonic_rift", "spin_to_win" ],
-    "thor" => [ "spin_to_win" ],
-    "fenrir" => [ "unchained", "ragnarok", "brutalize" ],
+    "thor" => [ "anvil_of_dawn", "mjolnirs_attunement", "tectonic_rift", "spin_to_win" ],
+    #"thor" => [ "spin_to_win" ],
+    #"fenrir" => [ "unchained", "ragnarok", "brutalize" ],
+    "fenrir" => [ "unchained" ],
     "bastet" => [ "pounce", "razor_whip", "cat_call" ],
     "apollo" => [ ],
     "mercury" => [ ],
@@ -1099,7 +1142,7 @@ if (defined $items{"soul_eater"}) {
 }
 
 # stone cutting sword
-if (defined $items{"stone_cutting_sword"}) {
+if (defined $items{"stone_cutting_sword"} or defined $items{ "scs" }) {
     $physical_power += 50;
     $item_mvmt_speed += .1;
     $gold += 2900;
@@ -1171,9 +1214,6 @@ if (defined $items{"transcendence"}) {
 #################################################################################
 # calculate stats
 #################################################################################
-if ($cdr > 0.4) { $cdr = 0.4; }
-
-if ($attack_rate > 2.5) { $attack_rate = 2.5; }
 
 if ( $opts{'g'} eq "scylla" ) {
     if ( $ability_stats{ "level" }->{ "crush" }->[ $char_level ] == 5 ) { $magical_power += 20; }
@@ -1188,6 +1228,13 @@ if ( $opts{ 'g' } eq "kukulkan" ) {
 
 if (defined $items{"rod"}) { $magical_power *= 1.25; } # does this multiply passives or only items? TODO
 
+
+# enforce maxima
+if ($cdr > 0.4) { $cdr = 0.4; }
+if ($attack_rate > 2.5) { $attack_rate = 2.5; }
+if ($magical_power > 900) { $magical_power = 900; }
+if ($physical_power > 400) { $physical_power = 400; }
+if ($flat_pen > 50) { $flat_pen = 50; }
 
 
 #################################################################################
@@ -1390,7 +1437,10 @@ sub get_eff_power() {
     if ( $base_stats{ "type" }->{ $opts{'g'} } eq "physical" ) {
         my $eff_physical_power = $physical_power
                 + 5 * $buffs{ "current" }->{ "xbal_passive" }
-                + 10 * $buffs{ "current" }->{ "ichaival" };
+                + 10 * $buffs{ "current" }->{ "ichaival" }
+                + $buffs{ "current" }->{ "gravity_surge" } *
+                        $ability_stats{ "power_buff" }->{ "gravity_surge" }->[
+                                $ability_stats{ "level" }->{ "gravity_surge" }->[ $char_level ] ];
         if (defined $items{ "masamune" }) {
             # TODO does masamune work this way? or is it more like telkhines?
             my $bonus = int(0.1 * ($their_health - 2000)); # 1 for every 10 health diff
@@ -1416,6 +1466,28 @@ sub get_eff_power() {
 sub get_mvmt_speed() {
     my $mvmt_speed = $base_stats{ "mvmt_speed" }->{ $opts{'g'} } * ($item_mvmt_speed + 0.4); # assume sprint is active TODO handle sprint duration
     return $mvmt_speed;
+}
+
+
+sub add_bluestone( $ ) {
+
+    my $aoe = shift;
+
+    if ( $bluestone_stacks < 2 ) {
+
+        my $tick = 0;
+        
+        while ( $tick < 2 ) {
+
+            my $tick_time = $time + ($tick + 1) * 1000;
+            while ( defined $ticks{ $tick_time } ) { $tick_time++; }
+            $ticks{ $tick_time } = +[ 15, "bluestone tick", 0, $aoe ];
+
+            $tick++;
+        }
+
+        $bluestone_stacks++;
+    }
 }
 
 sub get_basic_attack_damage() {
@@ -1476,7 +1548,7 @@ sub calc_mitigated_damage( $ $ $ $ ) {
         if ( defined $items{ "executioner" } ) {
             printf " %d executioner stacks ", $buffs{ "current" }->{ "executioner" };
         }
-        if ( defined $items{ "executioner" } ) {
+        if ( defined $items{ "stone_cutting_sword" } or defined $items{ "scs" } ) {
             printf " %d SCS stacks ", $buffs{ "current" }->{ "stone_cutting_sword" };
         }
         #if ( $opts{'g'} eq "sol" ) {
@@ -1529,6 +1601,17 @@ while ( $iteration < $max_iterations ) {
 
     while ( $time < $max_time ) {
 
+        # stuff that happens FIRST
+        if ($opts{'g'} eq "awilix" and $time == 0) {
+            add_stack("initiative");
+            reset_buff_time("initiative");
+
+            if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
+                $buffs{ "current" }->{ "hydras_lament" }= 1;
+            }
+        }
+
+
         #################################################################################
         # execute skills
         #################################################################################
@@ -1565,14 +1648,7 @@ while ( $iteration < $max_iterations ) {
                             if ( $action eq "clear" ) {
                                 $aoe = $ability_stats{ "aoe" }->{ $next_skill };
                             }
-                            while ( $i < 2 ) {
-
-                                my $tick_time = $time + ($i + 1) * 1000;
-                                while ( defined $ticks{ $tick_time } ) { $tick_time++; }
-                                $ticks{ $tick_time } = +[ 15, "bluestone tick", 0, $aoe ];
-
-                                $i++;
-                            }
+                            add_bluestone( $aoe );
                         }
                     }
                     $hit++;
@@ -1666,14 +1742,7 @@ while ( $iteration < $max_iterations ) {
                 # if this tick is an ability, schedule bluestone ticks
                 # TODO only do this for 2 ticks!
                 my $aoe = $ticks{ $time }->[3]; # borrow aoe coefficient from parent tick
-                while ( $bluestone_stacks < 2 ) {
-
-                    my $tick_time = $time + ($bluestone_stacks + 1) * 1000;
-                    while ( defined $ticks{ $tick_time } ) { $tick_time++; }
-                    $ticks{ $tick_time } = +[ 15, "bluestone tick", 0, $aoe ];
-
-                    $bluestone_stacks++;
-                }
+                add_bluestone( $aoe );
             }
 
 
@@ -1740,29 +1809,44 @@ while ( $iteration < $max_iterations ) {
             $audacity_stacks = 5;
         }
 
-        if ($opts{'g'} eq "awilix" and $time == 0) {
-            # start combo with moonlight charge + Ult
-            # TODO use normal combo logic for this
-            # TODO use normal ability stats logic
-            my $pre_prot_damage = 250 + 0.6 * get_eff_power();
-            $damage += calc_mitigated_damage($pre_prot_damage, "moonlight charge", 1, 1);
-
-            $pre_prot_damage = 400 + 0.8 * get_eff_power();
-            $damage += calc_mitigated_damage($pre_prot_damage, "gravity surge", 1, 1);
-
-            $buffs{ "current" }->{ "initiative" } = 1;
-            $buffs{ "end" }->{ "initiative" }= $time + 2500;
-
-            if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
-                $buffs{ "current" }->{ "hydras_lament" }= 1;
-            }
-
-            $next_attack = 250;
-        }
-
         #################################################################################
         # execute attack-chain dependent skills
         #################################################################################
+        if ($opts{'g'} eq "fenrir" and $num_attacks == 1 and
+                    $ability_stats{ "time" }->{ "brutalize" } <= $time ) {
+
+            # brutalize has very short AA cancel, do it after the first AA
+            my $pre_prot_damage = $ability_stats{ "damage" }->{ "brutalize" }->[
+                    $ability_stats{ "level" }->{ "brutalize" }->[ $char_level ] ] +
+                    (get_eff_power() * $ability_stats{ "scaling" }->{ "brutalize" });
+            my $hit = 0;
+            while ( $hit < $ability_stats{ "hits" }->{ "brutalize" } ) {
+                if( $pre_prot_damage > 0 ) { 
+                    if ( $action eq "clear" ) {
+                        $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
+                                $ability_stats{ "aoe" }->{ "brutalize" } );
+                    } else {
+                        $damage += calc_mitigated_damage( $pre_prot_damage, "brutalize", 1, 1 );
+                    }
+                    if(defined $items{"bluestone"}) {
+                        # schedule ticks
+                        my $aoe = 1;
+                        if ( $action eq "clear" ) {
+                            $aoe = $ability_stats{ "aoe" }->{ $next_skill };
+                        }
+                        add_bluestone( $aoe );
+                    }
+                }
+                $hit++;
+            }
+
+            $ability_stats{ "time" }->{ "brutalize" } = $time +
+                    1000 * $ability_stats{ "cooldown" }->{ "brutalize" };
+
+            $next_attack = $time + 2000;
+
+        }
+
         if ($opts{'g'} eq "medusa" and $num_attacks == 1 and $viper_shots_left == 0 and $action ne "clear") {
             # start viper shot after the first AA for AA cancel benefit
             $viper_shots_left = 3;
@@ -1785,7 +1869,9 @@ while ( $iteration < $max_iterations ) {
         if ($opts{'g'} eq "awilix" and $next_attack_chain == 2 and
                 $ability_stats{ "time" }->{ "feather_step" } <= $time ) {
             # time to feather step
-            my $pre_prot_damage = 360 + get_eff_power(); # TODO use hashed scaling/damage
+            my $pre_prot_damage = $ability_stats{ "damage" }->{ "feather_step" }->[
+                    $ability_stats{ "level" }->{ "feather_step" }->[ $char_level ] ]
+                    + ($ability_stats{ "scaling" }->{ "feather_step" } * get_eff_power());
 
             $damage += calc_mitigated_damage($pre_prot_damage, "feather step", 1, 1);
 
@@ -1978,6 +2064,11 @@ while ( $iteration < $max_iterations ) {
             if (defined $items{ "executioner" }) {
                 reset_buff_time( "executioner" );
                 add_stack("executioner");
+            }
+
+            if (defined $items{ "stone_cutting_sword" } or defined $items{ "scs" }) {
+                reset_buff_time( "stone_cutting_sword" );
+                add_stack("stone_cutting_sword");
             }
 
             # attack chain progression
