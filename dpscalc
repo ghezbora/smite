@@ -74,7 +74,7 @@ my %protection_stats = (
         "sol" => (400 + 75 * 20),
         "khepri" => (510 + 90*20 + 250 + 200), # khepri with urchin and bulwark
         "bellona" => (480 + 85 * 20 + 200 + 300 ),
-        "hercules" => (480 + 86 * 20 + 200 + 300 + 350 + 400), #herc with mystical, bulwark, thebes, and gaia
+        "hercules" => (480 + 86 * 20 + 200 + 300 + 350 + 350), #herc with mystical, bulwark, thebes, and gaia
     },
 );
 
@@ -140,6 +140,8 @@ my %ability_stats = (
         "thrown_axe" => 14,
         "hail_of_arrows" => 15,
         "bladed_arrow" => 14,
+
+        "training_exercise" => 15,
     },
     "time" => { # will be updated with cooldown when used
         "crush" => 0,
@@ -199,6 +201,8 @@ my %ability_stats = (
         "thrown_axe" => 0,
         "hail_of_arrows" => 0,
         "bladed_arrow" => 0,
+
+        "training_exercise" => 0,
     },
     "damage" => {
         "crush" => [ 0, 90, 140, 190, 240, 290 ],
@@ -255,7 +259,8 @@ my %ability_stats = (
         "thrown_axe" => [ 0, 60, 90, 120, 150, 180 ],
         "hail_of_arrows" => [ 0, 80, 120, 160, 200, 240 ],
         "bladed_arrow" => [ 0, 70, 120, 170, 220, 270 ],
-        "expose_weakness" => [ 0, 10, 20, 30, 40, 50 ],
+
+        "training_exercise" => [ 0, 70, 120, 170, 220, 270 ],
     },
     "aoe" => { # for clear calculations, how many minions hit
         "crush" => 6,
@@ -307,6 +312,8 @@ my %ability_stats = (
         "thrown_axe" => 1, # TODO does this pierce?
         "hail_of_arrows" => 3,
         "bladed_arrow" => 6,
+
+        "training_exercise" => 6,
     },
     "hits" => {
         "crush" => 1,
@@ -360,6 +367,8 @@ my %ability_stats = (
         "thrown_axe" => 1,
         "hail_of_arrows" => 1,
         "bladed_arrow" => 1,
+
+        "training_exercise" => 1,
     },
     "tick_damage" => {
         "viper_shot" => [ 0, 10, 15, 20, 25, 30 ],
@@ -428,6 +437,8 @@ my %ability_stats = (
         "thrown_axe" => 0.6,
         "hail_of_arrows" => 1.2,
         "bladed_arrow" => 0.7,
+
+        "training_exercise" => 0.8,
     },
     "tick_scaling" => {
         "viper_shot" => 0.1,
@@ -509,6 +520,8 @@ my %ability_stats = (
         "thrown_axe" => 0,
         "hail_of_arrows" => 0,
         "bladed_arrow" => 0,
+
+        "training_exercise" => 0,
     },
     "next_action" => { # time to next action
         # these are mostly guesses
@@ -563,8 +576,12 @@ my %ability_stats = (
         "thrown_axe" => 0.5,
         "hail_of_arrows" => 0.5,
         "bladed_arrow" => 0.5,
+
+        "training_exercise" => 0.5,
     },
     "power_buff" => {
+        "expose_weakness" => [ 0, 10, 20, 30, 40, 50 ],
+        "branching_bolas" => [ 0, 10, 20, 30, 40, 50 ],
         "gravity_surge" => [ 0, 20, 30, 40, 50, 60 ],
     },
     "attack_speed_buff" => {
@@ -636,6 +653,8 @@ my %ability_stats = (
         "expose_weakness" =>        [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 4, 5, 5 ],
         "hail_of_arrows" =>         [ 0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "weild_bow" =>              [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
+
+        "training_exercise" =>      [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
     },
 );
 
@@ -654,23 +673,25 @@ my %combos = (
     "rama" => [ ],
     "serqet" => [ "cobras_kiss", "deathbane", "last_breath" ],
     "thor" => [ "anvil_of_dawn", "mjolnirs_attunement", "tectonic_rift", "spin_to_win" ],
-    #"thor" => [ "spin_to_win" ],
-    #"fenrir" => [ "unchained", "ragnarok", "brutalize" ],
-    "fenrir" => [ "unchained" ],
+    "fenrir" => [ "unchained", "ragnarok" ],
     "bastet" => [ "pounce", "razor_whip", "cat_call" ],
     "apollo" => [ ],
     "mercury" => [ ],
     "neith" => [ "spirit_arrow", ],
     "ullr" => [ "thrown_axe", "hail_of_arrows", "bladed_arrow" ],
+    "chiron" => [ ],
 );
 
 
 my %clear_skills = (
+    "freya" => [ ],
     "medusa" => [ "acid_spray" ],
     "artemis" => [ "suppress_the_insolent" ],
     "kukulkan" => [ "whirlwind" ],
     "bastet" => [ "razor_whip" ],
     "apollo" => [ ],
+    "fenrir" => [ "brutalize" ],
+    "chiron" => [ "training_exercise" ],
 );
 
 
@@ -697,6 +718,7 @@ my %base_stats = (
         "apollo" => "physical",
         "neith" => "physical",
         "mercury" => "physical",
+        "chiron" => "physical",
     },
     "mvmt_speed" => {
         "mercury" => 375,
@@ -721,6 +743,7 @@ my %base_stats = (
         "apollo" => 0.95,
         "neith" => 0.95,
         "mercury" => 1,
+        "chiron" => 1,
     },
     "attack_rate_level_scaling" => {
         "freya" => 0.0195,
@@ -742,6 +765,7 @@ my %base_stats = (
         "apollo" => 0.017,
         "neith" => 0.016,
         "mercury" => 0.024,
+        "chiron" => .011,
     },
     "auto_damage" => {
         "freya" => 35,
@@ -763,6 +787,7 @@ my %base_stats = (
         "apollo" => 40,
         "neith" => 35,
         "mercury" => 38,
+        "chiron" => 35,
     },
     "auto_level_scaling" => {
         "freya" => 1.5,
@@ -784,6 +809,7 @@ my %base_stats = (
         "apollo" => 2.6,
         "neith" => 2.3,
         "mercury" => 2.13,
+        "chiron" => 2.35,
     },
     "mana" => {
         "freya" => 220,
@@ -805,6 +831,7 @@ my %base_stats = (
         "apollo" => 225,
         "neith" => 230,
         "mercury" => 200,
+        "chiron" => 225,
     },
     "mana_level_scaling" => {
         "freya" => 37,
@@ -826,6 +853,7 @@ my %base_stats = (
         "apollo" => 40,
         "neith" => 39,
         "mercury" => 40,
+        "chiron" => 40,
     },
     "attack_chain_progression" => {
         "freya" => [ 1 ],
@@ -847,6 +875,7 @@ my %base_stats = (
         "apollo" => [ 1 ],
         "neith" => [ 1 ],
         "mercury" => [ 1, 0.75, 1.25 ],
+        "chiron" => [ 1 ],
     },
 );
 
@@ -1171,6 +1200,15 @@ if (defined $items{"golden_bow"}) {
     $item_mvmt_speed += 0.05;
 }
 
+# odysseus bow
+if (defined $items{"obow"}) {
+    $attack_rate += 0.4 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+}
+
+if (defined $items{"charged_bow"}) {
+    $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+}
+
 # rage
 if (defined $items{"rage"}) {
     $base_crit_chance += 0.2;
@@ -1380,6 +1418,8 @@ my $next_skill;
 my $bluestone_stacks = 0;
 
 my $audacity_stacks = 0;
+
+my $obow_hits = 0;
 
 
 #################################################################################
@@ -1722,7 +1762,12 @@ while ( $iteration < $max_iterations ) {
                         $ticks{ $time }->[0], $ticks{ $time }->[1], 1, $ticks{ $time }->[3] );
 
                 if ( $ticks{ $time }->[1] eq "bluestone" ) {
-                    $bluestone_stacks--;
+                    if ( not $ticks{ $time + 1000 }->[1] eq "bluestone" ) {
+                        # TODO this is not guaranteed successful, there COULD be a tick of something
+                        # already scheduled at that time, and the second bluestone would go 1ms later
+                        # this is the second tick
+                        $bluestone_stacks--;
+                    }
                 }
             } else {
                 # true damage; here for last breath
@@ -1756,10 +1801,12 @@ while ( $iteration < $max_iterations ) {
         # execute buffs TODO can we merge these into the general skill logic?
         #################################################################################
         if ($opts{'g'} eq "freya" and $time == 0) {
-            reset_buff_time( "irradiate" );
             reset_buff_time( "pulse" );
-            add_stack( "irradiate" );
             add_stack( "pulse" );
+            if ( $action ne "clear" ) {
+                reset_buff_time( "irradiate" );
+                add_stack( "irradiate" );
+            }
             if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
                 $buffs{ "current" }->{ "polynomicon" } = 1;
             }
@@ -1897,12 +1944,12 @@ while ( $iteration < $max_iterations ) {
             my $pre_prot_damage = get_basic_attack_damage();
             
             if($buffs{ "current" }->{ "expose_weakness" }) { 
-                $pre_prot_damage += $ability_stats{ "damage" }->{ "expose_weakness" }->[
+                $pre_prot_damage += $ability_stats{ "power_buff" }->{ "expose_weakness" }->[
                         $ability_stats{ "level" }->{ "expose_weakness" }->[ $char_level ] ];
             }
 
             if($buffs{ "current" }->{ "branching_bolas" }) { 
-                $pre_prot_damage += $ability_stats{ "damage" }->{ "branching_bolas" }->[
+                $pre_prot_damage += $ability_stats{ "power_buff" }->{ "branching_bolas" }->[
                         $ability_stats{ "level" }->{ "branching_bolas" }->[ $char_level ] ];
             }
 
@@ -2028,6 +2075,30 @@ while ( $iteration < $max_iterations ) {
                 $pre_prot_damage += 0.04 * $their_health;
             }
 
+            if ($action eq "clear" and defined $items{"obow"}) {
+                if ($obow_hits == 3) {
+                    $obow_hits = 0;
+                    my $obow_damage = 0.5 * get_eff_power() + 30;
+                    $damage += calc_mitigated_damage( $obow_damage, "obow", 1, 5 );
+                }
+                else
+                {
+                    $obow_hits++;
+                }
+            }
+
+            if ($action eq "clear" and defined $items{"charged_bow"}) {
+                if ($obow_hits == 3) {
+                    $obow_hits = 0;
+                    my $obow_damage = 20;
+                    $damage += calc_mitigated_damage( $obow_damage, "charged_bow", 1, 5 );
+                }
+                else
+                {
+                    $obow_hits++;
+                }
+            }
+
             # all damage calcs done, execute the attack
             if ( $action eq "clear" and defined $items{ "golden_bow" } ) {
                 $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
@@ -2039,6 +2110,8 @@ while ( $iteration < $max_iterations ) {
                 $damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 1, 2);
                 $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
                 $attack_damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 0, 2);
+            } elsif ($buffs{ "current" }->{ "pulse" } and not $buffs{ "current" }->{ "irradiate" }) {
+                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 3);
             } else {
                 $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
                 $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
