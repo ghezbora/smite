@@ -279,6 +279,7 @@ my %ability_stats = (
 
         "stellar_burst" => 6,
 
+        "viper_shot" => 1,
         "acid_spray" => 6,
 
         "suppress_the_insolent" => 3,
@@ -684,6 +685,7 @@ my %combos = (
 
 
 my %clear_skills = (
+    "sol" => [ "stellar_burst" ],
     "freya" => [ ],
     "medusa" => [ "acid_spray" ],
     "artemis" => [ "suppress_the_insolent" ],
@@ -953,9 +955,37 @@ if (defined $items{"purple_pot"} ){
     $gold += 450;
 }
 
-if (defined $items{"lost_artifact"} ){
+if (defined $items{"vamp_shroud"} ) {
     $magical_power += 20;
+    $gold += 800;
+}
+
+if (defined $items{"ancient_blade"} ) {
+    $attack_rate += 0.1 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+    $gold += 590;
+}
+
+if (defined $items{"emerald_ring"}) {
+    $magical_power += 20;
+    $attack_rate += 0.05 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+    $gold += 690;
+}
+
+if (defined $items{"enchanted_ring"}) {
+    $magical_power += 30;
+    $attack_rate += 0.1 * $base_stats{ "attack_rate" }->{ $opts{ 'g' } };
+    $gold += 1075;
+}
+
+if (defined $items{"lost_artifact"} ){
+    $magical_power += 15;
     $gold += 600;
+}
+
+if (defined $items{"tiny_trinket"} ){
+    $magical_power += 20;
+    $lifesteal += 0.04;
+    $gold += 540;
 }
 
 if (defined $items{"pen_boots"}) {
@@ -2112,6 +2142,7 @@ while ( $iteration < $max_iterations ) {
                 $attack_damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 0, 2);
             } elsif ($buffs{ "current" }->{ "pulse" } and not $buffs{ "current" }->{ "irradiate" }) {
                 $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 3);
+                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 3);
             } else {
                 $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
                 $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
