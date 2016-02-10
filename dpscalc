@@ -1334,7 +1334,7 @@ my %buffs = (
         "rage" => 6,
         "executioner" => 4, # really a debuff on the target
         "demonic_grip" => 4, # really a debuff on the target
-        "spear" => 2, # really a debuff on the target
+        "spear" => 3, # really a debuff on the target
         "still_target" => 3,
         "xbal_passive" => 6,
         "initiative" => 1,
@@ -1590,7 +1590,6 @@ sub calc_mitigated_damage( $ $ $ $ ) {
 
     my $their_eff_prot = $their_protection;
     $their_eff_prot *= (1 - $percent_reduction);
-    $their_eff_prot *= (1 - 0.1 * $buffs{ "current" }->{ "spear" });
     $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "demonic_grip" });
     $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "executioner" });
     $their_eff_prot -= $flat_reduction;
