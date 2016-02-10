@@ -49,6 +49,7 @@ GetOptions( 'god=s' => \$opts{ "god" },
             'verbosity=i' => \$opts{"verbosity"},
             'action=s' => \$opts{"action"},
             'time=i' => \$opts{"time"},
+            'iterations=i' => \$opts{"iterations"},
             'level=i' => \$opts{"level"} );
 
 if ( not defined $opts{ "god" } or not defined $opts{ "items" } ) {
@@ -90,14 +91,28 @@ my %protection_stats = (
         "hercules" => (480 + 86 * $opts{"level"}),
     },
     "default_items" => {
-        "bastet" => { "bov" => 1, },
-        "sol" => { },
-        "khepri" => { "urchin" => 1, "bulwark" => 1, "winged_blade" => 1, "bov" => 1 },
-        "bellona" => { "bulwark" => 1, "urchin" => 1, "mystical_mail" => 1 },
-        "hercules" => { "thebes" => 1, "gaia" => 1, "bulwark" => 1, "urchin" => 1 },
+        "bastet" => "bov",
+        "sol" => "",
+        "khepri" => "urchin bulwark winged_blade bov",
+        "bellona" => "bulwark urchin mystical_mail frostbound",
+        "hercules" => "thebes gaia bulwark urchin",
     },
 );
 
+
+my @enemy_items;
+
+if (defined $opts{"enemy_items"} ) {
+    @enemy_items = split( /\s/, $opts{ "enemy_items" } );
+} else {
+    @enemy_items = split( /\s/, $protection_stats{ "default_items" }->{ $opts{"enemy" } } );
+}
+
+my %enemy_items;
+
+foreach my $item (@enemy_items) {
+    $enemy_items{ $item } = 1;
+}
 
 
 
@@ -933,13 +948,12 @@ if ( $opts{ "god" } eq "freya" ) { $lifesteal += 0.15; }
 my $cdr = 0;
 my $item_mvmt_speed = 0;
 
-my $their_protection;
-if ( $base_stats{ "type" }->{ $opts{ "god" } } eq "physical" ) {
-    $their_protection = $protection_stats{ "physical_protection" }->{ $opts{"enemy"} };
-} else {
-    $their_protection = $protection_stats{ "magical_protection" }->{ $opts{"enemy"} };
-}
-if ( $opts{"action"} eq "clear" ) { $their_protection = 0; }
+my $their_phys_prot = $protection_stats{ "physical_protection" }->{ $opts{"enemy"} };
+my $their_mag_prot = $protection_stats{ "magical_protection" }->{ $opts{"enemy"} };
+if ( $opts{"action"} eq "clear" ) {
+    $their_phys_prot = 0;
+    $their_mag_prot = 0;
+} # minions
 
 my $their_health = $protection_stats{ "health" }->{ $opts{"enemy"} };
 
@@ -1284,7 +1298,103 @@ if (defined $items{"transcendence"}) {
     $gold += 2600;
 }
 
+#################################################################################
+# enemy items (defensive)
+#################################################################################
 
+if (defined $enemy_items{ "bov" }) {
+    $their_phys_prot += 75;
+}
+
+if (defined $enemy_items{ "bulwark" }) {
+    $their_health += 200;
+    $their_mag_prot += 60;
+}
+
+if (defined $enemy_items{ "urchin" }) {
+    $their_health += 250;
+    $their_mag_prot += 65;
+    $their_phys_prot += 65;
+}
+
+if (defined $enemy_items{ "mantle_of_discord" }) {
+    $their_phys_prot += 60;
+    $their_mag_prot += 60;
+}
+
+if (defined $enemy_items{ "spirit_robe" }) {
+    $their_phys_prot += 60;
+    $their_mag_prot += 60;
+}
+
+if (defined $enemy_items{ "magis" }) {
+    $their_health += 350;
+    $their_mag_prot += 15;
+    $their_phys_prot += 15;
+}
+
+if (defined $enemy_items{ "mystical_mail" }) {
+    $their_health += 350;
+    $their_phys_prot += 30;
+}
+
+if (defined $enemy_items{ "sov" }) {
+    $their_health += 200;
+    $their_phys_prot += 50;
+}
+
+if (defined $enemy_items{ "midgardian" }) {
+    $their_health += 350;
+    $their_phys_prot += 30;
+}
+
+if (defined $enemy_items{ "nemean" }) {
+    $their_phys_prot += 90;
+    # TODO handle nemean damage return
+}
+
+if (defined $enemy_items{ "spectral_armor" }) {
+    $their_phys_prot += 80;
+    $lifesteal *= 0.5;
+}
+
+if (defined $enemy_items{ "frostbound" }) {
+    $their_health += 300;
+}
+
+if (defined $enemy_items{ "winged_blade" }) {
+    $their_health += 300;
+}
+
+if (defined $enemy_items{ "witchblade" }) {
+    $their_phys_prot += 45;
+    # TODO handle aura
+}
+
+if (defined $enemy_items{ "runic_shield" }) {
+    $their_mag_prot += 50;
+    # TODO handle aura
+}
+
+if (defined $enemy_items{ "mail_of_renewal" }) {
+    $their_health += 350;
+}
+
+if (defined $enemy_items{ "gaia" }) {
+    $their_health += 350;
+}
+
+if (defined $enemy_items{ "thebes" }) {
+    $their_health += 350;
+}
+
+if (defined $enemy_items{ "oni" }) {
+    $their_mag_prot += 60;
+}
+
+if (defined $enemy_items{ "genji" }) {
+    $their_mag_prot += 80;
+}
 
 #################################################################################
 # calculate stats
@@ -1324,6 +1434,9 @@ if ( $base_stats{ "type" }->{ $opts{ "god" } } eq "magical" ) {
 if ( $base_crit_chance == 0 and $opts{ "god" } ne "artemis" ) {
     $max_iterations = 1; # no crit, no rng
 }
+if ( defined $opts{ "iterations" } ) {
+    $max_iterations = $opts{"iterations"};
+}
 
 #################################################################################
 # buffs and stacks
@@ -1353,6 +1466,8 @@ my %buffs = (
         "pulse" => 1,
         "astral_strike" => 1,
         "stone_cutting_sword" => 3, # both a buff and a debuff
+        "oni" => 3, # buff for enemy
+        "spectral_armor" => 1, # buff for enemy
     },
     "current" => {
         "rage" => 0,
@@ -1377,8 +1492,15 @@ my %buffs = (
         "pulse" => 0,
         "astral_strike" => 0,
         "stone_cutting_sword" => 0, # both a buff and a debuff
+        "oni" => 3, # buff for enemy, assume this starts fully stacked
+        "spectral_armor" => 0, # buff for enemy
     },
-    "time" => { # end time for buffs, cooldown time for hydras / polynomicon
+    cooldown => {
+        "spectral_armor" => 0,
+        "polynomicon" => 0,
+        "hydras_lament" => 0,
+    },
+    "time" => { # end time for buffs
         "rage" => 0,
         "executioner" => 0, # really a debuff on the target
         "demonic_grip" => 0, # really a debuff on the target
@@ -1401,6 +1523,8 @@ my %buffs = (
         "pulse" => 0,
         "astral_strike" => 0,
         "stone_cutting_sword" => 0, # both a buff and a debuff
+        "oni" => 0, # buff for enemy
+        "spectral_armor" => 0, # buff for enemy
     },
     "duration" => {
         "rage" => 0,
@@ -1425,6 +1549,8 @@ my %buffs = (
         "pulse" => 5000,
         "astral_strike" => 0,
         "stone_cutting_sword" => 3000, # both a buff and a debuff
+        "oni" => 0, # buff for enemy
+        "spectral_armor" => 5000, # buff for enemy
     },
 );
 
@@ -1466,6 +1592,14 @@ sub add_stack($) {
     }
 }
 
+
+sub rm_stack($) {
+    my $buff = shift;
+    $buffs{ "current" }->{ $buff } -= 1;
+    if ( $buffs{ "current" }->{ $buff } < 0 ) {
+        $buffs{ "current" }->{ $buff } = 0;
+    }
+}
 
 sub reset_buff_time($) {
     my $buff = shift;
@@ -1588,7 +1722,35 @@ sub calc_mitigated_damage( $ $ $ $ ) {
     my $print = shift;
     my $num_targets = shift;
 
-    my $their_eff_prot = $their_protection;
+    my $their_base_prot;
+    if ( $base_stats{ "type" }->{ $opts{"god"} } eq "physical" ) {
+        # TODO it is possible for physical gods to do magical damage, e.g. with runeforged or nemean
+        # and vice versa, e.g., nu wa minions
+        $their_base_prot = $their_phys_prot;
+
+        if ($buffs{ "current" }->{ "spectral_armor" } == 1) {
+            $their_base_prot += 20;
+        }
+
+        if ( $lifesteal > 0 and defined $enemy_items{"spectral_armor"}
+            and $buffs{ "cooldown" }->{ "spectral_armor" } <= $time) {
+            # spectral is available 
+            if( rand() < 0.3 ) {
+                # spectral proc
+                add_stack("spectral_armor");
+                reset_buff_time("spectral_armor");
+                $buffs{ "current" }->{ "spectral_armor" } = 1;
+                $buffs{ "cooldown" }->{ "spectral_armor" } = $time + 30000;
+            }
+        }
+    } else {
+        $their_base_prot = $their_mag_prot;
+        if (defined $enemy_items{ "oni" }) {
+            $their_base_prot += 15 * $buffs{ "current" }->{ "oni" };
+            rm_stack("oni");
+        }
+    }
+    my $their_eff_prot = $their_base_prot;
     $their_eff_prot *= (1 - $percent_reduction);
     $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "demonic_grip" });
     $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "executioner" });
@@ -1604,9 +1766,9 @@ sub calc_mitigated_damage( $ $ $ $ ) {
     #$damage -= $their_flat_reduction;
     $damage *= (1 - $their_percent_reduction);
     
-    if ( $opts{ "verbosity" } >= $VERBOSITY_EXTRA ) {
+    if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL and $print) {
         my $output = sprintf "time %6d %16s prot %4d -> %4d damage %4d -> %4d ",
-                $time, $damage_source, $their_protection, $their_eff_prot, $pre_prot_damage, $damage;
+                $time, $damage_source, $their_base_prot, $their_eff_prot, $pre_prot_damage, $damage;
         if ( $opts{"action"} eq "clear" ) {
             $output .= sprintf " * %d -> %d ", $num_targets, ($num_targets * $damage);
         }
@@ -1622,8 +1784,11 @@ sub calc_mitigated_damage( $ $ $ $ ) {
         if ( defined $items{ "stone_cutting_sword" } or defined $items{ "scs" } ) {
             $output .= sprintf " %d SCS stacks ", $buffs{ "current" }->{ "stone_cutting_sword" };
         }
+        if ( defined $enemy_items{ "oni" }) {
+            $output .= sprintf " %d oni stacks ", $buffs{ "current" }->{ "oni" };
+        }
         $output .= "\n";
-        push $output, @one_pass_verbosity;
+        push @one_pass_verbosity, $output;
         if ( $opts{ "verbosity" } >= $VERBOSITY_EPIC ) {
             print $output;
         }
@@ -1664,12 +1829,11 @@ sub get_next_skill() {
 #################################################################################
 
 
-print "effective power " . get_eff_power() . "\n";
-print "base attack damage " . get_basic_attack_damage() . "\n";
-print "base attack rate $attack_rate\n";
 
 
 while ( $iteration < $max_iterations ) {
+
+    @one_pass_verbosity = ();
 
     while ( $time < $opts{"time"} ) {
 
@@ -1764,10 +1928,10 @@ while ( $iteration < $max_iterations ) {
                     add_stack( "serqet_poisons" );
                 }
 
-                if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
+                if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
                     $buffs{ "current" }->{ "polynomicon" } = 1;
                 }
-                if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
+                if (defined $items{"hydras"} and $buffs{ "cooldown" }->{ "hydras_lament" } <= $time) {
                     $buffs{ "current" }->{ "hydras_lament" } = 1;
                 }
 
@@ -1806,7 +1970,7 @@ while ( $iteration < $max_iterations ) {
                 $damage += $ticks{ $time }->[0];
                 if ( $opts{ "verbosity" } >= $VERBOSITY_EXTRA ) {
                     my $output = sprintf "time %d %s damage %d\n", $time, $ticks{ $time }->[1], $ticks{ $time }->[0];
-                    push $output, @one_pass_verbosity;
+                    push @one_pass_verbosity, $output;
                     if ( $opts{ "verbosity" } >= $VERBOSITY_EPIC ) {
                         print $output;
                     }
@@ -1843,7 +2007,7 @@ while ( $iteration < $max_iterations ) {
                 reset_buff_time( "irradiate" );
                 add_stack( "irradiate" );
             }
-            if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
+            if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
                 $buffs{ "current" }->{ "polynomicon" } = 1;
             }
         }
@@ -1851,7 +2015,7 @@ while ( $iteration < $max_iterations ) {
         if ($opts{ "god" } eq "sol" and $time >= $ability_stats{ "time" }->{ "radiance" }) {
             $heat += $radiance_heat_amount[
                    $ability_stats{ "level" }->{ "radiance" }->[ $opts{ "level" } ] ];
-            if (defined $items{"polynomicon"} and $buffs{ "time" }->{ "polynomicon" } <= $time) {
+            if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
                 $buffs{ "current" }->{ "polynomicon" } = 1;
             }
             $ability_stats{ "time" }->{ "radiance" } =
@@ -1941,7 +2105,7 @@ while ( $iteration < $max_iterations ) {
                 $messages_to_print{ "overcapping viper attack rate" } = 1;
                 $viper_attack_rate = 2.5;
             }
-            if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
+            if (defined $items{"hydras"} and $buffs{ "cooldown" }->{ "hydras_lament" } <= $time) {
                 $buffs{ "current" }->{ "hydras_lament" }= 1;
             }
 
@@ -1962,7 +2126,7 @@ while ( $iteration < $max_iterations ) {
             $next_attack_chain = 0;
             $next_attack = $time + 250; # don't know actual AA cancel durations
 
-            if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
+            if (defined $items{"hydras"} and $buffs{ "cooldown" }->{ "hydras_lament" } <= $time) {
                 $buffs{ "current" }->{ "hydras_lament" }= 1;
             }
 
@@ -2266,7 +2430,6 @@ while ( $iteration < $max_iterations ) {
     #################################################################################
     # get ready for next iteration
     #################################################################################
-    @one_pass_verbosity = ();
     foreach my $ability ( keys $ability_stats{ "time" } )
     {
         # reset all cooldowns
@@ -2305,8 +2468,15 @@ foreach my $line ( @one_pass_verbosity ){
 
 printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$opts{"time"}/1000));
 if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
+    print "effective power " . get_eff_power() . "\n";
+    print "base attack damage " . get_basic_attack_damage() . "\n";
+    print "base attack rate $attack_rate\n";
     printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
     printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($damage - $attack_damage)/$max_iterations);
+    if ( defined $enemy_items{"nemean"} ) {
+        # assume 30 + 0.9 * 20 = 48 magical protections TODO this could be more accurate
+        printf "Damage return from Nemean %.2f\n", ($attack_damage/$max_iterations) * 0.2 / 1.48;
+    }
     if ( defined $items{ "polynomicon" } ) {
         print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
     }
