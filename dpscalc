@@ -3,11 +3,6 @@
 
 # Wish list
 #
-# divide magical and physical protection
-#
-# add verbosity levels
-#
-# add audacity for apollo
 # add hou yi
 # add poison darts for xbal
 # add kali
@@ -1687,7 +1682,7 @@ sub add_bluestone( $ ) {
 
             my $tick_time = $time + ($tick + 1) * 1000;
             while ( defined $ticks{ $tick_time } ) { $tick_time++; }
-            $ticks{ $tick_time } = +[ 15, "bluestone tick", 0, $aoe ];
+            $ticks{ $tick_time } = +[ 15, "bluestone tick", "physical", $aoe ];
 
             $tick++;
         }
@@ -1715,15 +1710,16 @@ sub get_basic_attack_damage() {
     }
 }
 
-sub calc_mitigated_damage( $ $ $ $ ) {
+sub calc_mitigated_damage( $ $ $ $ $ ) {
 
     my $pre_prot_damage = shift;
     my $damage_source = shift;
     my $print = shift;
     my $num_targets = shift;
+    my $damage_type = shift;
 
-    my $their_base_prot;
-    if ( $base_stats{ "type" }->{ $opts{"god"} } eq "physical" ) {
+    my $their_base_prot = 0;
+    if ( $damage_type eq "physical" ) {
         # TODO it is possible for physical gods to do magical damage, e.g. with runeforged or nemean
         # and vice versa, e.g., nu wa minions
         $their_base_prot = $their_phys_prot;
@@ -1743,13 +1739,15 @@ sub calc_mitigated_damage( $ $ $ $ ) {
                 $buffs{ "cooldown" }->{ "spectral_armor" } = $time + 30000;
             }
         }
-    } else {
+    } elsif ($damage_type eq "magical") {
         $their_base_prot = $their_mag_prot;
         if (defined $enemy_items{ "oni" }) {
             $their_base_prot += 15 * $buffs{ "current" }->{ "oni" };
             rm_stack("oni");
         }
     }
+    # else damage type is true
+
     my $their_eff_prot = $their_base_prot;
     $their_eff_prot *= (1 - $percent_reduction);
     $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "demonic_grip" });
@@ -1767,8 +1765,9 @@ sub calc_mitigated_damage( $ $ $ $ ) {
     $damage *= (1 - $their_percent_reduction);
     
     if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL and $print) {
-        my $output = sprintf "time %6d %16s prot %4d -> %4d damage %4d -> %4d ",
-                $time, $damage_source, $their_base_prot, $their_eff_prot, $pre_prot_damage, $damage;
+        my $output = sprintf "time %6d %16s %8s prot %4d -> %4d damage %4d -> %4d ",
+                $time, $damage_source, $damage_type, $their_base_prot,
+                $their_eff_prot, $pre_prot_damage, $damage;
         if ( $opts{"action"} eq "clear" ) {
             $output .= sprintf " * %d -> %d ", $num_targets, ($num_targets * $damage);
         }
@@ -1869,9 +1868,11 @@ while ( $iteration < $max_iterations ) {
                         }
                         if ( $opts{"action"} eq "clear" ) {
                             $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
-                                    $ability_stats{ "aoe" }->{ $next_skill } );
+                                    $ability_stats{ "aoe" }->{ $next_skill },
+                                    $base_stats{ "type" }->{ $opts{"god"} } );
                         } else {
-                            $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1, 1 );
+                            $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1, 1,
+                                    $base_stats{ "type" }->{ $opts{"god"} });
                         }
                         if(defined $items{"spear"}) {
                             reset_buff_time("spear");
@@ -1905,13 +1906,15 @@ while ( $iteration < $max_iterations ) {
                             # not true damage
                             if ( $opts{"action"} eq "clear" and defined $ability_stats{ "aoe" }->{ $next_skill}) {
                                 # if clearing, use aoe coefficient
-                                $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 0,
+                                $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick",
+                                        $base_stats{ "type" }->{ $opts{"god"} },
                                         $ability_stats{ "aoe" }->{ $next_skill} ];
                             } else {
-                                $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 0, 1 ];
+                                $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 
+                                        $base_stats{ "type" }->{ $opts{"god"} }, 1 ];
                             }
                         } else {
-                            $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 1, 1 ];
+                            $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", "true", 1 ];
                         }
 
                         $i++;
@@ -1952,28 +1955,16 @@ while ( $iteration < $max_iterations ) {
         #################################################################################
         if ( defined $ticks{ $time } ) {
 
-            if ( $ticks{ $time }->[ 2 ] == 0 ) {
-                # not true damage
-                $damage += calc_mitigated_damage(
-                        $ticks{ $time }->[0], $ticks{ $time }->[1], 1, $ticks{ $time }->[3] );
+            $damage += calc_mitigated_damage(
+                    $ticks{ $time }->[0], $ticks{ $time }->[1], 1, $ticks{ $time }->[3],
+                    $ticks{ $time }->[2] );
 
-                if ( $ticks{ $time }->[1] eq "bluestone" ) {
-                    if ( not $ticks{ $time + 1000 }->[1] eq "bluestone" ) {
-                        # TODO this is not guaranteed successful, there COULD be a tick of something
-                        # already scheduled at that time, and the second bluestone would go 1ms later
-                        # this is the second tick
-                        $bluestone_stacks--;
-                    }
-                }
-            } else {
-                # true damage; here for last breath
-                $damage += $ticks{ $time }->[0];
-                if ( $opts{ "verbosity" } >= $VERBOSITY_EXTRA ) {
-                    my $output = sprintf "time %d %s damage %d\n", $time, $ticks{ $time }->[1], $ticks{ $time }->[0];
-                    push @one_pass_verbosity, $output;
-                    if ( $opts{ "verbosity" } >= $VERBOSITY_EPIC ) {
-                        print $output;
-                    }
+            if ( $ticks{ $time }->[1] eq "bluestone" ) {
+                if ( not $ticks{ $time + 1000 }->[1] eq "bluestone" ) {
+                    # TODO this is not guaranteed successful, there COULD be a tick of something
+                    # already scheduled at that time, and the second bluestone would go 1ms later
+                    # this is the second tick
+                    $bluestone_stacks--;
                 }
             }
             
@@ -2071,9 +2062,11 @@ while ( $iteration < $max_iterations ) {
                 if( $pre_prot_damage > 0 ) { 
                     if ( $opts{"action"} eq "clear" ) {
                         $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
-                                $ability_stats{ "aoe" }->{ "brutalize" } );
+                                $ability_stats{ "aoe" }->{ "brutalize" },
+                                $base_stats{ "type" }->{ $opts{"god"} } );
                     } else {
-                        $damage += calc_mitigated_damage( $pre_prot_damage, "brutalize", 1, 1 );
+                        $damage += calc_mitigated_damage( $pre_prot_damage, "brutalize", 1, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} } );
                     }
                     if(defined $items{"bluestone"}) {
                         # schedule ticks
@@ -2120,7 +2113,8 @@ while ( $iteration < $max_iterations ) {
                     $ability_stats{ "level" }->{ "feather_step" }->[ $opts{ "level" } ] ]
                     + ($ability_stats{ "scaling" }->{ "feather_step" } * get_eff_power());
 
-            $damage += calc_mitigated_damage($pre_prot_damage, "feather step", 1, 1);
+            $damage += calc_mitigated_damage($pre_prot_damage, "feather step", 1, 1,
+                    $base_stats{ "type" }->{ $opts{"god"} });
 
             # reset attack chain
             $next_attack_chain = 0;
@@ -2259,17 +2253,21 @@ while ( $iteration < $max_iterations ) {
             }
 
             if ($buffs{ "current" }->{ "polynomicon" }) {
-                $damage += calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 1, 1 );
+                $damage += calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 1, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} } );
                 $polynomicon_procs++;
-                $polynomicon_damage = int(calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 0, 1 ));
+                $polynomicon_damage = int(calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 0, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} } ));
                 $buffs{ "current" }->{ "polynomicon" } = 0;
                 reset_buff_time("polynomicon");
             }
 
             if (defined $items{"telkhines_ring"} or defined $items{ "telkhines" }) {
                 #$pre_prot_damage += 35;
-                $damage += calc_mitigated_damage( 35, "telkhines", 1, 1 );
-                $telkhines_damage += calc_mitigated_damage( 35, "telkhines", 0, 1 );
+                $damage += calc_mitigated_damage( 35, "telkhines", 1, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} } );
+                $telkhines_damage += calc_mitigated_damage( 35, "telkhines", 0, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} } );
             }
 
             if (defined $items{ "qins" }) {
@@ -2280,7 +2278,8 @@ while ( $iteration < $max_iterations ) {
                 if ($obow_hits == 3) {
                     $obow_hits = 0;
                     my $obow_damage = 0.5 * get_eff_power() + 30;
-                    $damage += calc_mitigated_damage( $obow_damage, "obow", 1, 5 );
+                    $damage += calc_mitigated_damage( $obow_damage, "obow", 1, 5,
+                            $base_stats{ "type" }->{ $opts{"god"} } );
                 }
                 else
                 {
@@ -2292,7 +2291,8 @@ while ( $iteration < $max_iterations ) {
                 if ($obow_hits == 3) {
                     $obow_hits = 0;
                     my $obow_damage = 20;
-                    $damage += calc_mitigated_damage( $obow_damage, "charged_bow", 1, 5 );
+                    $damage += calc_mitigated_damage( $obow_damage, "charged_bow", 1, 5,
+                            $base_stats{ "type" }->{ $opts{"god"} } );
                 }
                 else
                 {
@@ -2302,22 +2302,34 @@ while ( $iteration < $max_iterations ) {
 
             # all damage calcs done, execute the attack
             if ( $opts{"action"} eq "clear" and defined $items{ "golden_bow" } ) {
-                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
-                $damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 1, 2);
-                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
-                $attack_damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 0, 2);
+                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} });
+                $damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 1, 2,
+                        $base_stats{ "type" }->{ $opts{"god"} });
+                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} });
+                $attack_damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 0, 2,
+                        $base_stats{ "type" }->{ $opts{"god"} });
             } elsif ( $opts{"action"} eq "clear" and defined $items{ "throwing_dagger" } ) {
-                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
-                $damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 1, 2);
-                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
-                $attack_damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 0, 2);
+                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} });
+                $damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 1, 2,
+                        $base_stats{ "type" }->{ $opts{"god"} });
+                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} });
+                $attack_damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 0, 2,
+                        $base_stats{ "type" }->{ $opts{"god"} });
             } elsif ( $opts{"action"} eq "clear" and
                     $buffs{ "current" }->{ "pulse" } and not $buffs{ "current" }->{ "irradiate" }) {
-                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 3);
-                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 3);
+                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 3,
+                        $base_stats{ "type" }->{ $opts{"god"} });
+                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 3,
+                        $base_stats{ "type" }->{ $opts{"god"} });
             } else {
-                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1);
-                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1);
+                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} });
+                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} });
             }
 
             # get ready for next attack
@@ -2409,8 +2421,10 @@ while ( $iteration < $max_iterations ) {
             $total_malice_procs++;
             my $pre_prot_damage = 0.25 * get_basic_attack_damage();
 
-            $damage += calc_mitigated_damage($pre_prot_damage, "malice", 1, 1);
-            $malice_damage += calc_mitigated_damage($pre_prot_damage, "malice", 0, 1);
+            $damage += calc_mitigated_damage($pre_prot_damage, "malice", 1, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} });
+            $malice_damage += calc_mitigated_damage($pre_prot_damage, "malice", 0, 1,
+                        $base_stats{ "type" }->{ $opts{"god"} });
 
             $malice_procs_left -= 1;
             $next_malice_proc += 1000;
@@ -2473,10 +2487,6 @@ if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
     print "base attack rate $attack_rate\n";
     printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
     printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($damage - $attack_damage)/$max_iterations);
-    if ( defined $enemy_items{"nemean"} ) {
-        # assume 30 + 0.9 * 20 = 48 magical protections TODO this could be more accurate
-        printf "Damage return from Nemean %.2f\n", ($attack_damage/$max_iterations) * 0.2 / 1.48;
-    }
     if ( defined $items{ "polynomicon" } ) {
         print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
     }
@@ -2493,6 +2503,11 @@ if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
         printf  "Total Malice procs %d Malice procs/crit %.2f Malice damage %.2f Malice bonus damage per crit %.2f\n", $total_malice_procs/$max_iterations, ($total_malice_procs/$crits), $malice_damage/$max_iterations, ($malice_damage)/($crits);
     }
     printf "Total lifesteal %.2f\n", ($damage * $lifesteal)/$max_iterations;
+    if ( defined $enemy_items{"nemean"} ) {
+        # assume no magical prot on self TODO this could be more accurate
+        printf "Damage return from Nemean %.2f\n", ($attack_damage/$max_iterations) * 0.2 * ( 100 / (100 + 30 + 0.9 * $opts{"level"}));
+        printf "Net lifesteal - Nemean damage %.2f\n",  (($damage * $lifesteal)/$max_iterations ) - ( ($attack_damage/$max_iterations) * 0.2 * ( 100 / (100 + 30 + 0.9 * $opts{"level"})));
+    }
     printf "Total gold %d damage/gold %.2f\n", $gold, ($damage/$max_iterations) / $gold;
 }
 
