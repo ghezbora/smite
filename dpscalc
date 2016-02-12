@@ -1304,12 +1304,14 @@ if (defined $items{"golden_bow"}) {
 }
 
 # odysseus bow
-if (defined $items{"obow"}) {
+if (defined $items{"obow"} or defined $items{"odysseus_bow"}) {
     $attack_rate += 0.4 * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
+    $gold += 2450;
 }
 
 if (defined $items{"charged_bow"}) {
     $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
+    $gold += 1200;
 }
 
 # rage
@@ -2288,6 +2290,11 @@ while ( $iteration < $max_iterations ) {
                 $total_crit_chance += 0.1 * $buffs{ "current" }->{ "rage" };
             }
 
+            # item buffs mostly do not crit (e.g., telkhines, obow) but this does
+            if (defined $items{ "qins" } and $opts{"action"} ne "tower") {
+                $pre_prot_damage += 0.04 * $their_max_health;
+            }
+
             my $rng = rand();
             if ( $opts{ "action" } ne "tower" ) {
                 if ( $rng < $total_crit_chance ) {
@@ -2348,7 +2355,7 @@ while ( $iteration < $max_iterations ) {
                     # viper shot 3 ticks at 0.5 seconds
                     my $tick_time = $time + ($i + 1) * 0.5 * 1000;
                     while ( defined $ticks{ $tick_time } ) { $tick_time++; }
-                    $ticks{ $tick_time } = +[ $pre_prot_damage, "viper shot tick", 0,
+                    $ticks{ $tick_time } = +[ $pre_prot_damage, "viper shot tick", "physical",
                             $ability_stats{ "aoe" }->{ "viper_shot" } ];
 
                     $i++;
@@ -2385,11 +2392,7 @@ while ( $iteration < $max_iterations ) {
                         $base_stats{ "type" }->{ $opts{"god"} } );
             }
 
-            if (defined $items{ "qins" } and $opts{"action"} ne "tower") {
-                $pre_prot_damage += 0.04 * $their_max_health;
-            }
-
-            if ($opts{"action"} eq "clear" and defined $items{"obow"}) {
+            if ($opts{"action"} eq "clear" and (defined $items{"obow"} or defined $items{"odysseus_bow"})) {
                 if ($obow_hits == 3) {
                     $obow_hits = 0;
                     my $obow_damage = 0.5 * get_eff_power() + 30;
@@ -2512,8 +2515,8 @@ while ( $iteration < $max_iterations ) {
             if ($viper_shots_left > 0) {
                 $eff_attack_rate = $attack_rate +
                         $base_stats{ "attack_rate" }->{ $opts{ "god" } } * 
-                        $ability_stats{ "attack_speed_buff" }->{ "vengeful_assault" }->[
-                        $ability_stats{ "level" }->{ "vengeful_assault" }->[ $opts{ "level" } ] ];
+                        $ability_stats{ "attack_speed_buff" }->{ "viper_shot" }->[
+                        $ability_stats{ "level" }->{ "viper_shot" }->[ $opts{ "level" } ] ];
             }
 
             if ( $eff_attack_rate > 2.5 ) { $eff_attack_rate = 2.5; }
@@ -2585,6 +2588,7 @@ while ( $iteration < $max_iterations ) {
     $malice_procs_left = 0;
     $next_malice_proc = 0;
     $viper_shots_left = 0;
+    $obow_hits = 0;
 
     $iteration++;
 
