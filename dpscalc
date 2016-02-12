@@ -3,6 +3,8 @@
 
 # Wish list
 #
+# add tower damage
+#
 # add hou yi
 # add poison darts for xbal
 # add kali
@@ -118,6 +120,11 @@ my %ability_stats = (
         "sentinel" => 15,
         "im_a_monster" => 90,
 
+        "ricochet" => 10,
+        "mark_of_golden_crow" => 18,
+        "divebomb" => 15,
+        "sunbreaker" => 90,
+
         "whirlwind" => 15, # TODO scales
         "zephyr" => 7,
         "slipstream" => 15,
@@ -183,6 +190,11 @@ my %ability_stats = (
         "feather_step" => 0,
         "gravity_surge" => 0,
 
+        "ricochet" => 0,
+        "mark_of_golden_crow" => 0,
+        "divebomb" => 0,
+        "sunbreaker" => 0,
+
         "whirlwind" => 0,
         "zephyr" => 0,
         "slipstream" => 0,
@@ -239,6 +251,10 @@ my %ability_stats = (
         "sic_em" => [ 0, 60, 110, 160, 210, 260 ],
         "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
         "im_a_monster" => [ 0, 400, 500, 600, 700, 800 ],
+
+        "ricochet" => [ 0, 70, 110, 150, 190, 230 ],
+        "mark_of_golden_crow" => [ 0, 0, 0, 0, 0, 0 ],
+        "sunbreaker" => [ 0, 0, 0, 0, 0, 0 ],
 
         "whirlwind" => [ 0, 0, 0, 0, 0, 0 ],
         "zephyr" => [ 0, 60, 105, 150, 195, 240 ],
@@ -298,6 +314,10 @@ my %ability_stats = (
         "sentinel" => 0,
         "im_a_monster" => 0,
 
+        "ricochet" => 6,
+        "mark_of_golden_crow" => 0,
+        "sunbreaker" => 0,
+
         "moonlight_charge" => 6,
         "feather_step" => 3,
         "gravity_surge" => 0,
@@ -352,6 +372,10 @@ my %ability_stats = (
         "sentinel" => 0,
         "im_a_monster" => 1,
 
+        "ricochet" => 1,
+        "mark_of_golden_crow" => 0,
+        "sunbreaker" => 0,
+
         "moonlight_charge" => 1,
         "feather_step" => 1,
         "gravity_surge" => 1,
@@ -404,6 +428,8 @@ my %ability_stats = (
     "tick_damage" => {
         "viper_shot" => [ 0, 10, 15, 20, 25, 30 ],
 
+        "sunbreaker" => [ 0, 80, 90, 100, 110, 120 ],
+
         "whirlwind" => [ 0, 10, 20, 30, 40, 50 ],
 
         "shadow_lock" => [ 0, 30, 40, 50, 60, 70 ],
@@ -421,6 +447,11 @@ my %ability_stats = (
         "sic_em" => 0.6,
         "sentinel" => 0,
         "im_a_monster" => 1.2,
+
+        "ricochet" => 0.6,
+        "mark_of_golden_crow" => 0,
+        "divebomb" => 0,
+        "sunbreaker" => 0,
 
         "moonlight_charge" => 0.6,
         "feather_step" => 1,
@@ -474,6 +505,8 @@ my %ability_stats = (
     "tick_scaling" => {
         "viper_shot" => 0.1,
 
+        "sunbreaker" => 0.25,
+
         "whirlwind" => 0.15,
 
         "shadow_lock" => 0.2,
@@ -489,6 +522,8 @@ my %ability_stats = (
     "tick_duration" => {
         "shadow_lock" => .5,
         "night_terror" => 1,
+        
+        "sunbreaker" => 0.5,
 
         "whirlwind" => 0.5,
 
@@ -504,6 +539,8 @@ my %ability_stats = (
         "sic_em" => 0,
         "sentinel" => 0,
         "im_a_monster" => 0,
+
+        "sunbreaker" => 9,
 
         "moonlight_charge" => 0,
         "feather_step" => 0,
@@ -560,6 +597,11 @@ my %ability_stats = (
         "sic_em" => 0.5,
         "sentinel" => 0.5,
         "im_a_monster" => 1,
+
+        "ricochet" => 0.5,
+        "mark_of_golden_crow" => 0.5,
+        "divebomb" => 0.5,
+        "sunbreaker" => 0.5,
 
         "moonlight_charge" => 0.5,
         "feather_step" => 0.5,
@@ -632,6 +674,11 @@ my %ability_stats = (
         "sentinel" =>               [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
         "im_a_monster" =>           [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
+        "ricochet" =>               [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "mark_of_golden_crow" =>    [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "divebomb" =>               [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "sunbreaker" =>             [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
+
         "whirlwind" =>              [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "zephyr" =>                 [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "slipstream" =>             [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
@@ -702,6 +749,7 @@ my %combos = (
     "medusa" => [ ],
     "xbal" => [ ],
     "rama" => [ ],
+    "hou_yi" => [ ],
     "serqet" => [ "cobras_kiss", "deathbane", "last_breath" ],
     "thor" => [ "anvil_of_dawn", "mjolnirs_attunement", "tectonic_rift", "spin_to_win" ],
     "fenrir" => [ "unchained", "ragnarok" ],
@@ -717,6 +765,7 @@ my %combos = (
 my %clear_skills = (
     "sol" => [ "stellar_burst" ],
     "freya" => [ ],
+    "hou_yi" => [ "ricochet" ],
     "medusa" => [ "acid_spray" ],
     "artemis" => [ "suppress_the_insolent" ],
     "kukulkan" => [ "whirlwind" ],
@@ -751,6 +800,7 @@ my %base_stats = (
         "neith" => "physical",
         "mercury" => "physical",
         "chiron" => "physical",
+        "hou_yi" => "physical",
     },
     "mvmt_speed" => {
         "mercury" => 375,
@@ -776,6 +826,7 @@ my %base_stats = (
         "neith" => 0.95,
         "mercury" => 1,
         "chiron" => 1,
+        "hou_yi" => 0.9,
     },
     "attack_rate_level_scaling" => {
         "freya" => 0.0195,
@@ -798,6 +849,7 @@ my %base_stats = (
         "neith" => 0.016,
         "mercury" => 0.024,
         "chiron" => .011,
+        "hou_yi" => 0.012,
     },
     "auto_damage" => {
         "freya" => 35,
@@ -820,6 +872,7 @@ my %base_stats = (
         "neith" => 35,
         "mercury" => 38,
         "chiron" => 35,
+        "hou_yi" => 38,
     },
     "auto_level_scaling" => {
         "freya" => 1.5,
@@ -842,6 +895,7 @@ my %base_stats = (
         "neith" => 2.3,
         "mercury" => 2.13,
         "chiron" => 2.35,
+        "hou_yi" => 2.8,
     },
     "mana" => {
         "freya" => 220,
@@ -864,6 +918,7 @@ my %base_stats = (
         "neith" => 230,
         "mercury" => 200,
         "chiron" => 225,
+        "hou_yi" => 240,
     },
     "mana_level_scaling" => {
         "freya" => 37,
@@ -886,6 +941,7 @@ my %base_stats = (
         "neith" => 39,
         "mercury" => 40,
         "chiron" => 40,
+        "hou_yi" => 38,
     },
     "attack_chain_progression" => {
         "freya" => [ 1 ],
@@ -908,6 +964,7 @@ my %base_stats = (
         "neith" => [ 1 ],
         "mercury" => [ 1, 0.75, 1.25 ],
         "chiron" => [ 1 ],
+        "hou_yi" => [ 1 ],
     },
 );
 
@@ -928,6 +985,7 @@ my $mana = $base_stats{ "mana" }->{ $opts{ "god" } }
 my $base_crit_chance = 0;
 my $crits = 0;
 my $damage = 0;
+my $total_damage = 0;
 my $attack_damage = 0;
 my $malice_damage = 0;
 my $time = 0;
@@ -945,12 +1003,8 @@ my $item_mvmt_speed = 0;
 
 my $their_phys_prot = $protection_stats{ "physical_protection" }->{ $opts{"enemy"} };
 my $their_mag_prot = $protection_stats{ "magical_protection" }->{ $opts{"enemy"} };
-if ( $opts{"action"} eq "clear" ) {
-    $their_phys_prot = 0;
-    $their_mag_prot = 0;
-} # minions
 
-my $their_health = $protection_stats{ "health" }->{ $opts{"enemy"} };
+my $their_max_health = $protection_stats{ "health" }->{ $opts{"enemy"} };
 
 my $their_percent_reduction = 0;
 if ( $opts{"action"} eq "clear" ) {
@@ -1302,12 +1356,12 @@ if (defined $enemy_items{ "bov" }) {
 }
 
 if (defined $enemy_items{ "bulwark" }) {
-    $their_health += 200;
+    $their_max_health += 200;
     $their_mag_prot += 60;
 }
 
 if (defined $enemy_items{ "urchin" }) {
-    $their_health += 250;
+    $their_max_health += 250;
     $their_mag_prot += 65;
     $their_phys_prot += 65;
 }
@@ -1323,23 +1377,23 @@ if (defined $enemy_items{ "spirit_robe" }) {
 }
 
 if (defined $enemy_items{ "magis" }) {
-    $their_health += 350;
+    $their_max_health += 350;
     $their_mag_prot += 15;
     $their_phys_prot += 15;
 }
 
 if (defined $enemy_items{ "mystical_mail" }) {
-    $their_health += 350;
+    $their_max_health += 350;
     $their_phys_prot += 30;
 }
 
 if (defined $enemy_items{ "sov" }) {
-    $their_health += 200;
+    $their_max_health += 200;
     $their_phys_prot += 50;
 }
 
 if (defined $enemy_items{ "midgardian" }) {
-    $their_health += 350;
+    $their_max_health += 350;
     $their_phys_prot += 30;
 }
 
@@ -1354,11 +1408,11 @@ if (defined $enemy_items{ "spectral_armor" }) {
 }
 
 if (defined $enemy_items{ "frostbound" }) {
-    $their_health += 300;
+    $their_max_health += 300;
 }
 
 if (defined $enemy_items{ "winged_blade" }) {
-    $their_health += 300;
+    $their_max_health += 300;
 }
 
 if (defined $enemy_items{ "witchblade" }) {
@@ -1372,15 +1426,15 @@ if (defined $enemy_items{ "runic_shield" }) {
 }
 
 if (defined $enemy_items{ "mail_of_renewal" }) {
-    $their_health += 350;
+    $their_max_health += 350;
 }
 
 if (defined $enemy_items{ "gaia" }) {
-    $their_health += 350;
+    $their_max_health += 350;
 }
 
 if (defined $enemy_items{ "thebes" }) {
-    $their_health += 350;
+    $their_max_health += 350;
 }
 
 if (defined $enemy_items{ "oni" }) {
@@ -1395,6 +1449,12 @@ if (defined $enemy_items{ "genji" }) {
 # calculate stats
 #################################################################################
 
+if ( $opts{"action"} eq "clear" ) {
+    # minions
+    $their_phys_prot = 0;
+    $their_mag_prot = 0;
+}
+
 if ( $opts{ "god" } eq "scylla" ) {
     if ( $ability_stats{ "level" }->{ "crush" }->[ $opts{ "level" } ] == 5 ) { $magical_power += 20; }
     if ( $ability_stats{ "level" }->{ "sic_em" }->[ $opts{ "level" } ] == 5 ) { $magical_power += 20; }
@@ -1407,7 +1467,6 @@ if ( $opts{ "god" } eq "kukulkan" ) {
 }
 
 if (defined $items{"rod"}) { $magical_power *= 1.25; } # does this multiply passives or only items? TODO
-
 
 # enforce maxima
 if ($cdr > 0.4) { $cdr = 0.4; }
@@ -1579,6 +1638,12 @@ my $obow_hits = 0;
 # calculations
 #################################################################################
 
+sub get_their_health() {
+    my $health = $their_max_health - $damage;
+    if ($health < 0) { $health = 0; }
+    return $health;
+}
+
 sub add_stack($) {
     my $buff = shift;
     $buffs{ "current" }->{ $buff } += 1;
@@ -1644,7 +1709,7 @@ sub get_eff_power() {
                                 $ability_stats{ "level" }->{ "gravity_surge" }->[ $opts{ "level" } ] ];
         if (defined $items{ "masamune" }) {
             # TODO does masamune work this way? or is it more like telkhines?
-            my $bonus = int(0.1 * ($their_health - 2000)); # 1 for every 10 health diff
+            my $bonus = int(0.1 * ($their_max_health - 2000)); # 1 for every 10 health diff
             if ($bonus > 50) { $bonus = 50; }
             $eff_physical_power += $bonus;
         }
@@ -1748,6 +1813,19 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
     }
     # else damage type is true
 
+    my $eff_percent_pen = $percent_pen;
+    if ( $opts{"action"} ne "clear" and $opts{"god"} eq "hou_yi"
+                and $ability_stats{ "level" }->{ "mark_of_golden_crow" }->[ $opts{ "level" } ] == 5 ) {
+        # TODO this might ought to live elsewhere
+        $eff_percent_pen += 0.25; # assume mark is applied
+    }
+    if ( $opts{"action"} ne "clear" and $opts{"god"} eq "hou_yi" ) {
+        # TODO this might ought to live elsewhere
+        $pre_prot_damage += 0.01 * $pre_prot_damage *
+                $ability_stats{ "level" }->{ "mark_of_golden_crow" }->[ $opts{"level"} ] * 
+                int( ($their_max_health - get_their_health()) / (0.1 * $their_max_health) );
+    }
+
     my $their_eff_prot = $their_base_prot;
     $their_eff_prot *= (1 - $percent_reduction);
     $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "demonic_grip" });
@@ -1755,7 +1833,7 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
     $their_eff_prot -= $flat_reduction;
     $their_eff_prot -= 10 * $buffs{ "current" }->{ "spear" };
     $their_eff_prot -= 10 * $buffs{ "current" }->{ "stone_cutting_sword" };
-    $their_eff_prot *= (1 - $percent_pen);
+    $their_eff_prot *= (1 - $eff_percent_pen);
     $their_eff_prot -= $flat_pen;
     if ($their_eff_prot < 0) { $their_eff_prot = 0; }
 
@@ -1785,6 +1863,10 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
         }
         if ( defined $enemy_items{ "oni" }) {
             $output .= sprintf " %d oni stacks ", $buffs{ "current" }->{ "oni" };
+        }
+        if ( $opts{"action"} ne "clear" ) {
+            $output .= sprintf " their health %4d -> %4d ", get_their_health(), 
+                    (get_their_health() - $damage >= 0) ? (get_their_health() - $damage) : 0;
         }
         $output .= "\n";
         push @one_pass_verbosity, $output;
@@ -1858,6 +1940,11 @@ while ( $iteration < $max_iterations ) {
                 my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
                         $ability_stats{ "level" }->{ $next_skill }->[ $opts{ "level" } ] ] +
                         (get_eff_power() * $ability_stats{ "scaling" }->{ $next_skill });
+                if ( $opts{ "action" } ne "clear" and $next_skill eq "ricochet" ) {
+                    # assume one bounce on ricochet on a god
+                    # TODO this is kind of a hack...
+                    $pre_prot_damage *= 1.5;
+                }
                 my $hit = 0;
                 if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
                 while ( $hit < $ability_stats{ "hits" }->{ $next_skill } ) {
@@ -2212,9 +2299,9 @@ while ( $iteration < $max_iterations ) {
             }
 
             if ($buffs{ "current" }->{ "serqet_poisons" } >= 2) {
-                $pre_prot_damage += $their_health * 0.1;
+                $pre_prot_damage += $their_max_health * 0.1;
                 if ($buffs{ "current" }->{ "serqet_poisons" } == 3) {
-                    $pre_prot_damage += $their_health * 0.1;
+                    $pre_prot_damage += $their_max_health * 0.1;
                 }
             }
             $buffs{ "current" }->{ "serqet_poisons" } = 0;
@@ -2271,7 +2358,7 @@ while ( $iteration < $max_iterations ) {
             }
 
             if (defined $items{ "qins" }) {
-                $pre_prot_damage += 0.04 * $their_health;
+                $pre_prot_damage += 0.04 * $their_max_health;
             }
 
             if ($opts{"action"} eq "clear" and defined $items{"obow"}) {
@@ -2456,6 +2543,8 @@ while ( $iteration < $max_iterations ) {
     }
     %ticks = ();
     $time = 0;
+    $total_damage += $damage;
+    $damage = 0;
     $combo_idx = 0;
     $next_attack = 0;
     $next_attack_chain = 0;
@@ -2480,13 +2569,13 @@ foreach my $line ( @one_pass_verbosity ){
     print $line;
 }
 
-printf "Total damage %.2f DPS %.2f\n", $damage/$max_iterations, ($damage / ($max_iterations*$opts{"time"}/1000));
+printf "Total damage %.2f DPS %.2f\n", $total_damage/$max_iterations, ($total_damage / ($max_iterations*$opts{"time"}/1000));
 if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
     print "effective power " . get_eff_power() . "\n";
     print "base attack damage " . get_basic_attack_damage() . "\n";
     print "base attack rate $attack_rate\n";
     printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
-    printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($damage - $attack_damage)/$max_iterations);
+    printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($total_damage - $attack_damage)/$max_iterations);
     if ( defined $items{ "polynomicon" } ) {
         print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
     }
@@ -2502,13 +2591,13 @@ if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
     if (defined $items{ "malice" }) {
         printf  "Total Malice procs %d Malice procs/crit %.2f Malice damage %.2f Malice bonus damage per crit %.2f\n", $total_malice_procs/$max_iterations, ($total_malice_procs/$crits), $malice_damage/$max_iterations, ($malice_damage)/($crits);
     }
-    printf "Total lifesteal %.2f\n", ($damage * $lifesteal)/$max_iterations;
+    printf "Total lifesteal %.2f\n", ($total_damage * $lifesteal)/$max_iterations;
     if ( defined $enemy_items{"nemean"} ) {
         # assume no magical prot on self TODO this could be more accurate
         printf "Damage return from Nemean %.2f\n", ($attack_damage/$max_iterations) * 0.2 * ( 100 / (100 + 30 + 0.9 * $opts{"level"}));
-        printf "Net lifesteal - Nemean damage %.2f\n",  (($damage * $lifesteal)/$max_iterations ) - ( ($attack_damage/$max_iterations) * 0.2 * ( 100 / (100 + 30 + 0.9 * $opts{"level"})));
+        printf "Net lifesteal - Nemean damage %.2f\n",  (($total_damage * $lifesteal)/$max_iterations ) - ( ($attack_damage/$max_iterations) * 0.2 * ( 100 / (100 + 30 + 0.9 * $opts{"level"})));
     }
-    printf "Total gold %d damage/gold %.2f\n", $gold, ($damage/$max_iterations) / $gold;
+    printf "Total gold %d damage/gold %.2f\n", $gold, ($total_damage/$max_iterations) / $gold;
 }
 
 
