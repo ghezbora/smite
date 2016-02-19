@@ -3,8 +3,7 @@
 
 # Wish list
 #
-# add tower damage
-#
+# finish adding chronos (add time rift)
 # add hou yi
 # add poison darts for xbal
 # add kali
@@ -36,7 +35,7 @@ my $VERBOSITY_LEGENDARY = 9;
 $opts{ "enemy" } = "bastet";
 $opts{ "verbosity" } = $VERBOSITY_NORMAL;
 $opts{ "action" } = "kill";
-$opts{ "time" } = 5100;
+$opts{ "time" } = 5005;
 $opts{ "level" } = 20;
 
 GetOptions( 'god=s' => \$opts{ "god" },
@@ -90,7 +89,7 @@ my %protection_stats = (
     "default_items" => {
         "bastet" => "bov",
         "sol" => "",
-        "khepri" => "urchin bulwark winged_blade bov",
+        "khepri" => "urchin bulwark spirit_robe winged_blade bov",
         "bellona" => "bulwark urchin mystical_mail frostbound",
         "hercules" => "thebes gaia bulwark urchin",
     },
@@ -139,6 +138,9 @@ my %ability_stats = (
 
         "irradiate" => 11,
         "pulse" => 11,
+
+        "stop_time" => 18, # TODO scales
+        "time_rift" => 5,
 
         "shadow_lock" => 10,
         "siphon_darkness" => 15,
@@ -206,6 +208,9 @@ my %ability_stats = (
         "irradiate" => 0,
         "pulse" => 0,
 
+        "stop_time" => 0,
+        "time_rift" => 0,
+
         "acid_spray" => 0,
         "viper_shot" => 0,
 
@@ -270,6 +275,9 @@ my %ability_stats = (
 
         "stellar_burst" => [ 0, 40, 70, 100, 130, 160 ],
 
+        "stop_time" => [ 0, 30, 50, 70, 90, 110 ],
+        "time_rift" => [ 0, 80, 125, 170, 215, 260 ],
+
         "acid_spray" => [ 0, 90, 135, 180, 225, 270 ],
         "viper_shot" => [ 0, 0, 0, 0, 0, 0 ],
 
@@ -329,6 +337,9 @@ my %ability_stats = (
 
         "stellar_burst" => 6,
 
+        "stop_time" => 6,
+        "time_rift" => 3,
+
         "viper_shot" => 1,
         "acid_spray" => 6,
 
@@ -386,6 +397,9 @@ my %ability_stats = (
         "nine_winds" => 1,
 
         "stellar_burst" => 2,
+
+        "stop_time" => 2,
+        "time_rift" => 1,
 
         "acid_spray" => 1,
         "viper_shot" => 0,
@@ -463,6 +477,9 @@ my %ability_stats = (
         "nine_winds" => 1.2,
 
         "stellar_burst" => 0.35,
+
+        "stop_time" => 0.4,
+        "time_rift" => 0.85,
 
         "acid_spray" => 0.7,
         "viper_shot" => 0,
@@ -542,6 +559,9 @@ my %ability_stats = (
 
         "sunbreaker" => 9,
 
+        "stop_time" => 0,
+        "time_rift" => 0,
+
         "moonlight_charge" => 0,
         "feather_step" => 0,
         "gravity_surge" => 0,
@@ -614,6 +634,9 @@ my %ability_stats = (
 
         "stellar_burst" => 0.5,
 
+        "stop_time" => 0.5,
+        "time_rift" => 0.5,
+
         "acid_spray" => 0.5,
         "viper_shot" => 0.5,
 
@@ -664,6 +687,8 @@ my %ability_stats = (
 
         "vengeful_assault" => [ 0, 0.35, 0.45, 0.55, 0.65, 0.75 ],
 
+        "accelerate" => [ 0, 0.15, 0.20, 0.25, 0.30, 0.35 ],
+
         "wield_bow" => [ 0, 0.05, 0.10, 0.15, 0.20, 0.25 ],
 
         "viper_shot" => [ 0, 0.40, 0.50, 0.60, 0.70, 0.80 ],
@@ -692,6 +717,10 @@ my %ability_stats = (
 
         "irradiate" =>              [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "pulse" =>                  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+
+        "time_rift" =>              [ 0, 1, 1, 1, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "stop_time" =>              [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "accelerate" =>             [ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 5, 5, 5, 5, 5 ],
 
         "stellar_burst" =>          [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "radiance" =>               [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
@@ -745,6 +774,7 @@ my %ability_stats = (
 
 
 my %combos = (
+    "chronos" => [ "stop_time" ],
     "scylla" => [ "sic_em", "crush", "im_a_monster" ],
     "nox" => [ "shadow_lock", "siphon_darkness", "night_terror" ],
     "freya" => [ ],
@@ -769,6 +799,7 @@ my %combos = (
 
 
 my %clear_skills = (
+    "chronos" => [ "time_rift", "stop_time" ],
     "sol" => [ "stellar_burst" ],
     "freya" => [ ],
     "hou_yi" => [ "ricochet" ],
@@ -791,6 +822,7 @@ my %base_stats = (
         "scylla" => "magical",
         "nox" => "magical",
         "kukulkan" => "magical",
+        "chronos" => "magical",
 
         "artemis" => "physical",
         "awilix" => "physical",
@@ -817,6 +849,7 @@ my %base_stats = (
         "scylla" => 1,
         "nox" => 1,
         "kukulkan" => 0.87,
+        "chronos" => 1,
 
         "artemis" => 0.95,
         "awilix" => 1,
@@ -840,6 +873,7 @@ my %base_stats = (
         "scylla" => 0.008,
         "nox" => 0.008,
         "kukulkan" => 0.0091,
+        "chronos" => 0.008,
 
         "artemis" => 0.014,
         "awilix" => 0.0189,
@@ -863,6 +897,7 @@ my %base_stats = (
         "scylla" => 34,
         "nox" => 34,
         "kukulkan" => 34,
+        "chronos" => 35,
 
         "artemis" => 35,
         "awilix" => 38,
@@ -886,6 +921,7 @@ my %base_stats = (
         "scylla" => 1.45,
         "nox" => 1.5,
         "kukulkan" => 1.45,
+        "chronos" => 1.5,
 
         "artemis" => 2.05,
         "awilix" => 2.16,
@@ -909,6 +945,7 @@ my %base_stats = (
         "scylla" => 298,
         "nox" => 250,
         "kukulkan" => 265,
+        "chronos" => 240,
 
         "artemis" => 205,
         "awilix" => 220,
@@ -932,6 +969,7 @@ my %base_stats = (
         "scylla" => 56,
         "nox" => 38,
         "kukulkan" => 45,
+        "chronos" => 42,
 
         "artemis" => 34,
         "awilix" => 38,
@@ -955,6 +993,7 @@ my %base_stats = (
         "scylla" => [ 1 ],
         "nox" => [ 1 ],
         "kukulkan" => [ 1 ],
+        "chronos" => [ 1 ],
 
         "artemis" => [ 1 ],
         "awilix" => [ 1, 0.75, 1.25 ],
@@ -1244,6 +1283,14 @@ if (defined $items{"ninja_tabi"}) {
     $item_mvmt_speed += 0.18;
 }
 
+# ghez tabi
+if (defined $items{"ghez_tabi"}){
+    $physical_power += 20;
+    $flat_pen += 10;
+    $gold += 1500;
+    $item_mvmt_speed += 0.18;
+}
+
 # executioner
 if (defined $items{"executioner"}) {
     $physical_power += 30;
@@ -1520,6 +1567,7 @@ if ( defined $opts{ "iterations" } ) {
 
 my %buffs = (
     "max" => {
+        "accelerate" => 1,
         "rage" => 6,
         "executioner" => 4, # really a debuff on the target
         "demonic_grip" => 4, # really a debuff on the target
@@ -1546,6 +1594,7 @@ my %buffs = (
         "spectral_armor" => 1, # buff for enemy
     },
     "current" => {
+        "accelerate" => 0,
         "rage" => 0,
         "executioner" => 0, # really a debuff on the target
         "demonic_grip" => 0, # really a debuff on the target
@@ -1577,6 +1626,7 @@ my %buffs = (
         "hydras_lament" => 0,
     },
     "time" => { # end time for buffs
+        "accelerate" => 0,
         "rage" => 0,
         "executioner" => 0, # really a debuff on the target
         "demonic_grip" => 0, # really a debuff on the target
@@ -1603,6 +1653,7 @@ my %buffs = (
         "spectral_armor" => 0, # buff for enemy
     },
     "duration" => {
+        "accelerate" => 7000,
         "rage" => 0,
         "executioner" => 3000, # really a debuff on the target
         "demonic_grip" => 3000, # really a debuff on the target
@@ -1789,9 +1840,14 @@ sub get_basic_attack_damage() {
     }
     else
     {
+        my $scaling = 0.2;
+        if ( $buffs{ "current" }->{ "accelerate" } == 1 and
+                    ($opts{ "action" } eq "kill" or $opts{ "action" } eq "tower") ) {
+            $scaling = 0.55; # accelerate additional MP scaling on AAs
+        }
         my $eff_magical_base_dmg = ($base_stats{ "auto_damage" }->{ $opts{ "god" } }
                 + $opts{ "level" } * $base_stats{ "auto_level_scaling" }->{ $opts{ "god" } }
-                + 0.2 * get_eff_power()) # TODO is magical power scaling always 0.2?
+                + $scaling * get_eff_power())
                 * ${attack_chain_progression}[ $next_attack_chain ];
         return $eff_magical_base_dmg;
     }
@@ -2104,6 +2160,11 @@ while ( $iteration < $max_iterations ) {
         #################################################################################
         # execute buffs TODO can we merge these into the general skill logic?
         #################################################################################
+        if ($opts{ "god" } eq "chronos" and $time == 0) {
+            reset_buff_time("accelerate");
+            add_stack("accelerate");
+        }
+
         if ($opts{ "god" } eq "freya" and $time == 0 and $opts{"action"} ne "tower") {
             reset_buff_time( "pulse" );
             add_stack( "pulse" );
@@ -2201,7 +2262,7 @@ while ( $iteration < $max_iterations ) {
         }
 
         if ($opts{ "god" } eq "medusa" and $num_attacks == 1 and $viper_shots_left == 0
-                    and $opts{"action"} eq "kill") {
+                    and ($opts{"action"} eq "kill" or $opts{"action"} eq "tower")) {
             # start viper shot after the first AA for AA cancel benefit
             $viper_shots_left = 3;
             my $viper_attack_rate = $attack_rate +
@@ -2506,6 +2567,12 @@ while ( $iteration < $max_iterations ) {
                 $eff_attack_rate = $attack_rate + 
                         $ability_stats{ "attack_speed_buff" }->{ "maximum_velocity" }->[
                         $ability_stats{ "level" }->{ "maximum_velocity" }->[ $opts{ "level" } ] ]
+                        * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
+            }
+            if ( $buffs{ "current" }->{ "accelerate" } ) {
+                $eff_attack_rate = $attack_rate + 
+                        $ability_stats{ "attack_speed_buff" }->{ "accelerate" }->[
+                        $ability_stats{ "level" }->{ "accelerate" }->[ $opts{ "level" } ] ]
                         * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
             }
             if ( $audacity_stacks > 0) {
