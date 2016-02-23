@@ -1393,7 +1393,8 @@ if (defined $items{"hydras"}) {
 
 # transcendence
 if (defined $items{"transcendence"}) {
-    $mana += 1050;
+    #$mana += 1050;
+    $mana += 300;
     $physical_power += 35;
     $physical_power += 0.03 * $mana; # TODO having this last computes bonus right... probably?
     $gold += 2600;
@@ -1451,7 +1452,6 @@ if (defined $enemy_items{ "midgardian" }) {
 
 if (defined $enemy_items{ "nemean" }) {
     $their_phys_prot += 90;
-    # TODO handle nemean damage return
 }
 
 if (defined $enemy_items{ "spectral_armor" }) {
@@ -1567,6 +1567,7 @@ if ( defined $opts{ "iterations" } ) {
 
 my %buffs = (
     "max" => {
+        "midgardian" => 1,
         "accelerate" => 1,
         "rage" => 6,
         "executioner" => 4, # really a debuff on the target
@@ -1594,6 +1595,7 @@ my %buffs = (
         "spectral_armor" => 1, # buff for enemy
     },
     "current" => {
+        "midgardian" => 0,
         "accelerate" => 0,
         "rage" => 0,
         "executioner" => 0, # really a debuff on the target
@@ -1626,6 +1628,7 @@ my %buffs = (
         "hydras_lament" => 0,
     },
     "time" => { # end time for buffs
+        "midgardian" => 0,
         "accelerate" => 0,
         "rage" => 0,
         "executioner" => 0, # really a debuff on the target
@@ -1653,6 +1656,7 @@ my %buffs = (
         "spectral_armor" => 0, # buff for enemy
     },
     "duration" => {
+        "midgardian" => 3000,
         "accelerate" => 7000,
         "rage" => 0,
         "executioner" => 3000, # really a debuff on the target
@@ -2540,47 +2544,58 @@ while ( $iteration < $max_iterations ) {
 
             # attack chain progression
             my $eff_attack_rate = $attack_rate;
+            
+            $rng = rand();
+            if (defined $enemy_items{"midgardian"} and $rng < 0.3) {
+                reset_buff_time("midgardian");
+                add_stack("midgardian");
+            }
+
+            if ($buffs{"current"}->{"midgardian"} == 1) {
+                $eff_attack_rate -= 0.3 * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
+            }
+
             if ( $opts{ "god" } eq "sol" ) {
-                $eff_attack_rate = $attack_rate +
+                $eff_attack_rate += 
                         $base_stats{ "attack_rate" }->{ $opts{ "god" } } * ($heat * 0.25 * 0.012);
                 $messages_to_print{ "heat effective attack rate" } = $eff_attack_rate;
             }
             if ( $opts{ "god" } eq "ullr" ) {
-                $eff_attack_rate = $attack_rate +
+                $eff_attack_rate += 
                         $ability_stats{ "attack_speed_buff" }->{ "wield_bow" }->[
                         $ability_stats{ "level" }->{ "wield_bow" }->[ $opts{ "level" } ] ]
                         * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
             }
             if ( $buffs{ "current" }->{ "vengeful_assault" } ) {
-                $eff_attack_rate = $attack_rate + 
+                $eff_attack_rate += 
                         $ability_stats{ "attack_speed_buff" }->{ "vengeful_assault" }->[
                         $ability_stats{ "level" }->{ "vengeful_assault" }->[ $opts{ "level" } ] ]
                         * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
             }
             if ( $buffs{ "current" }->{ "pick_me_up" } ) { 
-                $eff_attack_rate = $attack_rate + 
+                $eff_attack_rate += 
                         $ability_stats{ "attack_speed_buff" }->{ "pick_me_up" }->[
                         $ability_stats{ "level" }->{ "pick_me_up" }->[ $opts{ "level" } ] ]
                         * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
             }
             if ( $buffs{ "current" }->{ "maximum_velocity" } ) {
-                $eff_attack_rate = $attack_rate + 
+                $eff_attack_rate +=
                         $ability_stats{ "attack_speed_buff" }->{ "maximum_velocity" }->[
                         $ability_stats{ "level" }->{ "maximum_velocity" }->[ $opts{ "level" } ] ]
                         * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
             }
             if ( $buffs{ "current" }->{ "accelerate" } ) {
-                $eff_attack_rate = $attack_rate + 
+                $eff_attack_rate += 
                         $ability_stats{ "attack_speed_buff" }->{ "accelerate" }->[
                         $ability_stats{ "level" }->{ "accelerate" }->[ $opts{ "level" } ] ]
                         * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
             }
             if ( $audacity_stacks > 0) {
-                $eff_attack_rate = $attack_rate + $base_stats{ "attack_rate" }->{ $opts{ "god" } };
+                $eff_attack_rate += $base_stats{ "attack_rate" }->{ $opts{ "god" } };
                 $audacity_stacks--;
             }
             if ($viper_shots_left > 0) {
-                $eff_attack_rate = $attack_rate +
+                $eff_attack_rate +=
                         $base_stats{ "attack_rate" }->{ $opts{ "god" } } * 
                         $ability_stats{ "attack_speed_buff" }->{ "viper_shot" }->[
                         $ability_stats{ "level" }->{ "viper_shot" }->[ $opts{ "level" } ] ];
