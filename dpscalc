@@ -3,7 +3,11 @@
 
 # Wish list
 #
-# finish adding chronos (add time rift)
+# items like hydras and poly are not handled well with the buff time system
+# it needs to handle both the cooldown and the buff duration
+#
+# need to fix time to next action
+#
 # add hou yi
 # add poison darts for xbal
 # add kali
@@ -32,7 +36,7 @@ my $VERBOSITY_EPIC = 7;
 my $VERBOSITY_LEGENDARY = 9;
 
 # set defaults
-$opts{ "enemy" } = "bastet";
+$opts{ "enemy" } = "chiron";
 $opts{ "verbosity" } = $VERBOSITY_NORMAL;
 $opts{ "action" } = "kill";
 $opts{ "time" } = 5005;
@@ -67,6 +71,7 @@ foreach my $item (@items) {
 my %protection_stats = (
     "physical_protection" => {
         "bastet" => (12 + 2.9 * $opts{"level"}),
+        "chiron" => (12 + 2.8 * $opts{"level"}),
         "sol" => (9 + 2.6 * $opts{"level"}),
         "khepri" => (19 + 3 * $opts{"level"}), # TODO do this for base god stats too
         "bellona" => (18 + 3 * $opts{"level"}),
@@ -74,6 +79,7 @@ my %protection_stats = (
     },
     "magical_protection" => {
         "bastet" => (30 + 0.9 * $opts{"level"}),
+        "chiron" => (30 + 0.9 * $opts{"level"}),
         "sol" => 30,
         "khepri" => (30 + 0.9 * $opts{"level"}),
         "bellona" => (30 + 0.9 * $opts{"level"}),
@@ -81,6 +87,7 @@ my %protection_stats = (
     },
     "health" => {
         "bastet" => (415 + 80 * $opts{"level"}),
+        "chiron" => (460 + 75 * $opts{"level"}),
         "sol" => (400 + 75 * $opts{"level"}),
         "khepri" => (510 + 90 * $opts{"level"}),
         "bellona" => (480 + 85 * $opts{"level"} ),
@@ -89,6 +96,7 @@ my %protection_stats = (
     "default_items" => {
         "bastet" => "bov",
         "sol" => "",
+        "chiron" => "",
         "khepri" => "urchin bulwark spirit_robe winged_blade bov",
         "bellona" => "bulwark urchin mystical_mail frostbound",
         "hercules" => "thebes gaia bulwark urchin",
@@ -774,7 +782,7 @@ my %ability_stats = (
 
 
 my %combos = (
-    "chronos" => [ "stop_time" ],
+    "chronos" => [ "stop_time", "time_rift" ],
     "scylla" => [ "sic_em", "crush", "im_a_monster" ],
     "nox" => [ "shadow_lock", "siphon_darkness", "night_terror" ],
     "freya" => [ ],
@@ -1038,6 +1046,8 @@ my $next_attack = 0;
 my $num_attacks = 0;
 my $total_attacks = 0;
 my $gold = 0;
+my $ttk = 0;
+my $total_ttk = 0;
 
 my $physical_power = 0;
 my $magical_power = 0;
@@ -1195,6 +1205,12 @@ if (defined $items{"doom_orb"} ){
     $magical_power += 140; #assume full stacks
     $mana += 200;
     $gold += 2050;
+}
+
+if (defined $items{"soul_reaver"}){
+    $magical_power += 100;
+    $mana += 300;
+    $gold += 2940;
 }
 
 if (defined $items{"book"}) {
@@ -1567,6 +1583,7 @@ if ( defined $opts{ "iterations" } ) {
 
 my %buffs = (
     "max" => {
+        "soul_reaver" => 1,
         "midgardian" => 1,
         "accelerate" => 1,
         "rage" => 6,
@@ -1595,6 +1612,7 @@ my %buffs = (
         "spectral_armor" => 1, # buff for enemy
     },
     "current" => {
+        "soul_reaver" => 0,
         "midgardian" => 0,
         "accelerate" => 0,
         "rage" => 0,
@@ -1626,8 +1644,10 @@ my %buffs = (
         "spectral_armor" => 0,
         "polynomicon" => 0,
         "hydras_lament" => 0,
+        "soul_reaver" => 0,
     },
     "time" => { # end time for buffs
+        "soul_reaver" => 0,
         "midgardian" => 0,
         "accelerate" => 0,
         "rage" => 0,
@@ -1656,6 +1676,7 @@ my %buffs = (
         "spectral_armor" => 0, # buff for enemy
     },
     "duration" => {
+        "soul_reaver" => 60000,
         "midgardian" => 3000,
         "accelerate" => 7000,
         "rage" => 0,
@@ -2002,6 +2023,10 @@ while ( $iteration < $max_iterations ) {
 
     @one_pass_verbosity = ();
 
+    if (defined $items{"soul_reaver"}) {
+        $buffs{ "current" }->{ "soul_reaver" } = 1;
+    }
+
     while ( $time < $opts{"time"} ) {
 
         # stuff that happens FIRST
@@ -2035,6 +2060,13 @@ while ( $iteration < $max_iterations ) {
                 if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
                 while ( $hit < $ability_stats{ "hits" }->{ $next_skill } ) {
                     if( $pre_prot_damage > 0 ) { 
+                        if ( $buffs{"current"}->{"soul_reaver"} > 0) {
+                            $damage += calc_mitigated_damage( $their_max_health * 0.15,
+                                    "soul_reaver", 1, 1, "magical" );
+                            $buffs{ "current" }->{ "soul_reaver" } = 0;
+                            $buffs{ "cooldown" }->{ "soul_reaver" } =
+                                    $time + $buffs{ "duration" }->{ "soul_reaver" };
+                        }
                         if ( $next_skill eq "deathbane" ) {
                             # deathbane can crit
                             $pre_prot_damage = ability_crits( $pre_prot_damage );
@@ -2390,11 +2422,25 @@ while ( $iteration < $max_iterations ) {
             if ($buffs{ "current" }->{ "pulse" }) {
                 $pre_prot_damage += $ability_stats{ "damage" }->{ "pulse" }->[
                         $ability_stats{ "level" }->{ "pulse" }->[ $opts{ "level" } ] ] + 0.15 * get_eff_power();
+                if ( $buffs{"current"}->{"soul_reaver"} > 0) {
+                    $damage += calc_mitigated_damage( $their_max_health * 0.15,
+                            "soul_reaver", 1, 1, "magical" );
+                    $buffs{ "current" }->{ "soul_reaver" } = 0;
+                    $buffs{ "cooldown" }->{ "soul_reaver" } =
+                            $time + $buffs{ "duration" }->{ "soul_reaver" };
+                }
             }
 
             if ($buffs{ "current" }->{ "irradiate" }) {
                 $pre_prot_damage += $ability_stats{ "damage" }->{ "irradiate" }->[
                         $ability_stats{ "level" }->{ "irradiate" }->[ $opts{ "level" } ] ] + 0.25 * get_eff_power();
+                if ( $buffs{"current"}->{"soul_reaver"} > 0) {
+                    $damage += calc_mitigated_damage( $their_max_health * 0.15,
+                            "soul_reaver", 1, 1, "magical" );
+                    $buffs{ "current" }->{ "soul_reaver" } = 0;
+                    $buffs{ "cooldown" }->{ "soul_reaver" } =
+                            $time + $buffs{ "duration" }->{ "soul_reaver" };
+                }
             }
 
             if ($buffs{ "current" }->{ "serqet_poisons" } >= 2) {
@@ -2641,6 +2687,10 @@ while ( $iteration < $max_iterations ) {
             }
         }
 
+        if ( get_their_health() <= 0 and $ttk == 0 ) {
+            $ttk = $time;
+        }
+
         $time++;
 
     }
@@ -2671,6 +2721,8 @@ while ( $iteration < $max_iterations ) {
     $next_malice_proc = 0;
     $viper_shots_left = 0;
     $obow_hits = 0;
+    $total_ttk += $ttk;
+    $ttk = 0;
 
     $iteration++;
 
@@ -2688,6 +2740,7 @@ foreach my $line ( @one_pass_verbosity ){
 }
 
 printf "Total damage %.2f DPS %.2f\n", $total_damage/$max_iterations, ($total_damage / ($max_iterations*$opts{"time"}/1000));
+printf "TTK = %.2f\n", $total_ttk / $max_iterations;
 if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
     print "effective power " . get_eff_power() . "\n";
     print "base attack damage " . get_basic_attack_damage() . "\n";
