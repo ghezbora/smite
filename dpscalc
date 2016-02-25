@@ -1953,6 +1953,8 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
     if ($eff_flat_pen > 50) { $eff_flat_pen = 50; }
     $their_eff_prot -= $eff_flat_pen;
 
+    if ($their_eff_prot < 0) { $their_eff_prot = 0; }
+
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
     #$damage -= $their_flat_reduction;
@@ -2210,7 +2212,7 @@ while ( $iteration < $max_iterations ) {
             add_stack("accelerate");
         }
 
-        if ($opts{ "god" } eq "freya" and $time == 0 and $opts{"action"} ne "tower") {
+        if ($opts{ "god" } eq "freya" and $time == 0) {
             reset_buff_time( "pulse" );
             add_stack( "pulse" );
             if ( $opts{"action"} eq "kill" ) {
@@ -2431,10 +2433,16 @@ while ( $iteration < $max_iterations ) {
             }
 
             # ability buffs
-            if ($buffs{ "current" }->{ "pulse" }) {
-                # TODO make this its own damage event
-                $pre_prot_damage += $ability_stats{ "damage" }->{ "pulse" }->[
-                        $ability_stats{ "level" }->{ "pulse" }->[ $opts{ "level" } ] ] + 0.15 * get_eff_power();
+            if ($buffs{ "current" }->{ "pulse" } and $opts{"action"} ne "tower") {
+                my $aoe = 1;
+                if ( $opts{"action"} eq "clear" and
+                        $buffs{ "current" }->{ "pulse" } and not $buffs{ "current" }->{ "irradiate" }) {
+                    $aoe = 3;
+                }
+                $damage += calc_mitigated_damage( $ability_stats{ "damage" }->{ "pulse" }->[
+                        $ability_stats{ "level" }->{ "pulse" }->[ $opts{ "level" } ] ] + 0.15 * get_eff_power(),
+                        "pulse", 1, $aoe, "magical");
+
                 if ( $buffs{"current"}->{"soul_reaver"} > 0) {
                     $damage += calc_mitigated_damage( $their_max_health * 0.15,
                             "soul_reaver", 1, 1, "magical" );
@@ -2445,8 +2453,9 @@ while ( $iteration < $max_iterations ) {
             }
 
             if ($buffs{ "current" }->{ "irradiate" }) {
-                $pre_prot_damage += $ability_stats{ "damage" }->{ "irradiate" }->[
-                        $ability_stats{ "level" }->{ "irradiate" }->[ $opts{ "level" } ] ] + 0.25 * get_eff_power();
+                $damage += calc_mitigated_damage( $ability_stats{ "damage" }->{ "irradiate" }->[
+                        $ability_stats{ "level" }->{ "irradiate" }->[ $opts{ "level" } ] ] + 0.25 * get_eff_power(),
+                        "irradiate", 1, 1, "magical" );
                 if ( $buffs{"current"}->{"soul_reaver"} > 0) {
                     $damage += calc_mitigated_damage( $their_max_health * 0.15,
                             "soul_reaver", 1, 1, "magical" );
@@ -2497,7 +2506,7 @@ while ( $iteration < $max_iterations ) {
                 reset_buff_time( "hydras_lament" );
             }
 
-            if ($buffs{ "current" }->{ "polynomicon" } and $opts{"action"} ne "tower") {
+            if ($buffs{ "current" }->{ "polynomicon" }) {
                 $damage += calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 1, 1,
                         $base_stats{ "type" }->{ $opts{"god"} } );
                 $polynomicon_procs++;
@@ -2560,12 +2569,6 @@ while ( $iteration < $max_iterations ) {
                 $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1,
                         $base_stats{ "type" }->{ $opts{"god"} });
                 $attack_damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 0, 2,
-                        $base_stats{ "type" }->{ $opts{"god"} });
-            } elsif ( $opts{"action"} eq "clear" and
-                    $buffs{ "current" }->{ "pulse" } and not $buffs{ "current" }->{ "irradiate" }) {
-                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 3,
-                        $base_stats{ "type" }->{ $opts{"god"} });
-                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 3,
                         $base_stats{ "type" }->{ $opts{"god"} });
             } else {
                 $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
