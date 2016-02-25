@@ -6,8 +6,6 @@
 # items like hydras and poly are not handled well with the buff time system
 # it needs to handle both the cooldown and the buff duration
 #
-# need to fix time to next action
-#
 # add hou yi
 # add poison darts for xbal
 # add kali
@@ -39,7 +37,7 @@ my $VERBOSITY_LEGENDARY = 9;
 $opts{ "enemy" } = "chiron";
 $opts{ "verbosity" } = $VERBOSITY_NORMAL;
 $opts{ "action" } = "kill";
-$opts{ "time" } = 5005;
+#$opts{ "time" } = 5005;
 $opts{ "level" } = 20;
 
 GetOptions( 'god=s' => \$opts{ "god" },
@@ -48,7 +46,7 @@ GetOptions( 'god=s' => \$opts{ "god" },
             'enemy_items=s' => \$opts{"enemy_items"},
             'verbosity=i' => \$opts{"verbosity"},
             'action=s' => \$opts{"action"},
-            'time=i' => \$opts{"time"},
+            #'time=i' => \$opts{"time"},
             'iterations=i' => \$opts{"iterations"},
             'level=i' => \$opts{"level"} );
 
@@ -773,7 +771,7 @@ my %ability_stats = (
         "bladed_arrow" =>           [ 0, 0, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "expose_weakness" =>        [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 4, 5, 5 ],
         "hail_of_arrows" =>         [ 0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
-        "weild_bow" =>              [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
+        "wield_bow" =>              [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
         "training_exercise" =>      [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
     },
@@ -1043,6 +1041,7 @@ my $attack_damage = 0;
 my $malice_damage = 0;
 my $time = 0;
 my $next_attack = 0;
+my $next_skill_time = 0;
 my $num_attacks = 0;
 my $total_attacks = 0;
 my $gold = 0;
@@ -1268,6 +1267,13 @@ if (defined $items{"asi"}) {
     $lifesteal += 0.15;
     $attack_rate += 0.2 * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
     $gold += 1780;
+}
+
+# crusher
+if (defined $items{"crusher"}) {
+    $physical_power += 40;
+    $flat_pen += 20;
+    $gold += 2300;
 }
 
 # brawler's beatstick
@@ -1522,7 +1528,9 @@ if ( $opts{"action"} eq "clear" ) {
     $their_phys_prot = 0;
     $their_mag_prot = 0;
     $their_percent_reduction = 0.1; # at the start of the match
+    $their_max_health = 3 * 370 + 3 * 265; # no brutes
 } elsif ( $opts{ "action"} eq "tower" ) {
+    $lifesteal = 0; #can't lifesteal towers
     $their_max_health = 2000;
     $their_phys_prot = 150;
     $their_mag_prot = 150;
@@ -1545,10 +1553,6 @@ if ( $opts{ "god" } eq "kukulkan" ) {
 }
 
 if (defined $items{"rod"}) { $magical_power *= 1.25; } # does this multiply passives or only items? TODO
-
-if ($opts{"action"} eq "tower") {
-    $lifesteal = 0; #can't lifesteal towers
-}
 
 # enforce maxima
 if ($cdr > 0.4) { $cdr = 0.4; }
@@ -1583,6 +1587,7 @@ if ( defined $opts{ "iterations" } ) {
 
 my %buffs = (
     "max" => {
+        "crusher" => 5,
         "soul_reaver" => 1,
         "midgardian" => 1,
         "accelerate" => 1,
@@ -1612,6 +1617,7 @@ my %buffs = (
         "spectral_armor" => 1, # buff for enemy
     },
     "current" => {
+        "crusher" => 0,
         "soul_reaver" => 0,
         "midgardian" => 0,
         "accelerate" => 0,
@@ -1647,6 +1653,7 @@ my %buffs = (
         "soul_reaver" => 0,
     },
     "time" => { # end time for buffs
+        "crusher" => 0,
         "soul_reaver" => 0,
         "midgardian" => 0,
         "accelerate" => 0,
@@ -1676,6 +1683,7 @@ my %buffs = (
         "spectral_armor" => 0, # buff for enemy
     },
     "duration" => {
+        "crusher" => 2000,
         "soul_reaver" => 60000,
         "midgardian" => 3000,
         "accelerate" => 7000,
@@ -1941,8 +1949,9 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
         $their_eff_prot -= 10 * $buffs{ "current" }->{ "stone_cutting_sword" };
     }
     $their_eff_prot *= (1 - $eff_percent_pen);
-    $their_eff_prot -= $flat_pen;
-    if ($their_eff_prot < 0) { $their_eff_prot = 0; }
+    my $eff_flat_pen = $flat_pen + 5 * $buffs{"current"}->{"crusher"};
+    if ($eff_flat_pen > 50) { $eff_flat_pen = 50; }
+    $their_eff_prot -= $eff_flat_pen;
 
     my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
@@ -1971,7 +1980,7 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
         if ( defined $enemy_items{ "oni" }) {
             $output .= sprintf " %d oni stacks ", $buffs{ "current" }->{ "oni" };
         }
-        if ( $opts{"action"} eq "kill" ) {
+        if ( $opts{"action"} eq "kill" or $opts{"action"} eq "tower" ) {
             $output .= sprintf " their health %4d -> %4d ", get_their_health(), 
                     (get_their_health() - $damage >= 0) ? (get_their_health() - $damage) : 0;
         }
@@ -2027,7 +2036,8 @@ while ( $iteration < $max_iterations ) {
         $buffs{ "current" }->{ "soul_reaver" } = 1;
     }
 
-    while ( $time < $opts{"time"} ) {
+    #while ( $time < $opts{"time"} ) {
+    while ( get_their_health() > 0 ) {
 
         # stuff that happens FIRST
         if ($opts{ "god" } eq "awilix" and $time == 0) {
@@ -2046,7 +2056,7 @@ while ( $iteration < $max_iterations ) {
         undef $next_skill;
         $next_skill = get_next_skill();
         if ( defined $next_skill and $opts{"action"} ne "tower" ) {
-            if ( $time >= $ability_stats{ "time" }->{ $next_skill } ) {
+            if ( $time >= $ability_stats{ "time" }->{ $next_skill } and $time >= $next_skill_time ) {
                 # time to use next ability
                 my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
                         $ability_stats{ "level" }->{ $next_skill }->[ $opts{ "level" } ] ] +
@@ -2147,9 +2157,8 @@ while ( $iteration < $max_iterations ) {
                         (1000*($ability_stats{ "cooldown" }->{ $next_skill } * (1 - $cdr)));
 
                 $next_attack_chain = 0;
-                if ( $next_attack < $time + 1000 * $ability_stats{ "next_action" }->{ $next_skill } ) {
-                    $next_attack = $time + 1000 * $ability_stats{ "next_action" }->{ $next_skill };
-                }
+                $next_attack = $time + 1000 * $ability_stats{ "next_action" }->{ $next_skill };
+                $next_skill_time = $time + 1000 * $ability_stats{ "next_action" }->{ $next_skill };
 
                 $combo_idx++;
             }
@@ -2238,9 +2247,12 @@ while ( $iteration < $max_iterations ) {
             reset_buff_time("astral_strike");
             add_stack("astral_strike");
             $astral_arrows = 5;
+        } elsif ($opts{ "god" } eq "rama" and $time == 0 and $opts{"action"} eq "tower") {
+            reset_buff_time("pick_me_up");
+            add_stack("pick_me_up");
         }
 
-        if ($opts{ "god" } eq "ullr" and $time == 0 and $opts{"action"} ne "tower") {
+        if ($opts{ "god" } eq "ullr" and $time == 0) {
             add_stack("expose_weakness");
             reset_buff_time( "expose_weakness" );
         }
@@ -2420,6 +2432,7 @@ while ( $iteration < $max_iterations ) {
 
             # ability buffs
             if ($buffs{ "current" }->{ "pulse" }) {
+                # TODO make this its own damage event
                 $pre_prot_damage += $ability_stats{ "damage" }->{ "pulse" }->[
                         $ability_stats{ "level" }->{ "pulse" }->[ $opts{ "level" } ] ] + 0.15 * get_eff_power();
                 if ( $buffs{"current"}->{"soul_reaver"} > 0) {
@@ -2588,6 +2601,11 @@ while ( $iteration < $max_iterations ) {
                 add_stack("stone_cutting_sword");
             }
 
+            if ($opts{"action"} eq "tower" and defined $items{"crusher"}) {
+                add_stack("crusher");
+                reset_buff_time("crusher");
+            }
+
             # attack chain progression
             my $eff_attack_rate = $attack_rate;
             
@@ -2600,6 +2618,9 @@ while ( $iteration < $max_iterations ) {
             if ($buffs{"current"}->{"midgardian"} == 1) {
                 $eff_attack_rate -= 0.3 * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
             }
+
+            $eff_attack_rate += $buffs{"current"}->{"crusher"} * 0.1 *
+                    $base_stats{ "attack_rate" }->{ $opts{ "god" } };
 
             if ( $opts{ "god" } eq "sol" ) {
                 $eff_attack_rate += 
@@ -2658,6 +2679,8 @@ while ( $iteration < $max_iterations ) {
 
             $heat += 5;
             if ( $heat > 100 ) { $heat = 100; }
+
+            $next_skill_time = $time + 100; # assume very fast AA cancels
         }
 
         #################################################################################
@@ -2714,6 +2737,7 @@ while ( $iteration < $max_iterations ) {
     $damage = 0;
     $combo_idx = 0;
     $next_attack = 0;
+    $next_skill_time = 0;
     $next_attack_chain = 0;
     $total_attacks += $num_attacks;
     $num_attacks = 0;
@@ -2739,13 +2763,17 @@ foreach my $line ( @one_pass_verbosity ){
     print $line;
 }
 
-printf "Total damage %.2f DPS %.2f\n", $total_damage/$max_iterations, ($total_damage / ($max_iterations*$opts{"time"}/1000));
+if( $total_ttk == 0) { $total_ttk = 1; }
+
+printf "Total damage %.2f DPS %.2f\n", $total_damage/$max_iterations, ($total_damage / ($total_ttk/1000));
 printf "TTK = %.2f\n", $total_ttk / $max_iterations;
 if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
     print "effective power " . get_eff_power() . "\n";
     print "base attack damage " . get_basic_attack_damage() . "\n";
     print "base attack rate $attack_rate\n";
-    printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
+    if ( $total_attacks > 0 ) {
+        printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
+    }
     printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($total_damage - $attack_damage)/$max_iterations);
     if ( defined $items{ "polynomicon" } ) {
         print "Polynomicon procs $polynomicon_procs polynomicon damage $polynomicon_damage\n";
@@ -2756,7 +2784,7 @@ if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
     if ( defined $items{ "hydras" } ) {
         print "Hydras procs $hydras_procs hydras damage $hydras_damage\n";
     }
-    if ( $base_stats{ "type" }->{ $opts{ "god" } } eq "physical" ) {
+    if ( $base_stats{ "type" }->{ $opts{ "god" } } eq "physical" and $total_attacks > 0 ) {
         printf "Num crits: %d total crit chance %.2f\n", $crits/$max_iterations, ($crits / $total_attacks);
     }
     if (defined $items{ "malice" }) {
