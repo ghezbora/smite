@@ -2210,6 +2210,9 @@ while ( $iteration < $max_iterations ) {
         if ($opts{ "god" } eq "chronos" and $time == 0) {
             reset_buff_time("accelerate");
             add_stack("accelerate");
+            if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
+                $buffs{ "current" }->{ "polynomicon" } = 1;
+            }
         }
 
         if ($opts{ "god" } eq "freya" and $time == 0) {
