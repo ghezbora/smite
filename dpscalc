@@ -244,10 +244,10 @@ my %ability_stats = (
         "brutalize" => 0,
         "ragnarok" => 0,
 
-        "pounce" => 12,
-        "razor_whip" => 15,
-        "declaw" => 10,
-        "cat_call" => 90,
+        "pounce" => 0,
+        "razor_whip" => 0,
+        "declaw" => 0,
+        "cat_call" => 0,
 
         "spirit_arrow" => 0,
 
@@ -721,7 +721,8 @@ my %ability_stats = (
         "slipstream" =>             [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
         "nine_winds" =>             [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
-        "irradiate" =>              [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        #"irradiate" =>              [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "irradiate" =>              [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "pulse" =>                  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
 
         "time_rift" =>              [ 0, 1, 1, 1, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
@@ -2058,7 +2059,8 @@ while ( $iteration < $max_iterations ) {
         undef $next_skill;
         $next_skill = get_next_skill();
         if ( defined $next_skill and $opts{"action"} ne "tower" ) {
-            if ( $time >= $ability_stats{ "time" }->{ $next_skill } and $time >= $next_skill_time ) {
+            if ( $time >= $ability_stats{ "time" }->{ $next_skill } and $time >= $next_skill_time
+                        and $ability_stats{"level"}->{$next_skill}->[ $opts{"level"} ] > 0 ) {
                 # time to use next ability
                 my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
                         $ability_stats{ "level" }->{ $next_skill }->[ $opts{ "level" } ] ] +
