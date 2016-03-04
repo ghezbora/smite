@@ -1737,6 +1737,7 @@ my $next_skill;
 my $bluestone_stacks = 0;
 
 my $audacity_stacks = 0;
+my $audacity_charge = 0;
 
 my $obow_hits = 0;
 
@@ -2039,6 +2040,10 @@ while ( $iteration < $max_iterations ) {
         $buffs{ "current" }->{ "soul_reaver" } = 1;
     }
 
+    if ($opts{ "god" } eq "apollo") {
+        $audacity_stacks = 5;
+    }
+
     #while ( $time < $opts{"time"} ) {
     while ( get_their_health() > 0 ) {
 
@@ -2209,24 +2214,30 @@ while ( $iteration < $max_iterations ) {
         #################################################################################
         # execute buffs TODO can we merge these into the general skill logic?
         #################################################################################
-        if ($opts{ "god" } eq "chronos" and $time == 0) {
+        if ($opts{ "god" } eq "chronos" and $time >= $ability_stats{"time"}->{"accelerate"}) {
             reset_buff_time("accelerate");
             add_stack("accelerate");
             if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
                 $buffs{ "current" }->{ "polynomicon" } = 1;
             }
+            $ability_stats{ "time" }->{ "accelerate" } = $time +
+                    (1000*($ability_stats{ "cooldown" }->{ "accelerate" } * (1 - $cdr)));
         }
 
-        if ($opts{ "god" } eq "freya" and $time == 0) {
+        if ($opts{ "god" } eq "freya" and $time >= $ability_stats{"time"}->{"pulse"}) {
             reset_buff_time( "pulse" );
             add_stack( "pulse" );
             if ( $opts{"action"} eq "kill" ) {
                 reset_buff_time( "irradiate" );
                 add_stack( "irradiate" );
+                $ability_stats{ "time" }->{ "irradiate" } = $time +
+                        (1000*($ability_stats{ "cooldown" }->{ "irradiate" } * (1 - $cdr)));
             }
             if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
                 $buffs{ "current" }->{ "polynomicon" } = 1;
             }
+            $ability_stats{ "time" }->{ "pulse" } = $time +
+                    (1000*($ability_stats{ "cooldown" }->{ "pulse" } * (1 - $cdr)));
         }
 
         if ($opts{ "god" } eq "sol" and $time >= $ability_stats{ "time" }->{ "radiance" }) {
@@ -2236,7 +2247,7 @@ while ( $iteration < $max_iterations ) {
                 $buffs{ "current" }->{ "polynomicon" } = 1;
             }
             $ability_stats{ "time" }->{ "radiance" } =
-                    $time + 1000 * $ability_stats{ "cooldown" }->{ "radiance" };
+                    $time + (1000 * $ability_stats{ "cooldown" }->{ "radiance" } * (1-$cdr));
         }
 
         if ($opts{ "god" } eq 'xbal' and $time == 0 and $opts{"action"} ne "tower") {
@@ -2259,21 +2270,18 @@ while ( $iteration < $max_iterations ) {
             add_stack("pick_me_up");
         }
 
-        if ($opts{ "god" } eq "ullr" and $time == 0) {
+        if ($opts{ "god" } eq "ullr" and $time >= $ability_stats{"time"}->{"expose_weakness"}) {
             add_stack("expose_weakness");
             reset_buff_time( "expose_weakness" );
+            $ability_stats{ "time" }->{ "expose_weakness" } = $time +
+                    (1000*($ability_stats{ "cooldown" }->{ "expose_weakness" } * (1 - $cdr)));
         }
 
-        if ($opts{ "god" } eq "artemis" and $time == 0) {
-            # start with tusky
-            #my $pre_prot_damage = 450 + $base_damage;
-            #$damage += calc_mitigated_damage($pre_prot_damage);
+        if ($opts{ "god" } eq "artemis" and $time >= $ability_stats{"time"}->{"vengeful_assault"}) {
             add_stack("vengeful_assault");
             reset_buff_time("vengeful_assault");
-        }
-
-        if ($opts{ "god" } eq "apollo" and $time == 0) {
-            $audacity_stacks = 5;
+            $ability_stats{ "time" }->{ "vengeful_assault" } = $time +
+                    (1000*($ability_stats{ "cooldown" }->{ "vengeful_assault" } * (1 - $cdr)));
         }
 
         #################################################################################
@@ -2688,6 +2696,10 @@ while ( $iteration < $max_iterations ) {
             $heat += 5;
             if ( $heat > 100 ) { $heat = 100; }
 
+            if ($opts{"god"} eq "apollo" and $audacity_stacks == 0) {
+                $audacity_charge++;
+            }
+
             $next_skill_time = $time + 100; # assume very fast AA cancels
         }
 
@@ -2716,6 +2728,11 @@ while ( $iteration < $max_iterations ) {
                 # time's up, reset stacks for this buff
                 $buffs{ "current" }->{ $buff } = 0;
             }
+        }
+
+        if ($audacity_charge == 10) {
+            $audacity_charge = 0;
+            $audacity_stacks = 5;
         }
 
         if ( get_their_health() <= 0 and $ttk == 0 ) {
