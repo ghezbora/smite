@@ -6,6 +6,9 @@
 # items like hydras and poly are not handled well with the buff time system
 # it needs to handle both the cooldown and the buff duration
 #
+# add ravana
+# add bellona
+# add amaterasu
 # add hou yi
 # add poison darts for xbal
 # add kali
@@ -2821,7 +2824,7 @@ if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
         printf "Damage return from Nemean %.2f\n", ($attack_damage/$max_iterations) * 0.2 * ( 100 / (100 + 30 + 0.9 * $opts{"level"}));
         printf "Net lifesteal - Nemean damage %.2f\n",  (($total_damage * $lifesteal)/$max_iterations ) - ( ($attack_damage/$max_iterations) * 0.2 * ( 100 / (100 + 30 + 0.9 * $opts{"level"})));
     }
-    printf "Total gold %d damage/gold %.2f\n", $gold, ($total_damage/$max_iterations) / $gold;
+    printf "Total gold %d TTK*gold %.2f\n", $gold, ($total_ttk/$max_iterations)*$gold/1000000;
 }
 
 
