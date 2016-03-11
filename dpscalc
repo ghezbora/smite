@@ -3,7 +3,9 @@
 
 # Wish list
 #
-# implement pre-hit duration and post-hit duration correctly for abilities
+# implement pre-hit duration and post-hit duration correctly
+#
+# add jungle clear action
 #
 # add ravana
 # add bellona
@@ -1567,7 +1569,14 @@ if ( $opts{"action"} eq "clear" ) {
     } else {
         $their_percent_reduction = -0.2; # TODO does this work?
     }
+} elsif ( $opts{ "action" } eq "jungle" ) {
+    # jungle camp, 3 minions
+    $their_max_health = 960 + 2 * 180;
+    $their_phys_prot = 0;
+    $their_mag_prot = 0;
+    $their_percent_reduction = 0.1;
 }
+
 
 if ( $opts{ "god" } eq "scylla" ) {
     if ( $ability_stats{ "level" }->{ "crush" }->[ $opts{ "level" } ] == 5 ) { $magical_power += 20; }
@@ -1841,6 +1850,25 @@ sub ability_crits($) {
 }
 
 
+sub get_aoe( $ ) {
+    if ( $opts{ "action" } eq "tower" or $opts{ "action" } eq "kill" ) {
+        return 1;
+    }
+    
+    my $ability = shift;
+    my $aoe = 1;
+    # TODO move auto attack aoe logic here as well ??
+    # golden bow / pulse
+    $aoe = $ability_stats{ "aoe" }->{ $ability };
+    if ( $opts{ "action" } eq "jungle" ) {
+        if ( $aoe > 3 ) {
+            $aoe = 3;
+        }
+    }
+    return $aoe;
+}
+
+
 sub get_eff_power() {
     
     if ( $base_stats{ "type" }->{ $opts{"god"} } eq "physical" ) {
@@ -1995,7 +2023,7 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
         my $output = sprintf "time %6d %16s %8s prot %4d -> %4d damage %4d -> %4d ",
                 $time, $damage_source, $damage_type, $their_base_prot,
                 $their_eff_prot, $pre_prot_damage, $damage;
-        if ( $opts{"action"} eq "clear" ) {
+        if ( $opts{"action"} eq "clear" or $opts{"action"} eq "jungle" ) {
             $output .= sprintf " * %d -> %d ", $num_targets, ($num_targets * $damage);
         }
         if ( defined $items{ "spear" } ) {
@@ -2039,7 +2067,7 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
 # skill ordering and cooldowns
 #################################################################################
 sub get_next_skill() {
-    if ( $opts{"action"} eq "clear" ) {
+    if ( $opts{"action"} eq "clear" or $opts{"action"} eq "jungle" ) {
         if ( scalar( $clear_skills{ $opts{ "god" } } ) == 0 ) {
             return undef;
         }
@@ -2131,25 +2159,25 @@ while ( $iteration < $max_iterations ) {
                             # deathbane can crit
                             $pre_prot_damage = ability_crits( $pre_prot_damage );
                         }
-                        if ( $opts{"action"} eq "clear" ) {
-                            # add so beautiful next target mitigation here TODO
-                            if ( $next_skill eq "so_beautiful" ) {
-                                my $it = 0;
-                                while ( $it < $ability_stats{ "aoe" }->{ $next_skill } ) {
-                                    $damage += calc_mitigated_damage( $pre_prot_damage * (0.85 ** $it),
-                                            $next_skill, 1, 1,
-                                            $base_stats{ "type" }->{ $opts{"god"} });
-                                    $it++;
-                                }
-                            } else {
-                                $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
-                                        $ability_stats{ "aoe" }->{ $next_skill },
-                                        $base_stats{ "type" }->{ $opts{"god"} } );
+
+                        # damage calculated, apply proper aoe
+                        if ( $next_skill eq "so_beautiful" and $opts{"action"} eq "clear") {
+                            # so beautiful has special mitigation, handle that here
+                            # do NOT process this like a normal aoe
+                            my $it = 0;
+                            while ( $it < $ability_stats{ "aoe" }->{ $next_skill } ) {
+                                $damage += calc_mitigated_damage( $pre_prot_damage * (0.85 ** $it),
+                                        $next_skill, 1, 1,
+                                        $base_stats{ "type" }->{ $opts{"god"} });
+                                $it++;
                             }
                         } else {
-                            $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1, 1,
-                                    $base_stats{ "type" }->{ $opts{"god"} });
+                            $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
+                                    get_aoe( $next_skill ),
+                                    $base_stats{ "type" }->{ $opts{"god"} } );
                         }
+
+
                         if(defined $items{"spear"}) {
                             reset_buff_time("spear");
                             add_stack("spear");
@@ -2157,10 +2185,7 @@ while ( $iteration < $max_iterations ) {
                         if(defined $items{"bluestone"}) {
                             # schedule ticks
                             my $i = 0;
-                            my $aoe = 1;
-                            if ( $opts{"action"} eq "clear" ) {
-                                $aoe = $ability_stats{ "aoe" }->{ $next_skill };
-                            }
+                            my $aoe = get_aoe($next_skill);
                             add_bluestone( $aoe );
                         }
                     }
@@ -2180,15 +2205,9 @@ while ( $iteration < $max_iterations ) {
                         while ( defined $ticks{ $tick_time } ) { $tick_time++; }
                         if ( $next_skill ne "last_breath" ) {
                             # not true damage
-                            if ( $opts{"action"} eq "clear" and defined $ability_stats{ "aoe" }->{ $next_skill}) {
-                                # if clearing, use aoe coefficient
-                                $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick",
-                                        $base_stats{ "type" }->{ $opts{"god"} },
-                                        $ability_stats{ "aoe" }->{ $next_skill} ];
-                            } else {
-                                $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", 
-                                        $base_stats{ "type" }->{ $opts{"god"} }, 1 ];
-                            }
+                            $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick",
+                                    $base_stats{ "type" }->{ $opts{"god"} },
+                                    get_aoe($next_skill) ];
                         } else {
                             $ticks{ $tick_time } = +[ $pre_prot_damage, "$next_skill tick", "true", 1 ];
                         }
@@ -2354,20 +2373,12 @@ while ( $iteration < $max_iterations ) {
             my $hit = 0;
             while ( $hit < $ability_stats{ "hits" }->{ "brutalize" } ) {
                 if( $pre_prot_damage > 0 ) { 
-                    if ( $opts{"action"} eq "clear" ) {
-                        $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
-                                $ability_stats{ "aoe" }->{ "brutalize" },
-                                $base_stats{ "type" }->{ $opts{"god"} } );
-                    } else {
-                        $damage += calc_mitigated_damage( $pre_prot_damage, "brutalize", 1, 1,
-                        $base_stats{ "type" }->{ $opts{"god"} } );
-                    }
+                    $damage += calc_mitigated_damage( $pre_prot_damage, "brutalize", 1,
+                            get_aoe("brutalize"),
+                            $base_stats{ "type" }->{ $opts{"god"} } );
                     if(defined $items{"bluestone"}) {
                         # schedule ticks
-                        my $aoe = 1;
-                        if ( $opts{"action"} eq "clear" ) {
-                            $aoe = $ability_stats{ "aoe" }->{ $next_skill };
-                        }
+                        my $aoe = get_aoe("brutalize");
                         add_bluestone( $aoe );
                     }
                 }
@@ -2512,7 +2523,7 @@ while ( $iteration < $max_iterations ) {
             # ability buffs
             if ($buffs{ "current" }->{ "pulse" } and $opts{"action"} ne "tower") {
                 my $aoe = 1;
-                if ( $opts{"action"} eq "clear" and
+                if ( ($opts{"action"} eq "clear" or $opts{"action"} eq "jungle" ) and
                         $buffs{ "current" }->{ "pulse" } and not $buffs{ "current" }->{ "irradiate" }) {
                     $aoe = 3;
                 }
