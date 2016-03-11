@@ -3,8 +3,7 @@
 
 # Wish list
 #
-# items like hydras and poly are not handled well with the buff time system
-# it needs to handle both the cooldown and the buff duration
+# implement pre-hit duration and post-hit duration correctly for abilities
 #
 # add ravana
 # add bellona
@@ -40,7 +39,6 @@ my $VERBOSITY_LEGENDARY = 9;
 $opts{ "enemy" } = "chiron";
 $opts{ "verbosity" } = $VERBOSITY_NORMAL;
 $opts{ "action" } = "kill";
-#$opts{ "time" } = 5005;
 $opts{ "level" } = 20;
 
 GetOptions( 'god=s' => \$opts{ "god" },
@@ -49,7 +47,6 @@ GetOptions( 'god=s' => \$opts{ "god" },
             'enemy_items=s' => \$opts{"enemy_items"},
             'verbosity=i' => \$opts{"verbosity"},
             'action=s' => \$opts{"action"},
-            #'time=i' => \$opts{"time"},
             'iterations=i' => \$opts{"iterations"},
             'level=i' => \$opts{"level"} );
 
@@ -128,6 +125,8 @@ my %ability_stats = (
         "sentinel" => 15,
         "im_a_monster" => 90,
 
+        "so_beautiful" => 15, #scaling
+
         "ricochet" => 10,
         "mark_of_golden_crow" => 18,
         "divebomb" => 15,
@@ -201,6 +200,8 @@ my %ability_stats = (
         "feather_step" => 0,
         "gravity_surge" => 0,
 
+        "so_beautiful" => 0,
+
         "ricochet" => 0,
         "mark_of_golden_crow" => 0,
         "divebomb" => 0,
@@ -266,6 +267,8 @@ my %ability_stats = (
         "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
         "im_a_monster" => [ 0, 400, 500, 600, 700, 800 ],
 
+        "so_beautiful" => [ 0, 80, 135, 190, 245, 300 ],
+
         "ricochet" => [ 0, 70, 110, 150, 190, 230 ],
         "mark_of_golden_crow" => [ 0, 0, 0, 0, 0, 0 ],
         "sunbreaker" => [ 0, 0, 0, 0, 0, 0 ],
@@ -317,7 +320,8 @@ my %ability_stats = (
         "declaw" => [ 0, 70, 120, 170, 220, 270 ],
         "cat_call" => [ 0, 0, 0, 0, 0, 0 ],
 
-        "spirit_arrow" => [ 0, 180, 310, 440, 570, 700 ],
+        #"spirit_arrow" => [ 0, 180, 310, 440, 570, 700 ],
+        "spirit_arrow" => [ 0, 90, 155, 220, 285, 350 ],
 
         "thrown_axe" => [ 0, 60, 90, 120, 150, 180 ],
         "hail_of_arrows" => [ 0, 80, 120, 160, 200, 240 ],
@@ -330,6 +334,8 @@ my %ability_stats = (
         "sic_em" => 1,
         "sentinel" => 0,
         "im_a_monster" => 0,
+
+        "so_beautiful" => 6,
 
         "ricochet" => 6,
         "mark_of_golden_crow" => 0,
@@ -391,6 +397,8 @@ my %ability_stats = (
         "sic_em" => 1,
         "sentinel" => 0,
         "im_a_monster" => 1,
+
+        "so_beautiful" => 1,
 
         "ricochet" => 1,
         "mark_of_golden_crow" => 0,
@@ -470,6 +478,8 @@ my %ability_stats = (
         "sic_em" => 0.6,
         "sentinel" => 0,
         "im_a_monster" => 1.2,
+
+        "so_beautiful" => 0.8,
 
         "ricochet" => 0.6,
         "mark_of_golden_crow" => 0,
@@ -561,6 +571,10 @@ my %ability_stats = (
         "cat_call" => 1,
     },
     "num_ticks" => {
+        "so_beautiful" => 0,
+
+        "ricochet" => 0,
+
         "crush" => 0,
         "sic_em" => 0,
         "sentinel" => 0,
@@ -621,6 +635,8 @@ my %ability_stats = (
         "training_exercise" => 0,
     },
     "next_action" => { # time to next action
+        "so_beautiful" => 0.5,
+
         # these are mostly guesses
         "crush" => 0.5,
         "sic_em" => 0.5,
@@ -714,6 +730,8 @@ my %ability_stats = (
         "sentinel" =>               [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
         "im_a_monster" =>           [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
+        "so_beautiful" =>           [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+
         "ricochet" =>               [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "mark_of_golden_crow" =>    [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "divebomb" =>               [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
@@ -800,7 +818,7 @@ my %combos = (
     "thor" => [ "anvil_of_dawn", "mjolnirs_attunement", "tectonic_rift", "spin_to_win" ],
     "fenrir" => [ "unchained", "ragnarok" ],
     "bastet" => [ "pounce", "razor_whip", "cat_call" ],
-    "apollo" => [ ],
+    "apollo" => [ "so_beautiful" ],
     "mercury" => [ ],
     "neith" => [ "spirit_arrow", ],
     "ullr" => [ "thrown_axe", "hail_of_arrows", "bladed_arrow" ],
@@ -817,9 +835,10 @@ my %clear_skills = (
     "artemis" => [ "suppress_the_insolent" ],
     "kukulkan" => [ "whirlwind" ],
     "bastet" => [ "razor_whip" ],
-    "apollo" => [ ],
+    "apollo" => [ "so_beautiful" ],
     "fenrir" => [ "brutalize" ],
     "chiron" => [ "training_exercise" ],
+    "neith" => [ "spirit_arrow", ],
 );
 
 
@@ -1249,6 +1268,11 @@ if (defined $items{ "bluestone" } ) {
     $gold += 800;
 }
 
+if (defined $items{ "deaths_toll" } ) {
+    $physical_power += 15;
+    $gold += 800;
+}
+
 # jotunn's wrath
 if (defined $items{"jotunns"} or defined $items{ "jotunns_wrath" }) {
     $physical_power += 40;
@@ -1355,7 +1379,7 @@ if (defined $items{"stone_cutting_sword"} or defined $items{ "scs" }) {
 
 # masamune
 if (defined $items{"masamune"}) {
-    $physical_power += 30;
+    $physical_power += 50;
     $item_mvmt_speed += .1;
     $gold += 2200;
 }
@@ -1364,7 +1388,7 @@ if (defined $items{"masamune"}) {
 if (defined $items{ "heartseeker" }) {
     $physical_power += 25;
     $item_mvmt_speed += 0.1;
-    $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ "god" } }; # assume stacked
+    #$attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ "god" } }; # assume stacked
     #TODO deal with heartseeker stacks
 }
 
@@ -1412,15 +1436,15 @@ if (defined $items{"deathbringer"} or defined $items{ "db" }) {
 }
 
 # hydras lament
-if (defined $items{"hydras"}) {
+if (defined $items{"hydras"} or defined $items{"hydras_lament"}) {
     $cdr += 0.15;
     $physical_power += 30;
 }
 
 # transcendence
 if (defined $items{"transcendence"}) {
-    #$mana += 1050;
-    $mana += 300;
+    $mana += 1050;
+    #$mana += 300;
     $physical_power += 35;
     $physical_power += 0.03 * $mana; # TODO having this last computes bonus right... probably?
     $gold += 2600;
@@ -1619,6 +1643,7 @@ my %buffs = (
         "stone_cutting_sword" => 3, # both a buff and a debuff
         "oni" => 3, # buff for enemy
         "spectral_armor" => 1, # buff for enemy
+        "heartseeker" => 5,
     },
     "current" => {
         "crusher" => 0,
@@ -1649,11 +1674,16 @@ my %buffs = (
         "stone_cutting_sword" => 0, # both a buff and a debuff
         "oni" => 3, # buff for enemy, assume this starts fully stacked
         "spectral_armor" => 0, # buff for enemy
+        "heartseeker" => 0,
     },
     cooldown => {
+        "spectral_armor" => 0, # TODO
+        "polynomicon" => 3000,
+        "soul_reaver" => 60000,
+    },
+    cooldown_time => {
         "spectral_armor" => 0,
         "polynomicon" => 0,
-        "hydras_lament" => 0,
         "soul_reaver" => 0,
     },
     "time" => { # end time for buffs
@@ -1685,6 +1715,7 @@ my %buffs = (
         "stone_cutting_sword" => 0, # both a buff and a debuff
         "oni" => 0, # buff for enemy
         "spectral_armor" => 0, # buff for enemy
+        "heartseeker" => 0,
     },
     "duration" => {
         "crusher" => 2000,
@@ -1706,8 +1737,8 @@ my %buffs = (
         "branching_bolas" => 0,
         "open_wound" => 0, # really a debuff on the target
         "serqet_poisons" => 20000, # really a debuff on the target
-        "hydras_lament" => 3000, # cooldown time
-        "polynomicon" => 3000, # cooldown time
+        "hydras_lament" => 8000,
+        "polynomicon" => 8000,
         "ichaival" => 3000, # both a buff and a debuff
         "irradiate" => 5000,
         "pulse" => 5000,
@@ -1715,6 +1746,7 @@ my %buffs = (
         "stone_cutting_sword" => 3000, # both a buff and a debuff
         "oni" => 0, # buff for enemy
         "spectral_armor" => 5000, # buff for enemy
+        "heartseeker" => 0,
     },
 );
 
@@ -1818,12 +1850,6 @@ sub get_eff_power() {
                 + $buffs{ "current" }->{ "gravity_surge" } *
                         $ability_stats{ "power_buff" }->{ "gravity_surge" }->[
                                 $ability_stats{ "level" }->{ "gravity_surge" }->[ $opts{ "level" } ] ];
-        if (defined $items{ "masamune" }) {
-            # TODO does masamune work this way? or is it more like telkhines?
-            my $bonus = int(0.1 * ($their_max_health - 2000)); # 1 for every 10 health diff
-            if ($bonus > 50) { $bonus = 50; }
-            $eff_physical_power += $bonus;
-        }
         if ($buffs{ "current" }->{ "initiative" } > 0) {
             $eff_physical_power *= 1.3;
         }
@@ -1984,6 +2010,12 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
         if ( defined $items{ "stone_cutting_sword" } or defined $items{ "scs" } ) {
             $output .= sprintf " %d SCS stacks ", $buffs{ "current" }->{ "stone_cutting_sword" };
         }
+        if ( defined $items{ "heartseeker" } ){
+            $output .= sprintf " %d heartseeker stacks ", $buffs{ "current" }->{ "heartseeker" };
+        }
+        if ( defined $items{ "crusher" } ){
+            $output .= sprintf " %d crusher stacks ", $buffs{ "current" }->{ "crusher" };
+        }
         if ( defined $enemy_items{ "oni" }) {
             $output .= sprintf " %d oni stacks ", $buffs{ "current" }->{ "oni" };
         }
@@ -2055,8 +2087,9 @@ while ( $iteration < $max_iterations ) {
             add_stack("initiative");
             reset_buff_time("initiative");
 
-            if (defined $items{"hydras"} and $buffs{ "time" }->{ "hydras_lament" } <= $time) {
-                $buffs{ "current" }->{ "hydras_lament" }= 1;
+            if (defined $items{"hydras"} or defined $items{"hydras_lament"}) {
+                add_stack("hydras_lament");
+                reset_buff_time("hydras_lament");
             }
         }
 
@@ -2070,9 +2103,14 @@ while ( $iteration < $max_iterations ) {
             if ( $time >= $ability_stats{ "time" }->{ $next_skill } and $time >= $next_skill_time
                         and $ability_stats{"level"}->{$next_skill}->[ $opts{"level"} ] > 0 ) {
                 # time to use next ability
+                my $effective_power = get_eff_power();
+                if ( $buffs{ "current" }->{"heartseeker"} == 5 ){
+                    $effective_power += 40;
+                    $buffs{ "current" }->{ "heartseeker" } = 0;
+                }
                 my $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
                         $ability_stats{ "level" }->{ $next_skill }->[ $opts{ "level" } ] ] +
-                        (get_eff_power() * $ability_stats{ "scaling" }->{ $next_skill });
+                        ($effective_power * $ability_stats{ "scaling" }->{ $next_skill });
                 if ( $opts{ "action" } eq "kill" and $next_skill eq "ricochet" ) {
                     # assume one bounce on ricochet on a god
                     # TODO this is kind of a hack...
@@ -2094,9 +2132,20 @@ while ( $iteration < $max_iterations ) {
                             $pre_prot_damage = ability_crits( $pre_prot_damage );
                         }
                         if ( $opts{"action"} eq "clear" ) {
-                            $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
-                                    $ability_stats{ "aoe" }->{ $next_skill },
-                                    $base_stats{ "type" }->{ $opts{"god"} } );
+                            # add so beautiful next target mitigation here TODO
+                            if ( $next_skill eq "so_beautiful" ) {
+                                my $it = 0;
+                                while ( $it < $ability_stats{ "aoe" }->{ $next_skill } ) {
+                                    $damage += calc_mitigated_damage( $pre_prot_damage * (0.85 ** $it),
+                                            $next_skill, 1, 1,
+                                            $base_stats{ "type" }->{ $opts{"god"} });
+                                    $it++;
+                                }
+                            } else {
+                                $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1,
+                                        $ability_stats{ "aoe" }->{ $next_skill },
+                                        $base_stats{ "type" }->{ $opts{"god"} } );
+                            }
                         } else {
                             $damage += calc_mitigated_damage( $pre_prot_damage, $next_skill, 1, 1,
                                     $base_stats{ "type" }->{ $opts{"god"} });
@@ -2158,11 +2207,13 @@ while ( $iteration < $max_iterations ) {
                     add_stack( "serqet_poisons" );
                 }
 
-                if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
-                    $buffs{ "current" }->{ "polynomicon" } = 1;
+                if (defined $items{"polynomicon"} and $buffs{ "cooldown_time" }->{ "polynomicon" } <= $time) {
+                    add_stack("polynomicon");
+                    reset_buff_time("polynomicon");
                 }
-                if (defined $items{"hydras"} and $buffs{ "cooldown" }->{ "hydras_lament" } <= $time) {
-                    $buffs{ "current" }->{ "hydras_lament" } = 1;
+                if (defined $items{"hydras"} or defined $items{"hydras_lament"}) {
+                    add_stack("hydras_lament");
+                    reset_buff_time("hydras_lament");
                 }
 
                 $ability_stats{ "time" }->{ $next_skill } = $time +
@@ -2220,8 +2271,9 @@ while ( $iteration < $max_iterations ) {
         if ($opts{ "god" } eq "chronos" and $time >= $ability_stats{"time"}->{"accelerate"}) {
             reset_buff_time("accelerate");
             add_stack("accelerate");
-            if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
-                $buffs{ "current" }->{ "polynomicon" } = 1;
+            if (defined $items{"polynomicon"} and $buffs{ "cooldown_time" }->{ "polynomicon" } <= $time) {
+                add_stack("polynomicon");
+                reset_buff_time("polynomicon");
             }
             $ability_stats{ "time" }->{ "accelerate" } = $time +
                     (1000*($ability_stats{ "cooldown" }->{ "accelerate" } * (1 - $cdr)));
@@ -2236,8 +2288,9 @@ while ( $iteration < $max_iterations ) {
                 $ability_stats{ "time" }->{ "irradiate" } = $time +
                         (1000*($ability_stats{ "cooldown" }->{ "irradiate" } * (1 - $cdr)));
             }
-            if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
-                $buffs{ "current" }->{ "polynomicon" } = 1;
+            if (defined $items{"polynomicon"} and $buffs{ "cooldown_time" }->{ "polynomicon" } <= $time) {
+                add_stack("polynomicon");
+                reset_buff_time("polynomicon");
             }
             $ability_stats{ "time" }->{ "pulse" } = $time +
                     (1000*($ability_stats{ "cooldown" }->{ "pulse" } * (1 - $cdr)));
@@ -2246,8 +2299,9 @@ while ( $iteration < $max_iterations ) {
         if ($opts{ "god" } eq "sol" and $time >= $ability_stats{ "time" }->{ "radiance" }) {
             $heat += $radiance_heat_amount[
                    $ability_stats{ "level" }->{ "radiance" }->[ $opts{ "level" } ] ];
-            if (defined $items{"polynomicon"} and $buffs{ "cooldown" }->{ "polynomicon" } <= $time) {
-                $buffs{ "current" }->{ "polynomicon" } = 1;
+            if (defined $items{"polynomicon"} and $buffs{ "cooldown_time" }->{ "polynomicon" } <= $time) {
+                add_stack("polynomicon");
+                reset_buff_time("polynomicon");
             }
             $ability_stats{ "time" }->{ "radiance" } =
                     $time + (1000 * $ability_stats{ "cooldown" }->{ "radiance" } * (1-$cdr));
@@ -2339,8 +2393,9 @@ while ( $iteration < $max_iterations ) {
                 $messages_to_print{ "overcapping viper attack rate" } = 1;
                 $viper_attack_rate = 2.5;
             }
-            if (defined $items{"hydras"} and $buffs{ "cooldown" }->{ "hydras_lament" } <= $time) {
-                $buffs{ "current" }->{ "hydras_lament" }= 1;
+            if (defined $items{"hydras"} or defined $items{"hydras_lament"}) {
+                add_stack("hydras_lament");
+                reset_buff_time("hydras_lament");
             }
 
             my $viper_attack_duration = int(1000 / $viper_attack_rate);
@@ -2350,9 +2405,14 @@ while ( $iteration < $max_iterations ) {
         if ($opts{ "god" } eq "awilix" and $next_attack_chain == 2 and
                 $ability_stats{ "time" }->{ "feather_step" } <= $time  and $opts{"action"} ne "tower") {
             # time to feather step
+            my $effective_power = get_eff_power();
+            if ( $buffs{ "current" }->{"heartseeker"} == 5 ){
+                $effective_power += 40;
+                $buffs{ "current" }->{ "heartseeker" } = 0;
+            }
             my $pre_prot_damage = $ability_stats{ "damage" }->{ "feather_step" }->[
                     $ability_stats{ "level" }->{ "feather_step" }->[ $opts{ "level" } ] ]
-                    + ($ability_stats{ "scaling" }->{ "feather_step" } * get_eff_power());
+                    + ($ability_stats{ "scaling" }->{ "feather_step" } * $effective_power);
 
             $damage += calc_mitigated_damage($pre_prot_damage, "feather step", 1, 1,
                     $base_stats{ "type" }->{ $opts{"god"} });
@@ -2361,8 +2421,9 @@ while ( $iteration < $max_iterations ) {
             $next_attack_chain = 0;
             $next_attack = $time + 250; # don't know actual AA cancel durations
 
-            if (defined $items{"hydras"} and $buffs{ "cooldown" }->{ "hydras_lament" } <= $time) {
-                $buffs{ "current" }->{ "hydras_lament" }= 1;
+            if (defined $items{"hydras"} or defined $items{"hydras_lament"}) {
+                add_stack("hydras_lament");
+                reset_buff_time("hydras_lament");
             }
 
             $ability_stats{ "time" }->{ "feather_step" } = $time +
@@ -2514,12 +2575,11 @@ while ( $iteration < $max_iterations ) {
 
             # item buffs
 
-            if($buffs{ "current" }->{ "hydras_lament" } and $opts{"action"} ne "tower") {
-                $hydras_damage += 0.25 * get_basic_attack_damage();
+            if($buffs{ "current" }->{ "hydras_lament" }) {
+                $hydras_damage += 0.3 * get_basic_attack_damage();
                 $hydras_procs++;
-                $pre_prot_damage += 0.25 * get_basic_attack_damage();
+                $pre_prot_damage += 0.3 * get_basic_attack_damage();
                 $buffs{ "current" }->{ "hydras_lament" } = 0;
-                reset_buff_time( "hydras_lament" );
             }
 
             if ($buffs{ "current" }->{ "polynomicon" }) {
@@ -2529,7 +2589,7 @@ while ( $iteration < $max_iterations ) {
                 $polynomicon_damage = int(calc_mitigated_damage( 0.75 * get_eff_power(), "polynomicon", 0, 1,
                         $base_stats{ "type" }->{ $opts{"god"} } ));
                 $buffs{ "current" }->{ "polynomicon" } = 0;
-                reset_buff_time("polynomicon");
+                $buffs{ "cooldown_time" }->{ "polynomicon" } = $time + $buffs{ "cooldown" }->{ "polynomicon" };
             }
 
             if (defined $items{"telkhines_ring"} or defined $items{ "telkhines" }
@@ -2539,6 +2599,12 @@ while ( $iteration < $max_iterations ) {
                         $base_stats{ "type" }->{ $opts{"god"} } );
                 $telkhines_damage += calc_mitigated_damage( 35, "telkhines", 0, 1,
                         $base_stats{ "type" }->{ $opts{"god"} } );
+            }
+
+            if (defined $items{ "masamune" }) {
+                my $bonus = int(0.1 * ($their_max_health - 2000)); # 1 for every 10 health diff TODO my health
+                if ($bonus > 50) { $bonus = 50; }
+                $damage += calc_mitigated_damage( $bonus, "masamune", 1, 1, "physical" );
             }
 
             if ($opts{"action"} eq "clear" and (defined $items{"obow"} or defined $items{"odysseus_bow"})) {
@@ -2687,6 +2753,9 @@ while ( $iteration < $max_iterations ) {
                         $ability_stats{ "level" }->{ "viper_shot" }->[ $opts{ "level" } ] ];
             }
 
+            $eff_attack_rate += 0.03 * $buffs{ "current" }->{ "heartseeker" } *
+                    $base_stats{ "attack_rate" }->{ $opts{ "god" } };
+
             if ( $eff_attack_rate > 2.5 ) { $eff_attack_rate = 2.5; }
 
             my $eff_attack_duration = int(1000 / $eff_attack_rate);
@@ -2701,6 +2770,11 @@ while ( $iteration < $max_iterations ) {
 
             if ($opts{"god"} eq "apollo" and $audacity_stacks == 0) {
                 $audacity_charge++;
+            }
+
+            if (defined $items{ "heartseeker" } ) {
+                add_stack( "heartseeker" );
+                reset_buff_time( "heartseeker" );
             }
 
             $next_skill_time = $time + 100; # assume very fast AA cancels
@@ -2809,7 +2883,7 @@ if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
     if ( defined $items{ "telkhines" } or defined $items{ "telkhines_ring" } ) {
         printf "Telkhines damage %.2f\n", $telkhines_damage;
     }
-    if ( defined $items{ "hydras" } ) {
+    if ( defined $items{ "hydras" } or defined $items{"hydras_lament"} ) {
         print "Hydras procs $hydras_procs hydras damage $hydras_damage\n";
     }
     if ( $base_stats{ "type" }->{ $opts{ "god" } } eq "physical" and $total_attacks > 0 ) {
