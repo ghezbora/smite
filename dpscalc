@@ -5,12 +5,9 @@
 #
 # implement pre-hit duration and post-hit duration correctly
 #
-# add jungle clear action
-#
 # add ravana
 # add bellona
 # add amaterasu
-# add hou yi
 # add poison darts for xbal
 # add kali
 # add arachne
@@ -122,12 +119,21 @@ foreach my $item (@enemy_items) {
 
 my %ability_stats = (
     "cooldown" => {
+        "slice_and_dice" => 13,
+        "divine_judgment" => 70,
+
+        "venomous_bite" => 15, # TODO scales
+        "cocoon" => 15,
+
+        "lash" => 15, # TODO scales
+        "incense" => 18,
+
         "crush" => 10,
         "sic_em" => 10,
         "sentinel" => 15,
         "im_a_monster" => 90,
 
-        "so_beautiful" => 15, #scaling
+        "so_beautiful" => 15, #TODO scales
 
         "ricochet" => 10,
         "mark_of_golden_crow" => 18,
@@ -193,6 +199,15 @@ my %ability_stats = (
         "training_exercise" => 15,
     },
     "time" => { # will be updated with cooldown when used
+        "slice_and_dice" => 0,
+        "divine_judgment" => 0,
+
+        "venomous_bite" => 0,
+        "cocoon" => 0,
+
+        "lash" => 0,
+        "incense" => 0,
+
         "crush" => 0,
         "sic_em" => 0,
         "sentinel" => 0,
@@ -264,6 +279,15 @@ my %ability_stats = (
         "training_exercise" => 0,
     },
     "damage" => {
+        "slice_and_dice" => [ 0, 40, 65, 90, 115, 140 ],
+        "divine_judgment" => [ 0, 0.3, 0.35, 0.4, 0.45, 0.5 ], # damage is %hp
+
+        "venomous_bite" => [ 0, 50, 75, 100, 125, 150 ],
+        "cocoon" => [ 0, 0, 0, 0, 0, 0 ],
+
+        "lash" => [ 0, 35, 45, 55, 65, 75 ],
+        "incense" => [ 0, 0, 0, 0, 0, 0 ],
+
         "crush" => [ 0, 90, 140, 190, 240, 290 ],
         "sic_em" => [ 0, 60, 110, 160, 210, 260 ],
         "sentinel" => [ 0, 0, 0, 0, 0, 0 ],
@@ -332,6 +356,15 @@ my %ability_stats = (
         "training_exercise" => [ 0, 70, 120, 170, 220, 270 ],
     },
     "aoe" => { # for clear calculations, how many minions hit
+        "slice_and_dice" => 6,
+        "divine_judgment" => 0,
+
+        "venomous_bite" => 1,
+        "cocoon" => 0,
+
+        "lash" => 3,
+        "incense" => 0,
+
         "crush" => 6,
         "sic_em" => 1,
         "sentinel" => 0,
@@ -395,6 +428,15 @@ my %ability_stats = (
         "training_exercise" => 6,
     },
     "hits" => {
+        "slice_and_dice" => 1,
+        "divine_judgment" => 1,
+
+        "venomous_bite" => 1,
+        "cocoon" => 0,
+
+        "lash" => 3,
+        "incense" => 0,
+
         "crush" => 1,
         "sic_em" => 1,
         "sentinel" => 0,
@@ -459,6 +501,10 @@ my %ability_stats = (
         "training_exercise" => 1,
     },
     "tick_damage" => {
+        "venomous_bite" => [ 0, 10, 20, 30, 40, 50 ],
+
+        "lash" => [ 0, 5, 10, 15, 20, 25 ],
+
         "viper_shot" => [ 0, 10, 15, 20, 25, 30 ],
 
         "sunbreaker" => [ 0, 80, 90, 100, 110, 120 ],
@@ -476,6 +522,15 @@ my %ability_stats = (
         "cat_call" => [ 0, 75, 105, 135, 165, 195 ],
     },
     "scaling" => {
+        "slice_and_dice" => 0.4,
+        "divine_judgment" => 0,
+
+        "venomous_bite" => 0.35,
+        "cocoon" => 0,
+
+        "lash" => 0.2,
+        "incense" => 0,
+
         "crush" => 0.8,
         "sic_em" => 0.6,
         "sentinel" => 0,
@@ -541,6 +596,10 @@ my %ability_stats = (
         "training_exercise" => 0.8,
     },
     "tick_scaling" => {
+        "venomous_bite" => 0.1,
+
+        "lash" => 0.05,
+
         "viper_shot" => 0.1,
 
         "sunbreaker" => 0.25,
@@ -558,6 +617,10 @@ my %ability_stats = (
         "cat_call" => 0.6,
     },
     "tick_duration" => {
+        "venomous_bite" => 0.5,
+
+        "lash" => 0.5,
+
         "shadow_lock" => .5,
         "night_terror" => 1,
         
@@ -573,6 +636,15 @@ my %ability_stats = (
         "cat_call" => 1,
     },
     "num_ticks" => {
+        "slice_and_dice" => 0,
+        "divine_judgment" => 0,
+
+        "venomous_bite" => 6,
+        "cocoon" => 0,
+
+        "lash" => 6,
+        "incense" => 0,
+
         "so_beautiful" => 0,
 
         "ricochet" => 0,
@@ -637,6 +709,15 @@ my %ability_stats = (
         "training_exercise" => 0,
     },
     "next_action" => { # time to next action
+        "slice_and_dice" => 0.5,
+        "divine_judgment" => 0.5,
+
+        "venomous_bite" => 0.5,
+        "cocoon" => 0.5,
+
+        "lash" => 0.5,
+        "incense" => 0.5,
+
         "so_beautiful" => 0.5,
 
         # these are mostly guesses
@@ -706,8 +787,12 @@ my %ability_stats = (
         "expose_weakness" => [ 0, 10, 20, 30, 40, 50 ],
         "branching_bolas" => [ 0, 10, 20, 30, 40, 50 ],
         "gravity_surge" => [ 0, 20, 30, 40, 50, 60 ],
+        "incense" => [ 0, 10, 20, 30, 40, 50 ],
+
     },
     "attack_speed_buff" => {
+        "cocoon" => [ 0, 0.3, 0.4, 0.5, 0.6, 0.7 ],
+
         "pick_me_up" => [ 0, 0.30, 0.35, 0.40, 0.45, 0.50 ],
 
         "maximum_velocity" => [ 0, 0.30, 0.40, 0.50, 0.60, 0.70 ],
@@ -724,6 +809,18 @@ my %ability_stats = (
     },
     "level" => {
         # character level           [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20 ],
+        "slice_and_dice" =>         [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "divine_judgment" =>        [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
+
+        "venomous_bite" =>          [ 0, 0, 1, 1, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "cocoon" =>                 [ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "web" =>                    [ 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "infinite_web" =>           [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
+
+        "nimble_strike" =>          [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "lash" =>                   [ 0, 1, 1, 1, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "incense" =>                [ 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+
         "maximum_velocity" =>       [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "pick_me_up" =>             [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
 
@@ -825,6 +922,9 @@ my %combos = (
     "neith" => [ "spirit_arrow", ],
     "ullr" => [ "thrown_axe", "hail_of_arrows", "bladed_arrow" ],
     "chiron" => [ ],
+    "nemesis" => [ "divine_judgment" ],
+    "arachne" => [ "venomous_bite", "cocoon" ],
+    "kali" => [ "lash" ],
 );
 
 
@@ -841,6 +941,9 @@ my %clear_skills = (
     "fenrir" => [ "brutalize" ],
     "chiron" => [ "training_exercise" ],
     "neith" => [ "spirit_arrow", ],
+    "nemesis" => [ "slice_and_dice" ],
+    "arachne" => [ "cocoon" ],
+    "kali" => [ "lash" ],
 );
 
 
@@ -870,6 +973,9 @@ my %base_stats = (
         "mercury" => "physical",
         "chiron" => "physical",
         "hou_yi" => "physical",
+        "nemesis" => "physical",
+        "arachne" => "physical",
+        "kali" => "physical",
     },
     "mvmt_speed" => {
         "mercury" => 375,
@@ -897,6 +1003,9 @@ my %base_stats = (
         "mercury" => 1,
         "chiron" => 1,
         "hou_yi" => 0.9,
+        "nemesis" => 1,
+        "arachne" => 1,
+        "kali" => 1,
     },
     "attack_rate_level_scaling" => {
         "freya" => 0.0195,
@@ -921,6 +1030,9 @@ my %base_stats = (
         "mercury" => 0.024,
         "chiron" => .011,
         "hou_yi" => 0.012,
+        "nemesis" => 0.0216,
+        "arachne" => 0.02,
+        "kali" => 0.0216,
     },
     "auto_damage" => {
         "freya" => 35,
@@ -945,6 +1057,9 @@ my %base_stats = (
         "mercury" => 38,
         "chiron" => 35,
         "hou_yi" => 38,
+        "nemesis" => 39,
+        "arachne" => 38,
+        "kali" => 37,
     },
     "auto_level_scaling" => {
         "freya" => 1.5,
@@ -969,6 +1084,9 @@ my %base_stats = (
         "mercury" => 2.13,
         "chiron" => 2.35,
         "hou_yi" => 2.8,
+        "nemesis" => 2.25,
+        "arachne" => 2.2,
+        "kali" => 2.32,
     },
     "mana" => {
         "freya" => 220,
@@ -993,6 +1111,9 @@ my %base_stats = (
         "mercury" => 200,
         "chiron" => 225,
         "hou_yi" => 240,
+        "nemesis" => 210,
+        "arachne" => 210,
+        "kali" => 205,
     },
     "mana_level_scaling" => {
         "freya" => 37,
@@ -1017,6 +1138,9 @@ my %base_stats = (
         "mercury" => 40,
         "chiron" => 40,
         "hou_yi" => 38,
+        "nemesis" => 38,
+        "arachne" => 41,
+        "kali" => 34,
     },
     "attack_chain_progression" => {
         "freya" => [ 1 ],
@@ -1041,6 +1165,9 @@ my %base_stats = (
         "mercury" => [ 1, 0.75, 1.25 ],
         "chiron" => [ 1 ],
         "hou_yi" => [ 1 ],
+        "nemesis" => [ 1, 1, .75, 1.25 ],
+        "arachne" => [ .5, 1, 1 ],
+        "kali" => [ 1, .5, .5 ],
     },
 );
 
@@ -1624,6 +1751,9 @@ if ( defined $opts{ "iterations" } ) {
 
 my %buffs = (
     "max" => {
+        "divine_judgment" => 1, # buff and debuff
+        "cocoon" => 3,
+        "incense" => 1,
         "crusher" => 5,
         "soul_reaver" => 1,
         "midgardian" => 1,
@@ -1655,6 +1785,9 @@ my %buffs = (
         "heartseeker" => 5,
     },
     "current" => {
+        "divine_judgment" => 0, # buff and debuff
+        "cocoon" => 0,
+        "incense" => 0,
         "crusher" => 0,
         "soul_reaver" => 0,
         "midgardian" => 0,
@@ -1696,6 +1829,9 @@ my %buffs = (
         "soul_reaver" => 0,
     },
     "time" => { # end time for buffs
+        "divine_judgment" => 0, # buff and debuff
+        "cocoon" => 0,
+        "incense" => 0,
         "crusher" => 0,
         "soul_reaver" => 0,
         "midgardian" => 0,
@@ -1727,6 +1863,9 @@ my %buffs = (
         "heartseeker" => 0,
     },
     "duration" => {
+        "divine_judgment" => 5000, # buff lasts 8, debuff lasts 5 TODO
+        "cocoon" => 0,
+        "incense" => 8000, # TODO duration scales 4...8
         "crusher" => 2000,
         "soul_reaver" => 60000,
         "midgardian" => 3000,
@@ -1738,7 +1877,7 @@ my %buffs = (
         "still_target" => 4000,
         "xbal_passive" => 0,
         "initiative" => 2500,
-        "vengeful_assault" => 5000,
+        "vengeful_assault" => 5000, #TODO duration scales
         "expose_weakness" => 5000,
         "pick_me_up" => 5000,
         "gravity_surge" => 6000,
@@ -1997,11 +2136,16 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
     }
 
     my $their_eff_prot = $their_base_prot;
-    $their_eff_prot *= (1 - $percent_reduction);
+    my $eff_percent_reduction = $percent_reduction;
     if ( $opts{"action"} ne "tower" ) {
-        $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "demonic_grip" });
-        $their_eff_prot *= (1 - 0.08 * $buffs{ "current" }->{ "executioner" });
+        $eff_percent_reduction += (0.08 * $buffs{ "current" }->{ "demonic_grip" });
+        $eff_percent_reduction += (0.08 * $buffs{ "current" }->{ "executioner" });
     }
+    if ( $opts{"action"} eq "kill" and $buffs{"current"}->{"divine_judgment"} > 0 ) {
+        $eff_percent_reduction += $ability_stats{"damage"}->{"divine_judgment"}->[
+                $ability_stats{"level"}->{"divine_judgment"}->[$opts{"level"}]]; # damage and prot reduction same
+    }
+    $their_eff_prot *= (1 - $eff_percent_reduction);
     $their_eff_prot -= $flat_reduction;
     if ( $opts{"action"} ne "tower" ) {
         $their_eff_prot -= 10 * $buffs{ "current" }->{ "spear" };
@@ -2020,7 +2164,7 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
     $damage *= (1 - $their_percent_reduction);
     
     if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL and $print) {
-        my $output = sprintf "time %6d %16s %8s prot %4d -> %4d damage %4d -> %4d ",
+        my $output = sprintf "time %6d %20s %8s prot %4d -> %4d damage %4d -> %4d ",
                 $time, $damage_source, $damage_type, $their_base_prot,
                 $their_eff_prot, $pre_prot_damage, $damage;
         if ( $opts{"action"} eq "clear" or $opts{"action"} eq "jungle" ) {
@@ -2144,6 +2288,13 @@ while ( $iteration < $max_iterations ) {
                     # TODO this is kind of a hack...
                     $pre_prot_damage *= 1.5;
                 }
+                if ( $opts{ "action" } eq "kill" and $next_skill eq "divine_judgment" ) {
+                    # divine judgment does % current hp as damage
+                    # TODO this is kind of a hack...
+                    $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
+                        $ability_stats{ "level" }->{ $next_skill }->[ $opts{ "level" } ] ]
+                        * get_their_health();
+                }
                 my $hit = 0;
                 if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
                 while ( $hit < $ability_stats{ "hits" }->{ $next_skill } ) {
@@ -2190,6 +2341,13 @@ while ( $iteration < $max_iterations ) {
                         }
                     }
                     $hit++;
+                }
+
+                if ( $opts{ "action" } eq "kill" and $next_skill eq "divine_judgment" ) {
+                    # add stack AFTER the damage is done, so we don't calc prot reduction
+                    # for the divide judgment hit
+                    add_stack("divine_judgment");
+                    reset_buff_time("divine_judgment");
                 }
 
                 if ( 0 < $ability_stats{ "num_ticks" }->{ $next_skill } ) {
@@ -2363,34 +2521,36 @@ while ( $iteration < $max_iterations ) {
         #################################################################################
         # execute attack-chain dependent skills
         #################################################################################
-        if ($opts{ "god" } eq "fenrir" and $num_attacks == 1 and
-                    $ability_stats{ "time" }->{ "brutalize" } <= $time  and $opts{"action"} ne "tower") {
+#        if ($opts{ "god" } eq "fenrir" and $num_attacks == 1 and
+#                    $ability_stats{ "time" }->{ "brutalize" } <= $time  and $opts{"action"} ne "tower") {
+#
+#            # brutalize has very short AA cancel, do it after the first AA
+#            my $pre_prot_damage = $ability_stats{ "damage" }->{ "brutalize" }->[
+#                    $ability_stats{ "level" }->{ "brutalize" }->[ $opts{ "level" } ] ] +
+#                    (get_eff_power() * $ability_stats{ "scaling" }->{ "brutalize" });
+#            my $hit = 0;
+#            while ( $hit < $ability_stats{ "hits" }->{ "brutalize" } ) {
+#                if( $pre_prot_damage > 0 ) { 
+#                    $damage += calc_mitigated_damage( $pre_prot_damage, "brutalize", 1,
+#                            get_aoe("brutalize"),
+#                            $base_stats{ "type" }->{ $opts{"god"} } );
+#                    if(defined $items{"bluestone"}) {
+#                        # schedule ticks
+#                        my $aoe = get_aoe("brutalize");
+#                        add_bluestone( $aoe );
+#                    }
+#                }
+#                $hit++;
+#            }
+#
+#            $ability_stats{ "time" }->{ "brutalize" } = $time +
+#                    1000 * $ability_stats{ "cooldown" }->{ "brutalize" };
+#
+#            $next_attack = $time + 2000;
+#
+#        }
 
-            # brutalize has very short AA cancel, do it after the first AA
-            my $pre_prot_damage = $ability_stats{ "damage" }->{ "brutalize" }->[
-                    $ability_stats{ "level" }->{ "brutalize" }->[ $opts{ "level" } ] ] +
-                    (get_eff_power() * $ability_stats{ "scaling" }->{ "brutalize" });
-            my $hit = 0;
-            while ( $hit < $ability_stats{ "hits" }->{ "brutalize" } ) {
-                if( $pre_prot_damage > 0 ) { 
-                    $damage += calc_mitigated_damage( $pre_prot_damage, "brutalize", 1,
-                            get_aoe("brutalize"),
-                            $base_stats{ "type" }->{ $opts{"god"} } );
-                    if(defined $items{"bluestone"}) {
-                        # schedule ticks
-                        my $aoe = get_aoe("brutalize");
-                        add_bluestone( $aoe );
-                    }
-                }
-                $hit++;
-            }
-
-            $ability_stats{ "time" }->{ "brutalize" } = $time +
-                    1000 * $ability_stats{ "cooldown" }->{ "brutalize" };
-
-            $next_attack = $time + 2000;
-
-        }
+# TODO AA canceling should be part of normal skill logic, not only for specific skills
 
         if ($opts{ "god" } eq "medusa" and $num_attacks == 1 and $viper_shots_left == 0
                     and ($opts{"action"} eq "kill" or $opts{"action"} eq "tower")) {
@@ -2618,7 +2778,8 @@ while ( $iteration < $max_iterations ) {
                 $damage += calc_mitigated_damage( $bonus, "masamune", 1, 1, "physical" );
             }
 
-            if ($opts{"action"} eq "clear" and (defined $items{"obow"} or defined $items{"odysseus_bow"})) {
+            if (($opts{"action"} eq "clear" or $opts{"action"} eq "jungle")
+                        and (defined $items{"obow"} or defined $items{"odysseus_bow"})) {
                 if ($obow_hits == 3) {
                     $obow_hits = 0;
                     my $obow_damage = 0.5 * get_eff_power() + 30;
@@ -2631,7 +2792,7 @@ while ( $iteration < $max_iterations ) {
                 }
             }
 
-            if ($opts{"action"} eq "clear" and defined $items{"charged_bow"}) {
+            if (($opts{"action"} eq "clear" or $opts{"action"} eq "jungle") and defined $items{"charged_bow"}) {
                 if ($obow_hits == 3) {
                     $obow_hits = 0;
                     my $obow_damage = 20;
@@ -2645,7 +2806,8 @@ while ( $iteration < $max_iterations ) {
             }
 
             # all damage calcs done, execute the attack
-            if ( $opts{"action"} eq "clear" and defined $items{ "golden_bow" } ) {
+            if ( ($opts{"action"} eq "clear" or $opts{"action"} eq "jungle")
+                        and defined $items{ "golden_bow" } ) {
                 $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
                         $base_stats{ "type" }->{ $opts{"god"} });
                 $damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 1, 2,
@@ -2654,7 +2816,8 @@ while ( $iteration < $max_iterations ) {
                         $base_stats{ "type" }->{ $opts{"god"} });
                 $attack_damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 0, 2,
                         $base_stats{ "type" }->{ $opts{"god"} });
-            } elsif ( $opts{"action"} eq "clear" and defined $items{ "throwing_dagger" } ) {
+            } elsif ( ($opts{"action"} eq "clear" or $opts{"action"} eq "jungle")
+                    and defined $items{ "throwing_dagger" } ) {
                 $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
                         $base_stats{ "type" }->{ $opts{"god"} });
                 $damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 1, 2,
@@ -2762,6 +2925,13 @@ while ( $iteration < $max_iterations ) {
                         $base_stats{ "attack_rate" }->{ $opts{ "god" } } * 
                         $ability_stats{ "attack_speed_buff" }->{ "viper_shot" }->[
                         $ability_stats{ "level" }->{ "viper_shot" }->[ $opts{ "level" } ] ];
+            }
+            if ($buffs{"current"}->{"cocoon"} > 0) {
+                rm_stack("cocoon");
+                $eff_attack_rate += 
+                        $base_stats{ "attack_rate" }->{ $opts{ "god" } } * 
+                        $ability_stats{ "attack_speed_buff" }->{ "cocoon" }->[
+                        $ability_stats{ "level" }->{ "cocoon" }->[ $opts{ "level" } ] ];
             }
 
             $eff_attack_rate += 0.03 * $buffs{ "current" }->{ "heartseeker" } *
