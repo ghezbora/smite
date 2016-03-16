@@ -279,6 +279,8 @@ my %ability_stats = (
         "training_exercise" => 0,
     },
     "damage" => {
+        "astral_strike" => [ 0, 10, 20, 30, 40, 50 ],
+
         "slice_and_dice" => [ 0, 40, 65, 90, 115, 140 ],
         "divine_judgment" => [ 0, 0.3, 0.35, 0.4, 0.45, 0.5 ], # damage is %hp
 
@@ -831,6 +833,8 @@ my %ability_stats = (
 
         "so_beautiful" =>           [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
 
+        "astral_strike" =>          [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+
         "ricochet" =>               [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "mark_of_golden_crow" =>    [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "divebomb" =>               [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
@@ -929,6 +933,7 @@ my %combos = (
 
 
 my %clear_skills = (
+    "rama" => [ ],
     "chronos" => [ "time_rift", "stop_time" ],
     "sol" => [ "stellar_burst" ],
     "freya" => [ ],
@@ -1475,6 +1480,12 @@ if (defined $items{"executioner"}) {
     $physical_power += 30;
     $attack_rate += 0.25 * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
     $gold += 2250;
+}
+
+# short bow
+if(defined $items{"short_bow"}){
+    $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
+    $gold += 600;
 }
 
 # ichaival
@@ -2808,30 +2819,39 @@ while ( $iteration < $max_iterations ) {
             # all damage calcs done, execute the attack
             if ( ($opts{"action"} eq "clear" or $opts{"action"} eq "jungle")
                         and defined $items{ "golden_bow" } ) {
-                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
-                        $base_stats{ "type" }->{ $opts{"god"} });
                 $damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 1, 2,
-                        $base_stats{ "type" }->{ $opts{"god"} });
-                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1,
                         $base_stats{ "type" }->{ $opts{"god"} });
                 $attack_damage += calc_mitigated_damage(0.5 * $pre_prot_damage, "attack", 0, 2,
                         $base_stats{ "type" }->{ $opts{"god"} });
             } elsif ( ($opts{"action"} eq "clear" or $opts{"action"} eq "jungle")
                     and defined $items{ "throwing_dagger" } ) {
-                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
-                        $base_stats{ "type" }->{ $opts{"god"} });
                 $damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 1, 2,
-                        $base_stats{ "type" }->{ $opts{"god"} });
-                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1,
                         $base_stats{ "type" }->{ $opts{"god"} });
                 $attack_damage += calc_mitigated_damage(0.25 * $pre_prot_damage, "attack", 0, 2,
                         $base_stats{ "type" }->{ $opts{"god"} });
-            } else {
-                $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
-                        $base_stats{ "type" }->{ $opts{"god"} });
-                $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1,
-                        $base_stats{ "type" }->{ $opts{"god"} });
             }
+
+            if($buffs{ "current" }->{ "astral_strike" } and $astral_arrows > 0) {
+                my $aoe = 0;
+                if ( $opts{"action"} eq "clear" ){
+                    $aoe = 5; # number of additional targets
+                } elsif( $opts{"action"} eq "jungle" ) {
+                    $aoe = 2;
+                }
+
+                if ( $aoe > 0 ) {
+                    $damage += calc_mitigated_damage($pre_prot_damage, "astral strike", 1, $aoe,
+                            $base_stats{ "type" }->{ $opts{"god"} });
+                    $attack_damage += calc_mitigated_damage($pre_prot_damage, "astral strike", 0, $aoe,
+                            $base_stats{ "type" }->{ $opts{"god"} });
+                }
+            }
+
+            $damage += calc_mitigated_damage($pre_prot_damage, "attack", 1, 1,
+                    $base_stats{ "type" }->{ $opts{"god"} });
+            $attack_damage += calc_mitigated_damage($pre_prot_damage, "attack", 0, 1,
+                    $base_stats{ "type" }->{ $opts{"god"} });
+
 
             # get ready for next attack
             if (defined $items{"spear"} and
@@ -3055,7 +3075,7 @@ if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL ) {
     print "base attack damage " . get_basic_attack_damage() . "\n";
     print "base attack rate $attack_rate\n";
     if ( $total_attacks > 0 ) {
-        printf "Num attacks: %d avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
+        printf "Num attacks: %.2f avg damage %.2f\n", $total_attacks/$max_iterations, ($attack_damage /$total_attacks);
     }
     printf "Damage from basic attacks %.2f Other damage %.2f\n", ($attack_damage/$max_iterations), (($total_damage - $attack_damage)/$max_iterations);
     if ( defined $items{ "polynomicon" } ) {
