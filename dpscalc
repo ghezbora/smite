@@ -845,9 +845,10 @@ my %ability_stats = (
         "slipstream" =>             [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
         "nine_winds" =>             [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
-        #"irradiate" =>              [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
-        "irradiate" =>              [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "irradiate" =>              [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
         "pulse" =>                  [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "banish" =>                 [ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+        "valkyries_discretion" =>   [ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
 
         "time_rift" =>              [ 0, 1, 1, 1, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "stop_time" =>              [ 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
@@ -1528,8 +1529,6 @@ if (defined $items{"masamune"}) {
 if (defined $items{ "heartseeker" }) {
     $physical_power += 25;
     $item_mvmt_speed += 0.1;
-    #$attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ "god" } }; # assume stacked
-    #TODO deal with heartseeker stacks
 }
 
 # golden bow
@@ -1583,8 +1582,11 @@ if (defined $items{"hydras"} or defined $items{"hydras_lament"}) {
 
 # transcendence
 if (defined $items{"transcendence"}) {
-    $mana += 1050;
-    #$mana += 300;
+    $mana += 300;
+    my $stacks = 10 * ($opts{"level"}-5); # stack from level 5 to 15
+    if ( $stacks > 50 ){ $stacks = 50; }
+    if ( $stacks < 0 ){ $stacks = 0; }
+    $mana += 15 * $stacks;
     $physical_power += 35;
     $physical_power += 0.03 * $mana; # TODO having this last computes bonus right... probably?
     $gold += 2600;
@@ -1615,8 +1617,8 @@ if (defined $enemy_items{ "mantle_of_discord" }) {
 }
 
 if (defined $enemy_items{ "spirit_robe" }) {
-    $their_phys_prot += 60;
-    $their_mag_prot += 60;
+    $their_phys_prot += 40;
+    $their_mag_prot += 40;
 }
 
 if (defined $enemy_items{ "magis" }) {
@@ -1667,7 +1669,7 @@ if (defined $enemy_items{ "runic_shield" }) {
     # TODO handle aura
 }
 
-if (defined $enemy_items{ "mail_of_renewal" }) {
+if (defined $enemy_items{ "mail_of_renewal" } or defined $enemy_items{ "mor" }) {
     $their_max_health += 350;
 }
 
@@ -1713,7 +1715,12 @@ if ( $opts{"action"} eq "clear" ) {
     $their_phys_prot = 0;
     $their_mag_prot = 0;
     $their_percent_reduction = 0.1;
+} elsif ( $opts{ "action" } eq "teamfight" ) {
+    $their_max_health = 12000; # TODO can't do this because of qins
+    $their_phys_prot = 120; # reasonable average? TODO
+    $their_mag_prot = 75;
 }
+
 
 
 if ( $opts{ "god" } eq "scylla" ) {
@@ -1945,6 +1952,7 @@ sub get_their_health() {
     if ($health < 0) { $health = 0; }
     return $health;
 }
+
 
 sub add_stack($) {
     my $buff = shift;
@@ -2233,10 +2241,11 @@ sub get_next_skill() {
     }
     else
     {
-        if ( scalar( $combos{ $opts{ "god" } } ) == 0 ) {
+                $combo_idx, scalar( @{ $combos{ $opts{ "god" } } } );
+        if ( scalar( @{ $combos{ $opts{ "god" } } } ) == 0 ) {
             return undef;
         }
-        if ( scalar( $combos{ $opts{ "god" } } ) < $combo_idx ) {
+        if ( scalar( @{ $combos{ $opts{ "god" } } } ) <= $combo_idx ) {
             $combo_idx = 0;
         }
         return $combos{ $opts{ "god" } }->[ $combo_idx ];
