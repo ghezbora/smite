@@ -4,6 +4,10 @@
 # Wish list
 #
 # implement pre-hit duration and post-hit duration correctly
+# 
+# implement multiple targets so qins works
+#
+# implement long-term sustainable damage (very high # targets)
 #
 # add ravana
 # add bellona
@@ -22,9 +26,8 @@ use Getopt::Std;
 use Getopt::Long;
 
 #################################################################################
-# declare globals
+# opts
 #################################################################################
-
 
 my %opts;
 
@@ -62,6 +65,10 @@ foreach my $item (@items) {
     $items{ $item } = 1;
 }
 
+
+#################################################################################
+# stat tables
+#################################################################################
 
 
 
@@ -114,7 +121,6 @@ my %enemy_items;
 foreach my $item (@enemy_items) {
     $enemy_items{ $item } = 1;
 }
-
 
 
 my %ability_stats = (
@@ -1178,6 +1184,9 @@ my %base_stats = (
 );
 
 
+#################################################################################
+# my base stats
+#################################################################################
 
 my @attack_chain_progression = @{ $base_stats{ "attack_chain_progression" }->{ $opts{ "god" } } };
 my $next_attack_chain = 0;
@@ -1212,18 +1221,57 @@ my $lifesteal = 0;
 if ( $opts{ "god" } eq "freya" ) { $lifesteal += 0.15; }
 my $cdr = 0;
 my $item_mvmt_speed = 0;
-
-my $their_phys_prot = $protection_stats{ "physical_protection" }->{ $opts{"enemy"} };
-my $their_mag_prot = $protection_stats{ "magical_protection" }->{ $opts{"enemy"} };
-
-my $their_max_health = $protection_stats{ "health" }->{ $opts{"enemy"} };
-
-my $their_percent_reduction = 0;
-
 my $flat_pen = 0;
 my $percent_pen = 0;
 my $flat_reduction = 0;
 my $percent_reduction = 0;
+
+
+#################################################################################
+# target base stats
+#################################################################################
+
+my @targets;
+
+if ( $opts{"action"} eq "clear" ) {
+    # minions
+    push @targets, +{ "phys_prot" => 0, "mag_prot" => 0, "percent_red" => 0.1, "max_health" => 370,
+            "current_health" => 370, "name" => "melee minion" };
+    push @targets, +{ "phys_prot" => 0, "mag_prot" => 0, "percent_red" => 0.1, "max_health" => 370,
+            "current_health" => 370, "name" => "melee minion" };
+    push @targets, +{ "phys_prot" => 0, "mag_prot" => 0, "percent_red" => 0.1, "max_health" => 370,
+            "current_health" => 370, "name" => "melee minion" };
+    push @targets, +{ "phys_prot" => 0, "mag_prot" => 0, "percent_red" => 0.1, "max_health" => 265,
+            "current_health" => 265, "name" => "archer minion" };
+    push @targets, +{ "phys_prot" => 0, "mag_prot" => 0, "percent_red" => 0.1, "max_health" => 265,
+            "current_health" => 265, "name" => "archer minion" };
+    push @targets, +{ "phys_prot" => 0, "mag_prot" => 0, "percent_red" => 0.1, "max_health" => 265,
+            "current_health" => 265, "name" => "archer minion" };
+} elsif ( $opts{ "action"} eq "tower" ) {
+    $lifesteal = 0; #can't lifesteal towers
+    if ( $base_stats{ "type" }->{ $opts{"god"} } eq "physical" ) {
+        push @targets, +{ "phys_prot" => 150, "mag_prot" => 150, "percent_red" => 0.15, "max_health" => 2000,
+                "current_health" => 2000, "name" => "tower" };
+    } else {
+        push @targets, +{ "phys_prot" => 150, "mag_prot" => 150, "percent_red" => -0.2, "max_health" => 2000,
+                "current_health" => 2000, "name" => "tower" };
+    }
+} elsif ( $opts{ "action" } eq "jungle" ) {
+    # jungle camp, 3 minions
+    push @targets, +{ "phys_prot" => 0, "mag_prot" => 0, "percent_red" => 0.1, "max_health" => 960,
+            "current_health" => 960, "name" => "jungle buff" };
+    push @targets, +{ "phys_prot" => 0, "mag_prot" => 0, "percent_red" => 0.1, "max_health" => 180,
+            "current_health" => 180, "name" => "jungle little" };
+    push @targets, +{ "phys_prot" => 0, "mag_prot" => 0, "percent_red" => 0.1, "max_health" => 180,
+            "current_health" => 180, "name" => "jungle little" };
+} elsif ( $opts{ "action" } eq "kill" ) {
+    # TODO enemy item handling is totally gone until it gets done per-target as well
+    push @targets, +{ "phys_prot" => $protection_stats{ "physical_protection" }->{ $opts{"enemy"} },
+            "mag_prot" => $protection_stats{ "magical_protection" }->{ $opts{"enemy"} },
+            "percent_red" => 0, "max_health" => $protection_stats{ "health" }->{ $opts{"enemy"} },
+            "current_health" => $protection_stats{ "health" }->{ $opts{"enemy"} },
+            "name" => $opts{"enemy"} };
+}
 
 #################################################################################
 # magical items
@@ -1596,130 +1644,107 @@ if (defined $items{"transcendence"}) {
 # enemy items (defensive)
 #################################################################################
 
-if (defined $enemy_items{ "bov" }) {
-    $their_phys_prot += 75;
-}
+if ( $opts{"action"} eq "kill") {
+    # TODO currenly handle only one enemy god
+    # if we want to handle teams, we will have to loop over this logic
 
-if (defined $enemy_items{ "bulwark" }) {
-    $their_max_health += 200;
-    $their_mag_prot += 60;
-}
-
-if (defined $enemy_items{ "urchin" }) {
-    $their_max_health += 250;
-    $their_mag_prot += 65;
-    $their_phys_prot += 65;
-}
-
-if (defined $enemy_items{ "mantle_of_discord" }) {
-    $their_phys_prot += 60;
-    $their_mag_prot += 60;
-}
-
-if (defined $enemy_items{ "spirit_robe" }) {
-    $their_phys_prot += 40;
-    $their_mag_prot += 40;
-}
-
-if (defined $enemy_items{ "magis" }) {
-    $their_max_health += 350;
-    $their_mag_prot += 15;
-    $their_phys_prot += 15;
-}
-
-if (defined $enemy_items{ "mystical_mail" }) {
-    $their_max_health += 350;
-    $their_phys_prot += 30;
-}
-
-if (defined $enemy_items{ "sov" }) {
-    $their_max_health += 200;
-    $their_phys_prot += 50;
-}
-
-if (defined $enemy_items{ "midgardian" }) {
-    $their_max_health += 350;
-    $their_phys_prot += 30;
-}
-
-if (defined $enemy_items{ "nemean" }) {
-    $their_phys_prot += 90;
-}
-
-if (defined $enemy_items{ "spectral_armor" }) {
-    $their_phys_prot += 80;
-    $lifesteal *= 0.5;
-}
-
-if (defined $enemy_items{ "frostbound" }) {
-    $their_max_health += 300;
-}
-
-if (defined $enemy_items{ "winged_blade" }) {
-    $their_max_health += 300;
-}
-
-if (defined $enemy_items{ "witchblade" }) {
-    $their_phys_prot += 45;
-    # TODO handle aura
-}
-
-if (defined $enemy_items{ "runic_shield" }) {
-    $their_mag_prot += 50;
-    # TODO handle aura
-}
-
-if (defined $enemy_items{ "mail_of_renewal" } or defined $enemy_items{ "mor" }) {
-    $their_max_health += 350;
-}
-
-if (defined $enemy_items{ "gaia" }) {
-    $their_max_health += 350;
-}
-
-if (defined $enemy_items{ "thebes" }) {
-    $their_max_health += 350;
-}
-
-if (defined $enemy_items{ "oni" }) {
-    $their_mag_prot += 60;
-}
-
-if (defined $enemy_items{ "genji" }) {
-    $their_mag_prot += 80;
-}
-
-#################################################################################
-# calculate stats
-#################################################################################
-
-if ( $opts{"action"} eq "clear" ) {
-    # minions
-    $their_phys_prot = 0;
-    $their_mag_prot = 0;
-    $their_percent_reduction = 0.1; # at the start of the match
-    $their_max_health = 3 * 370 + 3 * 265; # no brutes
-} elsif ( $opts{ "action"} eq "tower" ) {
-    $lifesteal = 0; #can't lifesteal towers
-    $their_max_health = 2000;
-    $their_phys_prot = 150;
-    $their_mag_prot = 150;
-    if ( $base_stats{ "type" }->{ $opts{"god"} } eq "physical" ) {
-        $their_percent_reduction = 0.15;
-    } else {
-        $their_percent_reduction = -0.2; # TODO does this work?
+    if (defined $enemy_items{ "bov" }) {
+        $targets[0]->{"phys_prot"} += 75;
     }
-} elsif ( $opts{ "action" } eq "jungle" ) {
-    # jungle camp, 3 minions
-    $their_max_health = 960 + 2 * 180;
-    $their_phys_prot = 0;
-    $their_mag_prot = 0;
-    $their_percent_reduction = 0.1;
-} elsif ( $opts{ "action" } eq "teamfight" ) {
-    $their_max_health = 12000; # TODO can't do this because of qins
-    $their_phys_prot = 120; # reasonable average? TODO
-    $their_mag_prot = 75;
+
+    if (defined $enemy_items{ "bulwark" }) {
+        $targets[0]->{"max_health"} += 200;
+        $targets[0]->{"mag_prot"} += 60;
+    }
+
+    if (defined $enemy_items{ "urchin" }) {
+        $targets[0]->{"max_health"} += 250;
+        $targets[0]->{"mag_prot"} += 65;
+        $targets[0]->{"phys_prot"} += 65;
+    }
+
+    if (defined $enemy_items{ "mantle_of_discord" }) {
+        $targets[0]->{"mag_prot"} += 60;
+        $targets[0]->{"phys_prot"} += 60;
+    }
+
+    if (defined $enemy_items{ "spirit_robe" }) {
+        $targets[0]->{"mag_prot"} += 40;
+        $targets[0]->{"phys_prot"} += 40;
+    }
+
+    if (defined $enemy_items{ "magis" }) {
+        $targets[0]->{"max_health"} += 350;
+        $targets[0]->{"mag_prot"} += 15;
+        $targets[0]->{"phys_prot"} += 15;
+    }
+
+    if (defined $enemy_items{ "mystical_mail" }) {
+        $targets[0]->{"max_health"} += 350;
+        $targets[0]->{"phys_prot"} += 30;
+    }
+
+    if (defined $enemy_items{ "sov" }) {
+        $targets[0]->{"max_health"} += 200;
+        $targets[0]->{"phys_prot"} += 50;
+    }
+
+    if (defined $enemy_items{ "midgardian" }) {
+        $targets[0]->{"max_health"} += 350;
+        $targets[0]->{"phys_prot"} += 30;
+    }
+
+    if (defined $enemy_items{ "nemean" }) {
+        $targets[0]->{"phys_prot"} += 90;
+    }
+
+    if (defined $enemy_items{ "spectral_armor" }) {
+        $targets[0]->{"phys_prot"} += 80;
+        $lifesteal *= 0.5;
+    }
+
+    if (defined $enemy_items{ "frostbound" }) {
+        $targets[0]->{"max_health"} += 300;
+    }
+
+    if (defined $enemy_items{ "winged_blade" }) {
+        $targets[0]->{"max_health"} += 300;
+    }
+
+    if (defined $enemy_items{ "witchblade" }) {
+        $targets[0]->{"phys_prot"} += 45;
+        # TODO handle aura
+    }
+
+    if (defined $enemy_items{ "runic_shield" }) {
+        $targets[0]->{"mag_prot"} += 50;
+        # TODO handle aura
+    }
+
+    if (defined $enemy_items{ "mail_of_renewal" } or defined $enemy_items{ "mor" }) {
+        $targets[0]->{"max_health"} += 350;
+    }
+
+    if (defined $enemy_items{ "gaia" }) {
+        $targets[0]->{"max_health"} += 350;
+    }
+
+    if (defined $enemy_items{ "thebes" }) {
+        $targets[0]->{"max_health"} += 350;
+    }
+
+    if (defined $enemy_items{ "oni" }) {
+        $targets[0]->{"mag_prot"} += 60;
+    }
+
+    if (defined $enemy_items{ "genji" }) {
+        $targets[0]->{"mag_prot"} += 80;
+    }
 }
+
+#################################################################################
+# stat calculations (some must be done post-items)
+#################################################################################
 
 
 
@@ -1947,11 +1972,17 @@ my $obow_hits = 0;
 # calculations
 #################################################################################
 
-sub get_their_health() {
-    my $health = $their_max_health - $damage;
-    if ($health < 0) { $health = 0; }
-    return $health;
+sub any_targets_remain() {
+    my $i = 0;
+    while ($i < scalar(@targets)) {
+        if ( $targets[$i]->{"current_health"} > 0 ) {
+            return 1;
+        }
+        $i++;
+    }
+    return 0;
 }
+
 
 
 sub add_stack($) {
@@ -2111,117 +2142,146 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
     my $num_targets = shift;
     my $damage_type = shift;
 
-    my $their_base_prot = 0;
-    if ( $damage_type eq "physical" ) {
-        # TODO it is possible for physical gods to do magical damage, e.g. with runeforged or nemean
-        # and vice versa, e.g., nu wa minions
-        $their_base_prot = $their_phys_prot;
+    my $i = 0;
+    my $j = 0;
 
-        if ($buffs{ "current" }->{ "spectral_armor" } == 1) {
-            $their_base_prot += 20;
+    my $total_damage = 0;
+
+    while ( $i < $num_targets ) {
+
+        while ( $j < scalar(@targets) and $targets[ $j ]->{ "current_health" } == 0 ) {
+            # skip dead targets, but don't remove them from the array
+            $j++;
+        }
+        if ( $j >= scalar (@targets) ) {
+            # walked off the end of the array
+            last;
         }
 
-        if ( $lifesteal > 0 and defined $enemy_items{"spectral_armor"}
-            and $buffs{ "cooldown" }->{ "spectral_armor" } <= $time) {
-            # spectral is available 
-            if( rand() < 0.3 ) {
-                # spectral proc
-                add_stack("spectral_armor");
-                reset_buff_time("spectral_armor");
-                $buffs{ "current" }->{ "spectral_armor" } = 1;
-                $buffs{ "cooldown" }->{ "spectral_armor" } = $time + 30000;
+        my $their_base_prot = 0;
+        if ( $damage_type eq "physical" ) {
+            # TODO it is possible for physical gods to do magical damage, e.g. with runeforged or nemean
+            # and vice versa, e.g., nu wa minions
+            $their_base_prot = $targets[$j]->{"phys_prot"};
+
+            if ($buffs{ "current" }->{ "spectral_armor" } == 1) {
+                $their_base_prot += 20;
+            }
+
+            if ( $lifesteal > 0 and defined $enemy_items{"spectral_armor"}
+                and $buffs{ "cooldown" }->{ "spectral_armor" } <= $time) {
+                # spectral is available 
+                if( rand() < 0.3 ) {
+                    # spectral proc
+                    add_stack("spectral_armor");
+                    reset_buff_time("spectral_armor");
+                    $buffs{ "current" }->{ "spectral_armor" } = 1;
+                    $buffs{ "cooldown" }->{ "spectral_armor" } = $time + 30000;
+                }
+            }
+        } elsif ($damage_type eq "magical") {
+            $their_base_prot = $targets[$j]->{"mag_prot"};
+            if (defined $enemy_items{ "oni" }) {
+                $their_base_prot += 15 * $buffs{ "current" }->{ "oni" };
+                rm_stack("oni");
             }
         }
-    } elsif ($damage_type eq "magical") {
-        $their_base_prot = $their_mag_prot;
-        if (defined $enemy_items{ "oni" }) {
-            $their_base_prot += 15 * $buffs{ "current" }->{ "oni" };
-            rm_stack("oni");
+        # else damage type is true
+
+        my $eff_percent_pen = $percent_pen;
+        if ( $opts{"action"} eq "kill" and $opts{"god"} eq "hou_yi"
+                    and $ability_stats{ "level" }->{ "mark_of_golden_crow" }->[ $opts{ "level" } ] == 5 ) {
+            # TODO this might ought to live elsewhere
+            $eff_percent_pen += 0.25; # assume mark is applied
         }
-    }
-    # else damage type is true
+        if ( $opts{"action"} eq "kill" and $opts{"god"} eq "hou_yi" ) {
+            # TODO this might ought to live elsewhere
+            $pre_prot_damage += 0.01 * $pre_prot_damage *
+                    $ability_stats{ "level" }->{ "mark_of_golden_crow" }->[ $opts{"level"} ] * 
+                    int( ($targets[$j]->{"max_health"} - $targets[$j]->{"current_health"})
+                    / (0.1 * $targets[$j]->{"max_health"}) );
+        }
 
-    my $eff_percent_pen = $percent_pen;
-    if ( $opts{"action"} eq "kill" and $opts{"god"} eq "hou_yi"
-                and $ability_stats{ "level" }->{ "mark_of_golden_crow" }->[ $opts{ "level" } ] == 5 ) {
-        # TODO this might ought to live elsewhere
-        $eff_percent_pen += 0.25; # assume mark is applied
-    }
-    if ( $opts{"action"} eq "kill" and $opts{"god"} eq "hou_yi" ) {
-        # TODO this might ought to live elsewhere
-        $pre_prot_damage += 0.01 * $pre_prot_damage *
-                $ability_stats{ "level" }->{ "mark_of_golden_crow" }->[ $opts{"level"} ] * 
-                int( ($their_max_health - get_their_health()) / (0.1 * $their_max_health) );
-    }
+        my $their_eff_prot = $their_base_prot;
+        my $eff_percent_reduction = $percent_reduction;
+        if ( $opts{"action"} ne "tower" ) {
+            $eff_percent_reduction += (0.08 * $buffs{ "current" }->{ "demonic_grip" });
+            $eff_percent_reduction += (0.08 * $buffs{ "current" }->{ "executioner" });
+        }
+        if ( $opts{"action"} eq "kill" and $buffs{"current"}->{"divine_judgment"} > 0 ) {
+            $eff_percent_reduction += $ability_stats{"damage"}->{"divine_judgment"}->[
+                    $ability_stats{"level"}->{"divine_judgment"}->[$opts{"level"}]]; # damage and prot reduction same
+        }
+        $their_eff_prot *= (1 - $eff_percent_reduction);
+        $their_eff_prot -= $flat_reduction;
+        if ( $opts{"action"} ne "tower" ) {
+            $their_eff_prot -= 10 * $buffs{ "current" }->{ "spear" };
+            $their_eff_prot -= 10 * $buffs{ "current" }->{ "stone_cutting_sword" };
+        }
+        $their_eff_prot *= (1 - $eff_percent_pen);
+        my $eff_flat_pen = $flat_pen + 5 * $buffs{"current"}->{"crusher"};
+        if ($eff_flat_pen > 50) { $eff_flat_pen = 50; }
+        $their_eff_prot -= $eff_flat_pen;
 
-    my $their_eff_prot = $their_base_prot;
-    my $eff_percent_reduction = $percent_reduction;
-    if ( $opts{"action"} ne "tower" ) {
-        $eff_percent_reduction += (0.08 * $buffs{ "current" }->{ "demonic_grip" });
-        $eff_percent_reduction += (0.08 * $buffs{ "current" }->{ "executioner" });
-    }
-    if ( $opts{"action"} eq "kill" and $buffs{"current"}->{"divine_judgment"} > 0 ) {
-        $eff_percent_reduction += $ability_stats{"damage"}->{"divine_judgment"}->[
-                $ability_stats{"level"}->{"divine_judgment"}->[$opts{"level"}]]; # damage and prot reduction same
-    }
-    $their_eff_prot *= (1 - $eff_percent_reduction);
-    $their_eff_prot -= $flat_reduction;
-    if ( $opts{"action"} ne "tower" ) {
-        $their_eff_prot -= 10 * $buffs{ "current" }->{ "spear" };
-        $their_eff_prot -= 10 * $buffs{ "current" }->{ "stone_cutting_sword" };
-    }
-    $their_eff_prot *= (1 - $eff_percent_pen);
-    my $eff_flat_pen = $flat_pen + 5 * $buffs{"current"}->{"crusher"};
-    if ($eff_flat_pen > 50) { $eff_flat_pen = 50; }
-    $their_eff_prot -= $eff_flat_pen;
+        if ($their_eff_prot < 0) { $their_eff_prot = 0; }
 
-    if ($their_eff_prot < 0) { $their_eff_prot = 0; }
+        my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
 
-    my $damage = ( 100 / (100 + $their_eff_prot) ) * $pre_prot_damage;
+        #$damage -= $their_flat_reduction;
+        $damage *= (1 - $targets[$j]->{"percent_red"});
+        
+        if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL and $print) {
+            my $output = sprintf "time %6d %20s %8s prot %4d -> %4d damage %4d -> %4d ",
+                    $time, $damage_source, $damage_type, $their_base_prot,
+                    $their_eff_prot, $pre_prot_damage, $damage;
+            #if ( $opts{"action"} eq "clear" or $opts{"action"} eq "jungle" ) {
+            #    $output .= sprintf " * %d -> %d ", $num_targets, ($num_targets * $damage);
+            #}
+            if ( defined $items{ "spear" } ) {
+                $output .= sprintf " %d spear stacks ", $buffs{ "current" }->{ "spear" };
+            }
+            if ( defined $items{ "demonic_grip" } ) {
+                $output .= sprintf " %d grip stacks ", $buffs{ "current" }->{ "demonic_grip" };
+            }
+            if ( defined $items{ "executioner" } ) {
+                $output .= sprintf " %d executioner stacks ", $buffs{ "current" }->{ "executioner" };
+            }
+            if ( defined $items{ "stone_cutting_sword" } or defined $items{ "scs" } ) {
+                $output .= sprintf " %d SCS stacks ", $buffs{ "current" }->{ "stone_cutting_sword" };
+            }
+            if ( defined $items{ "heartseeker" } ){
+                $output .= sprintf " %d heartseeker stacks ", $buffs{ "current" }->{ "heartseeker" };
+            }
+            if ( defined $items{ "crusher" } ){
+                $output .= sprintf " %d crusher stacks ", $buffs{ "current" }->{ "crusher" };
+            }
+            if ( defined $enemy_items{ "oni" }) {
+                $output .= sprintf " %d oni stacks ", $buffs{ "current" }->{ "oni" };
+            }
+            if ( $opts{"action"} eq "kill" or $opts{"action"} eq "tower" ) {
+                $output .= sprintf " their health %4d -> %4d ", $targets[$j]->{"current_health"},
+                        ($targets[$j]->{"current_health"} - $damage >= 0)
+                        ? ($targets[$j]->{"current_health"} - $damage) : 0;
+            }
+            $output .= "\n";
+            push @one_pass_verbosity, $output;
+            if ( $opts{ "verbosity" } >= $VERBOSITY_EPIC ) {
+                print $output;
+            }
+        } # output
 
-    #$damage -= $their_flat_reduction;
-    $damage *= (1 - $their_percent_reduction);
+        $targets[$j]->{"current_health"} -= $damage;
+        if ($targets[$j]->{"current_health"} < 0) {
+            $targets[$j]->{"current_health"} = 0;
+        }
+
+        $total_damage += $damage;
+
+        $i++;
+        $j++;
+    } # per target loop
     
-    if ( $opts{ "verbosity" } >= $VERBOSITY_NORMAL and $print) {
-        my $output = sprintf "time %6d %20s %8s prot %4d -> %4d damage %4d -> %4d ",
-                $time, $damage_source, $damage_type, $their_base_prot,
-                $their_eff_prot, $pre_prot_damage, $damage;
-        if ( $opts{"action"} eq "clear" or $opts{"action"} eq "jungle" ) {
-            $output .= sprintf " * %d -> %d ", $num_targets, ($num_targets * $damage);
-        }
-        if ( defined $items{ "spear" } ) {
-            $output .= sprintf " %d spear stacks ", $buffs{ "current" }->{ "spear" };
-        }
-        if ( defined $items{ "demonic_grip" } ) {
-            $output .= sprintf " %d grip stacks ", $buffs{ "current" }->{ "demonic_grip" };
-        }
-        if ( defined $items{ "executioner" } ) {
-            $output .= sprintf " %d executioner stacks ", $buffs{ "current" }->{ "executioner" };
-        }
-        if ( defined $items{ "stone_cutting_sword" } or defined $items{ "scs" } ) {
-            $output .= sprintf " %d SCS stacks ", $buffs{ "current" }->{ "stone_cutting_sword" };
-        }
-        if ( defined $items{ "heartseeker" } ){
-            $output .= sprintf " %d heartseeker stacks ", $buffs{ "current" }->{ "heartseeker" };
-        }
-        if ( defined $items{ "crusher" } ){
-            $output .= sprintf " %d crusher stacks ", $buffs{ "current" }->{ "crusher" };
-        }
-        if ( defined $enemy_items{ "oni" }) {
-            $output .= sprintf " %d oni stacks ", $buffs{ "current" }->{ "oni" };
-        }
-        if ( $opts{"action"} eq "kill" or $opts{"action"} eq "tower" ) {
-            $output .= sprintf " their health %4d -> %4d ", get_their_health(), 
-                    (get_their_health() - $damage >= 0) ? (get_their_health() - $damage) : 0;
-        }
-        $output .= "\n";
-        push @one_pass_verbosity, $output;
-        if ( $opts{ "verbosity" } >= $VERBOSITY_EPIC ) {
-            print $output;
-        }
-    }
-    
-    return ($num_targets * $damage);
+    return $total_damage;
 
 }
 
@@ -2241,7 +2301,6 @@ sub get_next_skill() {
     }
     else
     {
-                $combo_idx, scalar( @{ $combos{ $opts{ "god" } } } );
         if ( scalar( @{ $combos{ $opts{ "god" } } } ) == 0 ) {
             return undef;
         }
@@ -2271,8 +2330,14 @@ while ( $iteration < $max_iterations ) {
         $audacity_stacks = 5;
     }
 
+    my $i = 0;
+    while ( $i < scalar(@targets) ) {
+        $targets[$i]->{"current_health"} = $targets[$i]->{"max_health"};
+        $i++;
+    }
+
     #while ( $time < $opts{"time"} ) {
-    while ( get_their_health() > 0 ) {
+    while ( any_targets_remain() ) {
 
         # stuff that happens FIRST
         if ($opts{ "god" } eq "awilix" and $time == 0) {
@@ -2313,14 +2378,14 @@ while ( $iteration < $max_iterations ) {
                     # TODO this is kind of a hack...
                     $pre_prot_damage = $ability_stats{ "damage" }->{ $next_skill }->[
                         $ability_stats{ "level" }->{ $next_skill }->[ $opts{ "level" } ] ]
-                        * get_their_health();
+                        * $targets[0]->{"current_health"};
                 }
                 my $hit = 0;
                 if ( $buffs{ "current" }->{ "open_wound" } ) { $pre_prot_damage *= 1.15; }
                 while ( $hit < $ability_stats{ "hits" }->{ $next_skill } ) {
                     if( $pre_prot_damage > 0 ) { 
                         if ( $buffs{"current"}->{"soul_reaver"} > 0) {
-                            $damage += calc_mitigated_damage( $their_max_health * 0.15,
+                            $damage += calc_mitigated_damage( $targets[0]->{"max_health"} * 0.15,
                                     "soul_reaver", 1, 1, "magical" );
                             $buffs{ "current" }->{ "soul_reaver" } = 0;
                             $buffs{ "cooldown" }->{ "soul_reaver" } =
@@ -2671,7 +2736,7 @@ while ( $iteration < $max_iterations ) {
 
             # item buffs mostly do not crit (e.g., telkhines, obow) but this does
             if (defined $items{ "qins" } and $opts{"action"} ne "tower") {
-                $pre_prot_damage += 0.04 * $their_max_health;
+                $pre_prot_damage += 0.04 * $targets[0]->{"max_health"};
             }
 
             my $rng = rand();
@@ -2712,7 +2777,7 @@ while ( $iteration < $max_iterations ) {
                         "pulse", 1, $aoe, "magical");
 
                 if ( $buffs{"current"}->{"soul_reaver"} > 0) {
-                    $damage += calc_mitigated_damage( $their_max_health * 0.15,
+                    $damage += calc_mitigated_damage( $targets[0]->{"max_health"} * 0.15,
                             "soul_reaver", 1, 1, "magical" );
                     $buffs{ "current" }->{ "soul_reaver" } = 0;
                     $buffs{ "cooldown" }->{ "soul_reaver" } =
@@ -2725,7 +2790,7 @@ while ( $iteration < $max_iterations ) {
                         $ability_stats{ "level" }->{ "irradiate" }->[ $opts{ "level" } ] ] + 0.25 * get_eff_power(),
                         "irradiate", 1, 1, "magical" );
                 if ( $buffs{"current"}->{"soul_reaver"} > 0) {
-                    $damage += calc_mitigated_damage( $their_max_health * 0.15,
+                    $damage += calc_mitigated_damage( $targets[0]->{"max_health"} * 0.15,
                             "soul_reaver", 1, 1, "magical" );
                     $buffs{ "current" }->{ "soul_reaver" } = 0;
                     $buffs{ "cooldown" }->{ "soul_reaver" } =
@@ -2734,9 +2799,9 @@ while ( $iteration < $max_iterations ) {
             }
 
             if ($buffs{ "current" }->{ "serqet_poisons" } >= 2) {
-                $pre_prot_damage += $their_max_health * 0.1;
+                $pre_prot_damage += $targets[0]->{"max_health"} * 0.1;
                 if ($buffs{ "current" }->{ "serqet_poisons" } == 3) {
-                    $pre_prot_damage += $their_max_health * 0.1;
+                    $pre_prot_damage += $targets[0]->{"max_health"} * 0.1;
                 }
             }
             $buffs{ "current" }->{ "serqet_poisons" } = 0;
@@ -2793,7 +2858,8 @@ while ( $iteration < $max_iterations ) {
             }
 
             if (defined $items{ "masamune" }) {
-                my $bonus = int(0.1 * ($their_max_health - 2000)); # 1 for every 10 health diff TODO my health
+                # 1 for every 10 health diff TODO my health
+                my $bonus = int(0.1 * ($targets[0]->{"max_health"} - 2000)); 
                 if ($bonus > 50) { $bonus = 50; }
                 $damage += calc_mitigated_damage( $bonus, "masamune", 1, 1, "physical" );
             }
@@ -3022,7 +3088,7 @@ while ( $iteration < $max_iterations ) {
             $audacity_stacks = 5;
         }
 
-        if ( get_their_health() <= 0 and $ttk == 0 ) {
+        if ( any_targets_remain() <= 0 and $ttk == 0 ) {
             $ttk = $time;
         }
 
