@@ -5,17 +5,15 @@
 #
 # implement pre-hit duration and post-hit duration correctly
 # 
-# implement multiple targets so qins works
-#
 # implement long-term sustainable damage (very high # targets)
 #
+# add isis
+# add janus
+# add poseidon
 # add ravana
 # add bellona
 # add amaterasu
 # add poison darts for xbal
-# add kali
-# add arachne
-# add nemesis
 # add ne zha
 #
 
@@ -24,6 +22,7 @@ use warnings;
 
 use Getopt::Std;
 use Getopt::Long;
+use Data::Dumper;
 
 #################################################################################
 # opts
@@ -1743,6 +1742,13 @@ if ( $opts{"action"} eq "kill") {
 }
 
 #################################################################################
+# 
+#################################################################################
+
+
+
+
+#################################################################################
 # stat calculations (some must be done post-items)
 #################################################################################
 
@@ -2136,6 +2142,8 @@ sub get_basic_attack_damage() {
 
 sub calc_mitigated_damage( $ $ $ $ $ ) {
 
+    # TODO add starting target index so i can do aoe effects on the other targets
+
     my $pre_prot_damage = shift;
     my $damage_source = shift;
     my $print = shift;
@@ -2270,9 +2278,11 @@ sub calc_mitigated_damage( $ $ $ $ $ ) {
             }
         } # output
 
-        $targets[$j]->{"current_health"} -= $damage;
-        if ($targets[$j]->{"current_health"} < 0) {
-            $targets[$j]->{"current_health"} = 0;
+        if ( $print ) {
+            $targets[$j]->{"current_health"} -= $damage;
+            if ($targets[$j]->{"current_health"} < 0) {
+                $targets[$j]->{"current_health"} = 0;
+            }
         }
 
         $total_damage += $damage;
@@ -2338,6 +2348,11 @@ while ( $iteration < $max_iterations ) {
 
     #while ( $time < $opts{"time"} ) {
     while ( any_targets_remain() ) {
+
+        #if ( $time % 1000 == 0 ) {
+        #    print "time = $time\n";
+        #    print Dumper(@targets);
+        #}
 
         # stuff that happens FIRST
         if ($opts{ "god" } eq "awilix" and $time == 0) {
@@ -2734,8 +2749,9 @@ while ( $iteration < $max_iterations ) {
                 $total_crit_chance += 0.1 * $buffs{ "current" }->{ "rage" };
             }
 
-            # item buffs mostly do not crit (e.g., telkhines, obow) but this does
-            if (defined $items{ "qins" } and $opts{"action"} ne "tower") {
+            # item buffs mostly do not crit (e.g., telkhines, obow) but qins does
+            # so do it here, before we calculate crit damage
+            if (defined $items{ "qins" } and $opts{"action"} eq "kill") {
                 $pre_prot_damage += 0.04 * $targets[0]->{"max_health"};
             }
 
