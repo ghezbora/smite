@@ -274,6 +274,106 @@ my %ability_stats = (
 ),
 
 
+#################################################################################
+# buff stats
+#################################################################################
+
+my %buffs = (
+    "max_stacks" => {
+        "divine_judgment" => 1, # buff and debuff
+        "cocoon" => 3,
+        "incense" => 1,
+        "crusher" => 5,
+        "soul_reaver" => 1,
+        "midgardian" => 1,
+        "accelerate" => 1,
+        "rage" => 6,
+        "still_target" => 3,
+        "xbal_passive" => 6,
+        "initiative" => 1,
+        "vengeful_assault" => 1,
+        "expose_weakness" => 1,
+        "pick_me_up" => 1,
+        "gravity_surge" => 1,
+        "maximum_velocity" => 1,
+        "branching_bolas" => 1,
+        "hydras_lament" => 1,
+        "polynomicon" => 1,
+        "ichaival" => 3,
+        "irradiate" => 1,
+        "pulse" => 1,
+        "astral_strike" => 1,
+        "stone_cutting_sword" => 3,
+        "oni" => 3,
+        "spectral_armor" => 1,
+        "heartseeker" => 5,
+    },
+    "cooldown" => {
+        "polynomicon" => 3000,
+        "soul_reaver" => 40000,
+    },
+    "duration" => {
+        "divine_judgment" => 8000, # NB buff lasts 8, debuff lasts 5
+        "cocoon" => 0,
+        "incense" => 8000, # TODO duration scales 4...8
+        "crusher" => 2000,
+        "soul_reaver" => 40000,
+        "midgardian" => 3000,
+        "accelerate" => 7000,
+        "rage" => 0,
+        "still_target" => 4000,
+        "xbal_passive" => 0,
+        "initiative" => 2500,
+        "vengeful_assault" => 5000, #TODO duration scales
+        "expose_weakness" => 5000,
+        "pick_me_up" => 5000,
+        "gravity_surge" => 6000,
+        "maximum_velocity" => 5000,
+        "branching_bolas" => 0,
+        "hydras_lament" => 8000,
+        "polynomicon" => 8000,
+        "ichaival" => 3000,
+        "irradiate" => 5000,
+        "pulse" => 5000,
+        "astral_strike" => 0,
+        "stone_cutting_sword" => 3000,
+        "oni" => 0,
+        "spectral_armor" => 5000,
+        "heartseeker" => 0,
+    },
+);
+
+
+my %debuffs = (
+    "max_stacks" => {
+        "divine_judgment" => 1,
+        "executioner" => 4,
+        "demonic_grip" => 4,
+        "spear" => 3,
+        "stone_cutting_sword" => 3,
+        "ichaival" => 3,
+        "open_wound" => 1,
+        "serqet_poisons" => 3,
+        "frostbound" => 1,
+        "witchblade" => 1,
+        "runic_shield" => 1,
+    },
+    "duration" => {
+        "divine_judgment" => 5000, # NB debuff lasts 5 seconds, buff lasts 8
+        "midgardian" => 3000,
+        "executioner" => 3000,
+        "demonic_grip" => 3000,
+        "spear" => 5000,
+        "open_wound" => 0,
+        "serqet_poisons" => 20000,
+        "ichaival" => 3000,
+        "stone_cutting_sword" => 3000,
+        "frostbound" => 1250,
+        "witchblade" => 0, # TODO make sure these can't stack
+        "runic_shield" => 0,
+    },
+);
+
 
 #################################################################################
 # item stats
@@ -386,7 +486,8 @@ my %god = (
     "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "god" } },
     "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "god" } },
 
-    "health" => $base_stats{ "health" }->{ $opts{ "god" } },
+    "health" => $base_stats{ "health" }->{ $opts{ "god" } }, # max health
+    "current_health" => $base_stats{ "health" }->{ $opts{ "god" } },
     "mana" => $base_stats{ "mana" }->{ $opts{ "god" } },
 
     "cdr" => 0,
@@ -402,6 +503,8 @@ my %god = (
     "gold" => 0,
 
     "abilities" => [ ],
+
+    "buffs" => { },
 );
 
 my %enemy = (
@@ -418,7 +521,8 @@ my %enemy = (
     "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "enemy" } },
     "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "enemy" } },
 
-    "health" => $base_stats{ "health" }->{ $opts{ "enemy" } },
+    "health" => $base_stats{ "health" }->{ $opts{ "enemy" } }, # max health
+    "current_health" => $base_stats{ "health" }->{ $opts{ "enemy" } },
     "mana" => $base_stats{ "mana" }->{ $opts{ "enemy" } },
 
     "cdr" => 0,
@@ -434,6 +538,8 @@ my %enemy = (
     "gold" => 0,
 
     "abilities" => [ ],
+
+    "buffs" => { },
 );
 
 
@@ -505,6 +611,43 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "enemy" } } } ) {
 }
 
 
+#################################################################################
+# recordkeeping
+#################################################################################
+
+my %iteration_record = (
+    
+    "time" => 0,
+
+    "god" => {
+        "attacks" => 0,
+        "crits" => 0,
+        "polynomicon_procs" => 0,
+        "polynomicon_damage" => 0,
+        "hydras_procs" => 0,
+        "hydras_damage" => 0,
+        "telkhines_damage" => 0,
+    },
+
+    "enemy" => {
+        "attacks" => 0,
+        "crits" => 0,
+        "polynomicon_procs" => 0,
+        "polynomicon_damage" => 0,
+        "hydras_procs" => 0,
+        "hydras_damage" => 0,
+        "telkhines_damage" => 0,
+    },
+
+);
+
+
+# TODO not sure what i want to do here, maybe just keep a list of iteration_record objects
+# that's kinda large, but probably doable
+my %global_record = (
+    "times" => [ ],
+    "winner" => [ ],
+);
 
 
 
