@@ -100,7 +100,7 @@ my %base_stats = (
         "bellona" => (480 + 85 * $opts{"level"} ),
         "hercules" => (480 + 86 * $opts{"level"}),
     },
-    "base_attack_rate" => {
+    "base_attack_speed" => {
         "freya" => 0.95,
         "sol" => 1,
         "scylla" => 1,
@@ -127,32 +127,32 @@ my %base_stats = (
         "arachne" => 1,
         "kali" => 1,
     },
-    "total_attack_rate" => {
-        "freya" => (0.95 + .0195 * $opts{"level"}),
-        "sol" => (1 + .018 * $opts{"level"}),
-        "scylla" => (1 + .008 * $opts{"level"}),
-        "nox" => (1 + .008 * $opts{"level"}),
-        "kukulkan" => (0.87 + .0091 * $opts{"level"}),
-        "chronos" => (1 + .008 * $opts{"level"}),
+    "attack_speed_modifier" => {
+        "freya" => (.0195 * $opts{"level"}),
+        "sol" => (.018 * $opts{"level"}),
+        "scylla" => (.008 * $opts{"level"}),
+        "nox" => (.008 * $opts{"level"}),
+        "kukulkan" => (.0091 * $opts{"level"}),
+        "chronos" => (.008 * $opts{"level"}),
 
-        "artemis" => (0.95 + .014 * $opts{"level"}),
-        "awilix" => (1 + .0189 * $opts{"level"}),
-        "medusa" => (0.95 + .014 * $opts{"level"}),
-        "xbal" => (0.95 + .01 * $opts{"level"}),
-        "rama" => (0.95 + .017 * $opts{"level"}),
-        "ullr" => (0.95 + .015 * $opts{"level"}),
-        "serqet" => (1 + .0216 * $opts{"level"}),
-        "thor" => (1 + .0145 * $opts{"level"}),
-        "fenrir" => (1 + .017 * $opts{"level"}),
-        "bastet" => (1 + .0198 * $opts{"level"}),
-        "apollo" => (0.95 + .017 * $opts{"level"}),
-        "neith" => (0.95 + .016 * $opts{"level"}),
-        "mercury" => (1 + .024 * $opts{"level"}),
-        "chiron" => (1 + .011 * $opts{"level"}),
-        "hou_yi" => (0.9 + .012 * $opts{"level"}),
-        "nemesis" => (1 + .0216 * $opts{"level"}),
-        "arachne" => (1 + .02 * $opts{"level"}),
-        "kali" => (1 + .0216 * $opts{"level"}),
+        "artemis" => (.014 * $opts{"level"}),
+        "awilix" => (.0189 * $opts{"level"}),
+        "medusa" => (.014 * $opts{"level"}),
+        "xbal" => (.01 * $opts{"level"}),
+        "rama" => (.017 * $opts{"level"}),
+        "ullr" => (.015 * $opts{"level"}),
+        "serqet" => (.0216 * $opts{"level"}),
+        "thor" => (.0145 * $opts{"level"}),
+        "fenrir" => (.017 * $opts{"level"}),
+        "bastet" => (.0198 * $opts{"level"}),
+        "apollo" => (.017 * $opts{"level"}),
+        "neith" => (.016 * $opts{"level"}),
+        "mercury" => (.024 * $opts{"level"}),
+        "chiron" => (.011 * $opts{"level"}),
+        "hou_yi" => (.012 * $opts{"level"}),
+        "nemesis" => (.0216 * $opts{"level"}),
+        "arachne" => (.02 * $opts{"level"}),
+        "kali" => (.0216 * $opts{"level"}),
     },
     "auto_damage" => {
         "freya" => (35 + 1.5 * $opts{"level"}),
@@ -237,8 +237,38 @@ my %base_stats = (
     },
 );
 
+#################################################################################
+# item stats
+#################################################################################
+
+my %item_stats = (
+
+	######################################################################
+	# magical items
+	######################################################################
+	"cooldown_boots" => {
+		"mana" => 250,
+		"cdr" => .1,
+		"magical_power" => 40,
+		"gold" => 1500
+	},
+
+	"pen_boots" => {
+		"magical_power" => 45,
+		"flat_pen" => 10,
+		"gold" => 1600,
+	},
+
+	######################################################################
+	# physical items
+	######################################################################
 
 
+	######################################################################
+	# common items
+	######################################################################
+
+);
 
 
 #################################################################################
@@ -251,7 +281,7 @@ my %base_stats = (
 # $god->{ "crit_chance" } is much faster than $base_stats{ "crit_chance" }->{ $opts{ "god" } }
 
 my %god = (
-    "type" => $base_stats{ "type" }->{ $opts{ "god" } }
+    "type" => $base_stats{ "type" }->{ $opts{ "god" } },
 
     "physical_power" => 0,
     "physical_prot" => $base_stats{ "physical_protection" }->{ $opts{ "god" } },
@@ -259,8 +289,8 @@ my %god = (
     "magical_power" => 0,
     "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "god" } },
 
-    "base_attack_speed" => $base_stats{ "base_attack_rate" }->{ $opts{ "god" } },
-    "eff_attack_speed" => $base_stats{ "total_attack_rate" }->{ $opts{ "god" } },
+    "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "god" } },
+    "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "god" } },
     "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "god" } },
     "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "god" } },
 
@@ -283,6 +313,23 @@ my %god = (
 my @items = split( /\s/, $opts{ "items" } );
 
 foreach my $item (@items) {
-    $god->{ "items" }->{ $item } = 1;
+    $god{ "items" }->{ $item } = 1;
 }
+
+
+
+#################################################################################
+# apply items
+#################################################################################
+
+foreach my $item (@items) {
+    foreach my $stat (keys $item_stats{ $item }) {
+	    $god{ $stat } += $item_stats{ $item }->{ $stat };
+    }
+}
+
+
+
+
+print Dumper(%god);
 
