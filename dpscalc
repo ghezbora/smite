@@ -8,6 +8,7 @@
 # implement long-term sustainable damage (very high # targets)
 #
 # add isis
+# add nu wa
 # add janus
 # add poseidon
 # add ravana
@@ -97,11 +98,11 @@ my %protection_stats = (
         "hercules" => (480 + 86 * $opts{"level"}),
     },
     "default_items" => {
-        "bastet" => "bov",
+        "bastet" => "void_shield",
         "sol" => "",
         "chiron" => "",
-        "khepri" => "urchin bulwark spirit_robe winged_blade bov",
-        "bellona" => "bulwark urchin mystical_mail frostbound",
+        "khepri" => "sov heartward spirit_robe winged_blade bov",
+        "bellona" => "bov urchin frostbound bulwark void_shield",
         "hercules" => "thebes gaia bulwark urchin",
     },
 );
@@ -1455,6 +1456,13 @@ if (defined $items{ "deaths_toll" } ) {
     $gold += 800;
 }
 
+# void shield
+if (defined $items{ "void_shield" } ) {
+	$physical_power += 30;
+	$flat_reduction += 20;
+	$gold += 2600;
+}
+
 # jotunn's wrath
 if (defined $items{"jotunns"} or defined $items{ "jotunns_wrath" }) {
     $physical_power += 40;
@@ -1510,8 +1518,9 @@ if (defined $items{"warrior_tabi"}) {
 # ninja tabi
 if (defined $items{"ninja_tabi"}) {
     $physical_power += 20;
-    $attack_rate += 0.15 * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
+    $attack_rate += 0.20 * $base_stats{ "attack_rate" }->{ $opts{ "god" } };
     $gold += 1500;
+	$mana += 100;
     $item_mvmt_speed += 0.18;
 }
 
@@ -1651,6 +1660,10 @@ if ( $opts{"action"} eq "kill") {
         $targets[0]->{"phys_prot"} += 75;
     }
 
+	if (defined $items{ "void_shield" } ) {
+		$targets[0]->{"phys_prot"} += 50;
+	}
+
     if (defined $enemy_items{ "bulwark" }) {
         $targets[0]->{"max_health"} += 200;
         $targets[0]->{"mag_prot"} += 60;
@@ -1685,7 +1698,12 @@ if ( $opts{"action"} eq "kill") {
 
     if (defined $enemy_items{ "sov" }) {
         $targets[0]->{"max_health"} += 200;
-        $targets[0]->{"phys_prot"} += 50;
+		$targets[0]->{"phys_prot"} += 60;
+    }
+
+    if (defined $enemy_items{ "heartward" }) {
+        $targets[0]->{"max_health"} += 200;
+		$targets[0]->{"mag_prot"} += 50;
     }
 
     if (defined $enemy_items{ "midgardian" }) {
@@ -1699,7 +1717,6 @@ if ( $opts{"action"} eq "kill") {
 
     if (defined $enemy_items{ "spectral_armor" }) {
         $targets[0]->{"phys_prot"} += 80;
-        $lifesteal *= 0.5;
     }
 
     if (defined $enemy_items{ "frostbound" }) {
@@ -1711,7 +1728,7 @@ if ( $opts{"action"} eq "kill") {
     }
 
     if (defined $enemy_items{ "witchblade" }) {
-        $targets[0]->{"phys_prot"} += 45;
+        $targets[0]->{"phys_prot"} += 60;
         # TODO handle aura
     }
 
@@ -1916,7 +1933,7 @@ my %buffs = (
         "cocoon" => 0,
         "incense" => 8000, # TODO duration scales 4...8
         "crusher" => 2000,
-        "soul_reaver" => 60000,
+        "soul_reaver" => 40000,
         "midgardian" => 3000,
         "accelerate" => 7000,
         "rage" => 0,
@@ -2400,8 +2417,8 @@ while ( $iteration < $max_iterations ) {
                 while ( $hit < $ability_stats{ "hits" }->{ $next_skill } ) {
                     if( $pre_prot_damage > 0 ) { 
                         if ( $buffs{"current"}->{"soul_reaver"} > 0) {
-                            $damage += calc_mitigated_damage( $targets[0]->{"max_health"} * 0.15,
-                                    "soul_reaver", 1, 1, "magical" );
+                            $damage += calc_mitigated_damage( $targets[0]->{"max_health"} * 0.10,
+                                    "soul_reaver", 1, 1, "true" );
                             $buffs{ "current" }->{ "soul_reaver" } = 0;
                             $buffs{ "cooldown" }->{ "soul_reaver" } =
                                     $time + $buffs{ "duration" }->{ "soul_reaver" };
@@ -2793,8 +2810,8 @@ while ( $iteration < $max_iterations ) {
                         "pulse", 1, $aoe, "magical");
 
                 if ( $buffs{"current"}->{"soul_reaver"} > 0) {
-                    $damage += calc_mitigated_damage( $targets[0]->{"max_health"} * 0.15,
-                            "soul_reaver", 1, 1, "magical" );
+                    $damage += calc_mitigated_damage( $targets[0]->{"max_health"} * 0.10,
+                            "soul_reaver", 1, 1, "true" );
                     $buffs{ "current" }->{ "soul_reaver" } = 0;
                     $buffs{ "cooldown" }->{ "soul_reaver" } =
                             $time + $buffs{ "duration" }->{ "soul_reaver" };
@@ -2806,8 +2823,8 @@ while ( $iteration < $max_iterations ) {
                         $ability_stats{ "level" }->{ "irradiate" }->[ $opts{ "level" } ] ] + 0.25 * get_eff_power(),
                         "irradiate", 1, 1, "magical" );
                 if ( $buffs{"current"}->{"soul_reaver"} > 0) {
-                    $damage += calc_mitigated_damage( $targets[0]->{"max_health"} * 0.15,
-                            "soul_reaver", 1, 1, "magical" );
+                    $damage += calc_mitigated_damage( $targets[0]->{"max_health"} * 0.10,
+                            "soul_reaver", 1, 1, "true" );
                     $buffs{ "current" }->{ "soul_reaver" } = 0;
                     $buffs{ "cooldown" }->{ "soul_reaver" } =
                             $time + $buffs{ "duration" }->{ "soul_reaver" };
