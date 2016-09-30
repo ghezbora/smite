@@ -1790,6 +1790,7 @@ if ($attack_rate > 2.5) { $attack_rate = 2.5; }
 if ($magical_power > 900) { $magical_power = 900; }
 if ($physical_power > 400) { $physical_power = 400; }
 if ($flat_pen > 50) { $flat_pen = 50; }
+# TODO protections cap at 325
 
 
 #################################################################################
@@ -2363,7 +2364,6 @@ while ( $iteration < $max_iterations ) {
         $i++;
     }
 
-    #while ( $time < $opts{"time"} ) {
     while ( any_targets_remain() ) {
 
         #if ( $time % 1000 == 0 ) {

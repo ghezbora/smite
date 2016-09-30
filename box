@@ -1,0 +1,288 @@
+#!/usr/bin/perl
+
+
+use strict;
+use warnings;
+
+use Getopt::Std;
+use Getopt::Long;
+use Data::Dumper;
+
+#################################################################################
+# opts
+#################################################################################
+
+my %opts;
+
+my $VERBOSITY_QUIET = 1;
+my $VERBOSITY_NORMAL = 3;
+my $VERBOSITY_EXTRA = 5;
+my $VERBOSITY_EPIC = 7;
+my $VERBOSITY_LEGENDARY = 9;
+
+# set defaults
+$opts{ "verbosity" } = $VERBOSITY_NORMAL;
+$opts{ "level" } = 20;
+
+GetOptions( 'god=s' => \$opts{ "god" },
+            'enemy=s' => \$opts{"enemy"},
+            'items=s' => \$opts{"items"},
+            'enemy_items=s' => \$opts{"enemy_items"},
+            'verbosity=i' => \$opts{"verbosity"},
+            'iterations=i' => \$opts{"iterations"},
+            'level=i' => \$opts{"level"} );
+
+if ( not defined $opts{ "god" } or not defined $opts{ "items" } ) {
+    print "god and items are required options\n";
+    exit;
+}
+if ( not defined $opts{ "enemy" } or not defined $opts{ "enemy_items" } ) {
+    print "enemy god and items are required options\n";
+    exit;
+}
+
+
+
+
+#################################################################################
+# stat tables
+#################################################################################
+
+my %base_stats = (
+    "type" => {
+        "freya" => "magical",
+        "sol" => "magical",
+        "scylla" => "magical",
+        "nox" => "magical",
+        "kukulkan" => "magical",
+        "chronos" => "magical",
+
+        "artemis" => "physical",
+        "awilix" => "physical",
+        "medusa" => "physical",
+        "xbal" => "physical",
+        "rama" => "physical",
+        "ullr" => "physical",
+        "serqet" => "physical",
+        "thor" => "physical",
+        "fenrir" => "physical",
+        "bastet" => "physical",
+        "apollo" => "physical",
+        "neith" => "physical",
+        "mercury" => "physical",
+        "chiron" => "physical",
+        "hou_yi" => "physical",
+        "nemesis" => "physical",
+        "arachne" => "physical",
+        "kali" => "physical",
+    },
+    "physical_protection" => {
+        "bastet" => (12 + 2.9 * $opts{"level"}),
+        "chiron" => (12 + 2.8 * $opts{"level"}),
+        "sol" => (9 + 2.6 * $opts{"level"}),
+        "khepri" => (19 + 3 * $opts{"level"}),
+        "bellona" => (18 + 3 * $opts{"level"}),
+        "hercules" => (18 + 3 * $opts{"level"}),
+    },
+    "magical_protection" => {
+        "bastet" => (30 + 0.9 * $opts{"level"}),
+        "chiron" => (30 + 0.9 * $opts{"level"}),
+        "sol" => 30,
+        "khepri" => (30 + 0.9 * $opts{"level"}),
+        "bellona" => (30 + 0.9 * $opts{"level"}),
+        "hercules" => (30 + 0.9 * $opts{"level"}),
+    },
+    "health" => {
+        "bastet" => (415 + 80 * $opts{"level"}),
+        "chiron" => (460 + 75 * $opts{"level"}),
+        "sol" => (400 + 75 * $opts{"level"}),
+        "khepri" => (510 + 90 * $opts{"level"}),
+        "bellona" => (480 + 85 * $opts{"level"} ),
+        "hercules" => (480 + 86 * $opts{"level"}),
+    },
+    "base_attack_rate" => {
+        "freya" => 0.95,
+        "sol" => 1,
+        "scylla" => 1,
+        "nox" => 1,
+        "kukulkan" => 0.87,
+        "chronos" => 1,
+
+        "artemis" => 0.95,
+        "awilix" => 1,
+        "medusa" => 0.95,
+        "xbal" => 0.95,
+        "rama" => 0.95,
+        "ullr" => 0.95,
+        "serqet" => 1,
+        "thor" => 1,
+        "fenrir" => 1,
+        "bastet" => 1,
+        "apollo" => 0.95,
+        "neith" => 0.95,
+        "mercury" => 1,
+        "chiron" => 1,
+        "hou_yi" => 0.9,
+        "nemesis" => 1,
+        "arachne" => 1,
+        "kali" => 1,
+    },
+    "total_attack_rate" => {
+        "freya" => (0.95 + .0195 * $opts{"level"}),
+        "sol" => (1 + .018 * $opts{"level"}),
+        "scylla" => (1 + .008 * $opts{"level"}),
+        "nox" => (1 + .008 * $opts{"level"}),
+        "kukulkan" => (0.87 + .0091 * $opts{"level"}),
+        "chronos" => (1 + .008 * $opts{"level"}),
+
+        "artemis" => (0.95 + .014 * $opts{"level"}),
+        "awilix" => (1 + .0189 * $opts{"level"}),
+        "medusa" => (0.95 + .014 * $opts{"level"}),
+        "xbal" => (0.95 + .01 * $opts{"level"}),
+        "rama" => (0.95 + .017 * $opts{"level"}),
+        "ullr" => (0.95 + .015 * $opts{"level"}),
+        "serqet" => (1 + .0216 * $opts{"level"}),
+        "thor" => (1 + .0145 * $opts{"level"}),
+        "fenrir" => (1 + .017 * $opts{"level"}),
+        "bastet" => (1 + .0198 * $opts{"level"}),
+        "apollo" => (0.95 + .017 * $opts{"level"}),
+        "neith" => (0.95 + .016 * $opts{"level"}),
+        "mercury" => (1 + .024 * $opts{"level"}),
+        "chiron" => (1 + .011 * $opts{"level"}),
+        "hou_yi" => (0.9 + .012 * $opts{"level"}),
+        "nemesis" => (1 + .0216 * $opts{"level"}),
+        "arachne" => (1 + .02 * $opts{"level"}),
+        "kali" => (1 + .0216 * $opts{"level"}),
+    },
+    "auto_damage" => {
+        "freya" => (35 + 1.5 * $opts{"level"}),
+        "sol" => (34 + 1.45 * $opts{"level"}),
+        "scylla" => (34 + 1.45 * $opts{"level"}),
+        "nox" => (34 + 1.5 * $opts{"level"}),
+        "kukulkan" => (34 + 1.45 * $opts{"level"}),
+        "chronos" => (35 + 1.5 * $opts{"level"}),
+
+        "artemis" => (35 + 2.05 * $opts{"level"}),
+        "awilix" => (38 + 2.16 * $opts{"level"}),
+        "medusa" => (38 + 2.6 * $opts{"level"}),
+        "xbal" => (37 + 2.5 * $opts{"level"}),
+        "rama" => (40 + 2.5 * $opts{"level"}),
+        "ullr" => (38 + 2.4 * $opts{"level"}),
+        "serqet" => (39 + 2.25 * $opts{"level"}),
+        "thor" => (39 + 2.4 * $opts{"level"}),
+        "fenrir" => (38 + 2.3 * $opts{"level"}),
+        "bastet" => (38 + 2.13 * $opts{"level"}),
+        "apollo" => (40 + 2.6 * $opts{"level"}),
+        "neith" => (35 + 2.3 * $opts{"level"}),
+        "mercury" => (38 + 2.13 * $opts{"level"}),
+        "chiron" => (35 + 2.35 * $opts{"level"}),
+        "hou_yi" => (38 + 2.8 * $opts{"level"}),
+        "nemesis" => (39 + 2.25 * $opts{"level"}),
+        "arachne" => (38 + 2.2 * $opts{"level"}),
+        "kali" => (37 + 2.32 * $opts{"level"}),
+    },
+    "mana" => {
+        "freya" => (220 + 37 * $opts{"level"}),
+        "sol" => (300 + 57 * $opts{"level"}),
+        "scylla" => (298 + 56 * $opts{"level"}),
+        "nox" => (250 + 38 * $opts{"level"}),
+        "kukulkan" => (265 + 45 * $opts{"level"}),
+        "chronos" => (240 + 42 * $opts{"level"}),
+
+        "artemis" => (205 + 34 * $opts{"level"}),
+        "awilix" => (220 + 38 * $opts{"level"}),
+        "medusa" => (220 + 34 * $opts{"level"}),
+        "xbal" => (220 + 37 * $opts{"level"}),
+        "rama" => (205 + 34 * $opts{"level"}),
+        "ullr" => (230 + 40 * $opts{"level"}),
+        "serqet" => (240 + 40 * $opts{"level"}),
+        "thor" => (240 + 38 * $opts{"level"}),
+        "fenrir" => (240 + 35 * $opts{"level"}),
+        "bastet" => (214 + 39 * $opts{"level"}),
+        "apollo" => (225 + 40 * $opts{"level"}),
+        "neith" => (230 + 39 * $opts{"level"}),
+        "mercury" => (200 + 40 * $opts{"level"}),
+        "chiron" => (225 + 40 * $opts{"level"}),
+        "hou_yi" => (240 + 38 * $opts{"level"}),
+        "nemesis" => (210 + 38 * $opts{"level"}),
+        "arachne" => (210 + 41 * $opts{"level"}),
+        "kali" => (205 + 34 * $opts{"level"}),
+    },
+    "attack_chain_progression" => {
+        "freya" => [ 1 ],
+        "sol" => [ 1 ],
+        "scylla" => [ 1 ],
+        "nox" => [ 1 ],
+        "kukulkan" => [ 1 ],
+        "chronos" => [ 1 ],
+
+        "artemis" => [ 1 ],
+        "awilix" => [ 1, 0.75, 1.25 ],
+        "medusa" => [ 1 ],
+        "xbal" => [ 1 ],
+        "rama" => [ 1 ],
+        "ullr" => [ 1 ],
+        "serqet" => [ 1, 0.75, 1.25 ],
+        "thor" => [ 1 ],
+        "fenrir" => [ 1 ],
+        "bastet" => [ 1, 0.7, 1.3 ],
+        "apollo" => [ 1 ],
+        "neith" => [ 1 ],
+        "mercury" => [ 1, 0.75, 1.25 ],
+        "chiron" => [ 1 ],
+        "hou_yi" => [ 1 ],
+        "nemesis" => [ 1, 1, .75, 1.25 ],
+        "arachne" => [ .5, 1, 1 ],
+        "kali" => [ 1, .5, .5 ],
+    },
+);
+
+
+
+
+
+#################################################################################
+# setup specific stats
+#################################################################################
+
+
+# setup these stats so that we can modify them with items once (not every time)
+# and also so that we can do a lot fewer dereferences when we need them
+# $god->{ "crit_chance" } is much faster than $base_stats{ "crit_chance" }->{ $opts{ "god" } }
+
+my %god = (
+    "type" => $base_stats{ "type" }->{ $opts{ "god" } }
+
+    "physical_power" => 0,
+    "physical_prot" => $base_stats{ "physical_protection" }->{ $opts{ "god" } },
+
+    "magical_power" => 0,
+    "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "god" } },
+
+    "base_attack_speed" => $base_stats{ "base_attack_rate" }->{ $opts{ "god" } },
+    "eff_attack_speed" => $base_stats{ "total_attack_rate" }->{ $opts{ "god" } },
+    "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "god" } },
+    "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "god" } },
+
+    "health" => $base_stats{ "health" }->{ $opts{ "god" } },
+    "mana" => $base_stats{ "mana" }->{ $opts{ "god" } },
+
+    "cdr" => 0,
+
+    "crit_chance" => 0,
+    "lifesteal" => 0,
+
+    "flat_pen" => 0,
+    "percent_pen" => 0,
+    "flat_reduction" => 0,
+    "percent_reduction" => 0,
+
+    "items" => { },
+);
+
+my @items = split( /\s/, $opts{ "items" } );
+
+foreach my $item (@items) {
+    $god->{ "items" }->{ $item } = 1;
+}
+
