@@ -45,7 +45,7 @@ if ( not defined $opts{ "enemy" } or not defined $opts{ "enemy_items" } ) {
 
 
 #################################################################################
-# stat tables
+# base stat tables
 #################################################################################
 
 my %base_stats = (
@@ -235,7 +235,45 @@ my %base_stats = (
         "arachne" => [ .5, 1, 1 ],
         "kali" => [ 1, .5, .5 ],
     },
+    "combo" => {
+        "sol" => [ "stellar_burst" ],
+    }
 );
+
+#################################################################################
+# ability base stats
+#################################################################################
+
+# these stats are not used at runtime, they are used to populate the ability array
+# in the god stats object
+# the level field is used to pick the correct value out of each of the other fields
+# then we don't have to dereference many times to get the right values at runtime
+
+my %ability_stats = (
+    "cooldown" => {
+        "stellar_burst" => [ 12, 12, 12, 12, 12, 12 ],
+        "radiance" => [ 15, 15, 15, 15, 15, 15 ],
+    },
+    "tick_damage" => {
+        "stellar_burst" => [ 0, 40, 70, 100, 130, 160 ],
+    },
+    "tick_scaling" => {
+        "stellar_burst" => [ 0.35, 0.35, 0.35, 0.35, 0.35, 0.35 ],
+    },
+    "tick_duration" => {
+        "stellar_burst" => [ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ],
+    },
+    "num_ticks" => {
+        "stellar_burst" => [ 2, 2, 2, 2, 2, 2 ],
+    },
+    "level" => {
+        # character level           [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20 ],
+        "stellar_burst" =>          [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+        "radiance" =>               [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+    },
+),
+
+
 
 #################################################################################
 # item stats
@@ -259,25 +297,79 @@ my %item_stats = (
 		"gold" => 1600,
 	},
 
+    "void_stone" => {
+        "magical_power" => 40,
+        "magical_prot" => 50,
+        "flat_reduction" => 20,
+        "gold" => 2350,
+    },
+
 	######################################################################
 	# physical items
 	######################################################################
+    "warrior_tabi" => {
+        "physical_power" => 40,
+        "gold" => 1550,
+    },
 
+    "ninja_tabi" => {
+        "physical_power" => 20,
+        "attack_speed_modifier" => .2,
+        "mana" => 100,
+        "gold" => 1500,
+    },
+
+    "void_shield" => {
+        "physical_power" => 30,
+        "physical_prot" => 40,
+        "flat_reduction" => 20,
+        "gold" => 2700,
+    },
+
+    "titans_bane" => {
+        "physical_power" => 30,
+        "percent_pen" => .33,
+        "gold" => 2050,
+    },
+
+    "asi" => {
+        "flat_pen" => 15,
+        "attack_speed_modifier" => .2,
+        "lifesteal" => .15,
+        "gold" => 1780,
+    },
+
+    "jotunns" => {
+        "physical_power" => 40,
+        "flat_pen" => 10,
+        "cdr" => .2,
+        "mana" => 150,
+        "gold" => 2440,
+    },
 
 	######################################################################
 	# common items
 	######################################################################
 
+    "winged_blade" => {
+        "health" => 300,
+        "attack_speed_modifier" => .1,
+    },
+
+    "sov" => {
+        "physical_prot" => 60,
+        "health" => 200,
+        "gold" => 2100,
+    }
 );
 
 
 #################################################################################
-# setup specific stats
+# setup god stats for THIS RUN
 #################################################################################
 
 
-# setup these stats so that we can modify them with items once (not every time)
-# and also so that we can do a lot fewer dereferences when we need them
+# setup these stats so that we can do a lot fewer dereferences when we need them
 # $god->{ "crit_chance" } is much faster than $base_stats{ "crit_chance" }->{ $opts{ "god" } }
 
 my %god = (
@@ -307,14 +399,43 @@ my %god = (
     "flat_reduction" => 0,
     "percent_reduction" => 0,
 
-    "items" => { },
+    "gold" => 0,
+
+    "abilities" => [ ],
 );
 
-my @items = split( /\s/, $opts{ "items" } );
+my %enemy = (
+    "type" => $base_stats{ "type" }->{ $opts{ "enemy" } },
 
-foreach my $item (@items) {
-    $god{ "items" }->{ $item } = 1;
-}
+    "physical_power" => 0,
+    "physical_prot" => $base_stats{ "physical_protection" }->{ $opts{ "enemy" } },
+
+    "magical_power" => 0,
+    "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "enemy" } },
+
+    "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "enemy" } },
+    "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "enemy" } },
+    "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "enemy" } },
+    "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "enemy" } },
+
+    "health" => $base_stats{ "health" }->{ $opts{ "enemy" } },
+    "mana" => $base_stats{ "mana" }->{ $opts{ "enemy" } },
+
+    "cdr" => 0,
+
+    "crit_chance" => 0,
+    "lifesteal" => 0,
+
+    "flat_pen" => 0,
+    "percent_pen" => 0,
+    "flat_reduction" => 0,
+    "percent_reduction" => 0,
+
+    "gold" => 0,
+
+    "abilities" => [ ],
+);
+
 
 
 
@@ -322,14 +443,102 @@ foreach my $item (@items) {
 # apply items
 #################################################################################
 
+my @items = split( /\s/, $opts{ "items" } );
+
 foreach my $item (@items) {
     foreach my $stat (keys $item_stats{ $item }) {
 	    $god{ $stat } += $item_stats{ $item }->{ $stat };
     }
 }
 
+my @enemy_items = split( /\s/, $opts{ "enemy_items" } );
+
+foreach my $item (@enemy_items) {
+    foreach my $stat (keys $item_stats{ $item }) {
+	    $enemy{ $stat } += $item_stats{ $item }->{ $stat };
+    }
+}
+
+#################################################################################
+# setup abilities for THIS RUN
+#################################################################################
+
+
+foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
+
+    print "ability = " . $ability . "\n";
+
+    push( $god{ "abilities" },
+
+            +{ "name" => $ability,
+                "tick_duration" => $ability_stats{ "tick_duration" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+                "tick_damage" => $ability_stats{ "tick_damage" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+                "num_ticks" => $ability_stats{ "num_ticks" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+                "tick_scaling" => $ability_stats{ "tick_scaling" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+                "cooldown" => $ability_stats{ "cooldown" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+             } );
+}
+
+foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "enemy" } } } ) {
+
+    print "ability = " . $ability . "\n";
+
+    push( $enemy{ "abilities" },
+
+            +{ "name" => $ability,
+                "tick_duration" => $ability_stats{ "tick_duration" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+                "tick_damage" => $ability_stats{ "tick_damage" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+                "num_ticks" => $ability_stats{ "num_ticks" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+                "tick_scaling" => $ability_stats{ "tick_scaling" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+                "cooldown" => $ability_stats{ "cooldown" }->{ $ability }->[
+                                 $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
+             } );
+}
 
 
 
+
+
+#################################################################################
+#################################################################################
+#################################################################################
+#                                   MAIN
+#################################################################################
+#################################################################################
+#################################################################################
+
+
+
+while ( $iteration < $max_iterations ) {
+
+
+
+
+
+    while ( both_up() ) {
+
+
+
+    } # END SINGLE ITERATION LOOP
+
+} # END MAIN LOOP
+
+
+
+
+
+print Dumper(%base_stats);
+print "\n\n\n\n";
+print Dumper(%ability_stats);
+print "\n\n\n\n";
 print Dumper(%god);
 
