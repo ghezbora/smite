@@ -41,11 +41,16 @@ if ( not defined $opts{ "enemy" } or not defined $opts{ "enemy_items" } ) {
     exit;
 }
 
-
-
+#################################################################################
+#################################################################################
+#################################################################################
+#                                GAME DATA
+#################################################################################
+#################################################################################
+#################################################################################
 
 #################################################################################
-# base stat tables
+# base stat tables for ALL RUNS
 #################################################################################
 
 my %base_stats = (
@@ -241,7 +246,7 @@ my %base_stats = (
 );
 
 #################################################################################
-# ability base stats
+# ability base stats for ALL RUNS
 #################################################################################
 
 # these stats are not used at runtime, they are used to populate the ability array
@@ -275,10 +280,10 @@ my %ability_stats = (
 
 
 #################################################################################
-# buff stats
+# buff stats for ALL RUNS
 #################################################################################
 
-my %buffs = (
+my %buff_stats = (
     "max_stacks" => {
         "divine_judgment" => 1, # buff and debuff
         "cocoon" => 3,
@@ -376,7 +381,7 @@ my %debuffs = (
 
 
 #################################################################################
-# item stats
+# item stats for ALL RUNS
 #################################################################################
 
 my %item_stats = (
@@ -472,88 +477,90 @@ my %item_stats = (
 # setup these stats so that we can do a lot fewer dereferences when we need them
 # $god->{ "crit_chance" } is much faster than $base_stats{ "crit_chance" }->{ $opts{ "god" } }
 
-my %god = (
-    "type" => $base_stats{ "type" }->{ $opts{ "god" } },
+my %gods = (
+    "self" => {
+        "type" => $base_stats{ "type" }->{ $opts{ "god" } },
 
-    "physical_power" => 0,
-    "physical_prot" => $base_stats{ "physical_protection" }->{ $opts{ "god" } },
+        "physical_power" => 0,
+        "physical_prot" => $base_stats{ "physical_protection" }->{ $opts{ "god" } },
 
-    "magical_power" => 0,
-    "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "god" } },
+        "magical_power" => 0,
+        "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "god" } },
 
-    "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "god" } },
-    "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "god" } },
-    "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "god" } },
-    "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "god" } },
+        "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "god" } },
+        "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "god" } },
+        "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "god" } },
+        "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "god" } },
 
-    "health" => $base_stats{ "health" }->{ $opts{ "god" } }, # max health
-    "current_health" => $base_stats{ "health" }->{ $opts{ "god" } },
-    "mana" => $base_stats{ "mana" }->{ $opts{ "god" } },
+        "health" => $base_stats{ "health" }->{ $opts{ "god" } }, # max health
+        "current_health" => $base_stats{ "health" }->{ $opts{ "god" } },
+        "mana" => $base_stats{ "mana" }->{ $opts{ "god" } },
 
-    "cdr" => 0,
+        "cdr" => 0,
 
-    "crit_chance" => 0,
-    "lifesteal" => 0,
+        "crit_chance" => 0,
+        "lifesteal" => 0,
 
-    "flat_pen" => 0,
-    "percent_pen" => 0,
-    "flat_reduction" => 0,
-    "percent_reduction" => 0,
+        "flat_pen" => 0,
+        "percent_pen" => 0,
+        "flat_reduction" => 0,
+        "percent_reduction" => 0,
 
-    "gold" => 0,
+        "gold" => 0,
 
-    "abilities" => [ ],
+        "abilities" => [ ],
 
-    "buffs" => { },
-);
+        "buffs" => { },
+    },
 
-my %enemy = (
-    "type" => $base_stats{ "type" }->{ $opts{ "enemy" } },
+    "enemy" => {
+        "type" => $base_stats{ "type" }->{ $opts{ "enemy" } },
 
-    "physical_power" => 0,
-    "physical_prot" => $base_stats{ "physical_protection" }->{ $opts{ "enemy" } },
+        "physical_power" => 0,
+        "physical_prot" => $base_stats{ "physical_protection" }->{ $opts{ "enemy" } },
 
-    "magical_power" => 0,
-    "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "enemy" } },
+        "magical_power" => 0,
+        "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "enemy" } },
 
-    "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "enemy" } },
-    "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "enemy" } },
-    "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "enemy" } },
-    "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "enemy" } },
+        "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "enemy" } },
+        "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "enemy" } },
+        "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "enemy" } },
+        "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "enemy" } },
 
-    "health" => $base_stats{ "health" }->{ $opts{ "enemy" } }, # max health
-    "current_health" => $base_stats{ "health" }->{ $opts{ "enemy" } },
-    "mana" => $base_stats{ "mana" }->{ $opts{ "enemy" } },
+        "health" => $base_stats{ "health" }->{ $opts{ "enemy" } }, # max health
+        "current_health" => $base_stats{ "health" }->{ $opts{ "enemy" } },
+        "mana" => $base_stats{ "mana" }->{ $opts{ "enemy" } },
 
-    "cdr" => 0,
+        "cdr" => 0,
 
-    "crit_chance" => 0,
-    "lifesteal" => 0,
+        "crit_chance" => 0,
+        "lifesteal" => 0,
 
-    "flat_pen" => 0,
-    "percent_pen" => 0,
-    "flat_reduction" => 0,
-    "percent_reduction" => 0,
+        "flat_pen" => 0,
+        "percent_pen" => 0,
+        "flat_reduction" => 0,
+        "percent_reduction" => 0,
 
-    "gold" => 0,
+        "gold" => 0,
 
-    "abilities" => [ ],
+        "abilities" => [ ],
 
-    "buffs" => { },
+        "buffs" => { },
+    },
 );
 
 
 
 
 #################################################################################
-# apply items
+# apply items for THIS RUN
 #################################################################################
 
 my @items = split( /\s/, $opts{ "items" } );
 
 foreach my $item (@items) {
     foreach my $stat (keys $item_stats{ $item }) {
-	    $god{ $stat } += $item_stats{ $item }->{ $stat };
+	    $gods{ "self" }->{ $stat } += $item_stats{ $item }->{ $stat };
     }
 }
 
@@ -561,7 +568,7 @@ my @enemy_items = split( /\s/, $opts{ "enemy_items" } );
 
 foreach my $item (@enemy_items) {
     foreach my $stat (keys $item_stats{ $item }) {
-	    $enemy{ $stat } += $item_stats{ $item }->{ $stat };
+	    $gods{ "enemy" }->{ $stat } += $item_stats{ $item }->{ $stat };
     }
 }
 
@@ -574,7 +581,7 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
 
     print "ability = " . $ability . "\n";
 
-    push( $god{ "abilities" },
+    push( $gods{ "self" }->{ "abilities" },
 
             +{ "name" => $ability,
                 "tick_duration" => $ability_stats{ "tick_duration" }->{ $ability }->[
@@ -594,7 +601,7 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "enemy" } } } ) {
 
     print "ability = " . $ability . "\n";
 
-    push( $enemy{ "abilities" },
+    push( $gods{ "enemy" }->{ "abilities" },
 
             +{ "name" => $ability,
                 "tick_duration" => $ability_stats{ "tick_duration" }->{ $ability }->[
@@ -650,6 +657,89 @@ my %global_record = (
 );
 
 
+#################################################################################
+# meta-data
+#################################################################################
+
+my $max_iterations = 1; # change this if RNG is involved
+my $iteration = 0;
+
+#################################################################################
+#################################################################################
+#################################################################################
+#                          SIMULATION FUNCTIONS
+#################################################################################
+#################################################################################
+#################################################################################
+
+sub both_up() {
+    if ($gods{"self"}->{"current_health"} > 0 and $gods{"enemy"}->{"current_health"} > 0) {
+        return 1;
+    }
+    return 0;
+}
+
+sub add_buff_stack($ $) {
+    my $god = shift;
+    my $buff = shift;
+    if (defined $gods{ $god }->{ "buffs" }->{ $buff }) {
+        $gods{ $god }->{ "buffs" }->{ $buff }++;
+    } else {
+        $gods{ $god }->{ "buffs" }->{ $buff } = 1;
+    }
+    if ($gods{ $god }->{ "buffs" }->{ $buff } > $buff_stats{"max_stacks"}->{$buff}) {
+        $gods{ $god }->{ "buffs" }->{ $buff } = $buff_stats{"max_stacks"}->{$buff};
+    }
+}
+
+sub rm_buff_stack($ $) {
+}
+
+sub add_debuff_stack($ $) {
+}
+
+sub rm_debuff_stack($ $) {
+}
+
+sub refresh_buff_time($ $) {
+}
+
+sub refresh_debuff_time($ $) {
+}
+
+sub get_eff_power($) {
+    my $god = shift;
+    my $type = $gods{$god}->{"type"};
+    #TODO
+    if ($type eq "magical") {
+        return $gods{$god}->{"magical_power"};
+    } else {
+        return $gods{$god}->{"physical_power"};
+    }
+}
+
+sub get_aa_scaling($) {
+    my $god = shift;
+    my $type = $gods{ $god }->{ "type" };
+    my $scaling = 0;
+    if ($type eq "physical") { $scaling = 1; } # TODO do any gods deviate from this pattern? could use god stats
+    elsif ($type eq "magical") { $scaling = 0.2; }
+
+    if (defined $gods{$god}->{"buffs"}->{"accelerate"} and $gods{$god}->{"buffs"}->{"accelerate"} > 0) {
+        $scaling += 0.4; # TODO make sure this is correct...
+    }
+}
+
+sub get_aa_damage($) {
+    my $god = shift;
+    my $damage = $gods{$god}->{"aa_damage"};
+    $damage += get_eff_power($god) * get_aa_scaling($god);
+
+    if (defined $gods{$god}->{"buffs"}->{"heat"} and $gods{$god}->{"buffs"}->{"heat"} == 25) {
+        $damage *= 1.25; # TODO make sure this is correct...
+    }
+    return $damage;
+}
 
 #################################################################################
 #################################################################################
@@ -663,15 +753,25 @@ my %global_record = (
 
 while ( $iteration < $max_iterations ) {
 
+    #################################################################################
+    # reset stats
+    #################################################################################
+    $gods{"self"}->{ "current_health" } = $gods{"self"}->{ "health" };
+    $gods{"enemy"}->{ "current_health" } = $gods{"enemy"}->{ "health" };
 
-
-
+    $gods{"self"}->{ "buffs" } = +{ };
+    $gods{"enemy"}->{ "buffs" } = +{ };
+    $gods{"self"}->{ "debuffs" } = +{ };
+    $gods{"enemy"}->{ "debuffs" } = +{ };
 
     while ( both_up() ) {
 
-
+        # add_buff_stack( "self", "heartseeker" );
+        $gods{"enemy"}->{"current_health"} -= get_aa_damage("self");
 
     } # END SINGLE ITERATION LOOP
+
+    $iteration++;
 
 } # END MAIN LOOP
 
@@ -683,5 +783,7 @@ print Dumper(%base_stats);
 print "\n\n\n\n";
 print Dumper(%ability_stats);
 print "\n\n\n\n";
-print Dumper(%god);
+print Dumper(%gods);
+print "\n\n\n\n";
+print "AA damage " . get_aa_damage("self") . "\n";
 
