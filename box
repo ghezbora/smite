@@ -658,11 +658,12 @@ my %global_record = (
 
 
 #################################################################################
-# meta-data
+# simulation data
 #################################################################################
 
 my $max_iterations = 1; # change this if RNG is involved
 my $iteration = 0;
+my $time = 0;
 
 #################################################################################
 #################################################################################
@@ -683,12 +684,12 @@ sub add_buff_stack($ $) {
     my $god = shift;
     my $buff = shift;
     if (defined $gods{ $god }->{ "buffs" }->{ $buff }) {
-        $gods{ $god }->{ "buffs" }->{ $buff }++;
+        $gods{ $god }->{ "buffs" }->{ $buff }->{"stacks"}++;
     } else {
-        $gods{ $god }->{ "buffs" }->{ $buff } = 1;
+        $gods{ $god }->{ "buffs" }->{ $buff } = +{ "stacks" => 1 };
     }
-    if ($gods{ $god }->{ "buffs" }->{ $buff } > $buff_stats{"max_stacks"}->{$buff}) {
-        $gods{ $god }->{ "buffs" }->{ $buff } = $buff_stats{"max_stacks"}->{$buff};
+    if ($gods{ $god }->{ "buffs" }->{ $buff }->{"stacks"} > $buff_stats{"max_stacks"}->{$buff}) {
+        $gods{ $god }->{ "buffs" }->{ $buff }->{"stacks"} = $buff_stats{"max_stacks"}->{$buff};
     }
 }
 
@@ -702,6 +703,13 @@ sub rm_debuff_stack($ $) {
 }
 
 sub refresh_buff_time($ $) {
+    my $god = shift;
+    my $buff = shift;
+    if (defined $gods{ $god }->{ "buffs" }->{ $buff }) {
+        $gods{ $god }->{ "buffs" }->{ $buff }->{"time"} = $time;
+    } else {
+        $gods{ $god }->{ "buffs" }->{ $buff } = +{ "time" => $time };
+    }
 }
 
 sub refresh_debuff_time($ $) {
@@ -725,7 +733,8 @@ sub get_aa_scaling($) {
     if ($type eq "physical") { $scaling = 1; } # TODO do any gods deviate from this pattern? could use god stats
     elsif ($type eq "magical") { $scaling = 0.2; }
 
-    if (defined $gods{$god}->{"buffs"}->{"accelerate"} and $gods{$god}->{"buffs"}->{"accelerate"} > 0) {
+    if (defined $gods{$god}->{"buffs"}->{"accelerate"}
+                and $gods{$god}->{"buffs"}->{"accelerate"}->{"stacks"} > 0) {
         $scaling += 0.4; # TODO make sure this is correct...
     }
 }
@@ -735,7 +744,7 @@ sub get_aa_damage($) {
     my $damage = $gods{$god}->{"aa_damage"};
     $damage += get_eff_power($god) * get_aa_scaling($god);
 
-    if (defined $gods{$god}->{"buffs"}->{"heat"} and $gods{$god}->{"buffs"}->{"heat"} == 25) {
+    if (defined $gods{$god}->{"buffs"}->{"heat"} and $gods{$god}->{"buffs"}->{"heat"}->{"stacks"} == 25) {
         $damage *= 1.25; # TODO make sure this is correct...
     }
     return $damage;
@@ -766,8 +775,11 @@ while ( $iteration < $max_iterations ) {
 
     while ( both_up() ) {
 
-        # add_buff_stack( "self", "heartseeker" );
+        add_buff_stack( "self", "heartseeker" );
+        refresh_buff_time( "self", "heartseeker" );
         $gods{"enemy"}->{"current_health"} -= get_aa_damage("self");
+
+        $time++;
 
     } # END SINGLE ITERATION LOOP
 
