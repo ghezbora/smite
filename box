@@ -61,7 +61,9 @@ my %base_stats = (
         "nox" => "magical",
         "kukulkan" => "magical",
         "chronos" => "magical",
+        "isis" => "magical",
 
+		"amaterasu" => "physical",
         "artemis" => "physical",
         "awilix" => "physical",
         "medusa" => "physical",
@@ -82,27 +84,36 @@ my %base_stats = (
         "kali" => "physical",
     },
     "physical_protection" => {
+        "amaterasu" => (18 + 3 * $opts{"level"}),
         "bastet" => (12 + 2.9 * $opts{"level"}),
         "chiron" => (12 + 2.8 * $opts{"level"}),
         "sol" => (9 + 2.6 * $opts{"level"}),
+        "isis" => (9 + 2.7 * $opts{"level"}),
         "khepri" => (19 + 3 * $opts{"level"}),
         "bellona" => (18 + 3 * $opts{"level"}),
         "hercules" => (18 + 3 * $opts{"level"}),
+        "freya" => (14 + 2.8 * $opts{"level"}),
     },
     "magical_protection" => {
+        "amaterasu" => (30 + 0.9 * $opts{"level"}),
         "bastet" => (30 + 0.9 * $opts{"level"}),
         "chiron" => (30 + 0.9 * $opts{"level"}),
+        "freya" => (30 + 0.9 * $opts{"level"}),
         "sol" => 30,
+        "isis" => 30,
         "khepri" => (30 + 0.9 * $opts{"level"}),
         "bellona" => (30 + 0.9 * $opts{"level"}),
         "hercules" => (30 + 0.9 * $opts{"level"}),
     },
     "health" => {
+        "isis" => (365 + 68 * $opts{"level"}),
         "bastet" => (415 + 80 * $opts{"level"}),
         "chiron" => (460 + 75 * $opts{"level"}),
+        "freya" => (405 + 80 * $opts{"level"}),
         "sol" => (400 + 75 * $opts{"level"}),
         "khepri" => (510 + 90 * $opts{"level"}),
         "bellona" => (480 + 85 * $opts{"level"} ),
+        "amaterasu" => (470 + 82 * $opts{"level"} ),
         "hercules" => (480 + 86 * $opts{"level"}),
     },
     "base_attack_speed" => {
@@ -111,8 +122,10 @@ my %base_stats = (
         "scylla" => 1,
         "nox" => 1,
         "kukulkan" => 0.87,
+		"isis" => 1,
         "chronos" => 1,
 
+		"amaterasu" => 1,
         "artemis" => 0.95,
         "awilix" => 1,
         "medusa" => 0.95,
@@ -139,7 +152,9 @@ my %base_stats = (
         "nox" => (.008 * $opts{"level"}),
         "kukulkan" => (.0091 * $opts{"level"}),
         "chronos" => (.008 * $opts{"level"}),
+		"isis" => 0,
 
+        "amaterasu" => (.012 * $opts{"level"}),
         "artemis" => (.014 * $opts{"level"}),
         "awilix" => (.0189 * $opts{"level"}),
         "medusa" => (.014 * $opts{"level"}),
@@ -161,12 +176,14 @@ my %base_stats = (
     },
     "auto_damage" => {
         "freya" => (35 + 1.5 * $opts{"level"}),
+        "isis" => (35 + 1.5 * $opts{"level"}),
         "sol" => (34 + 1.45 * $opts{"level"}),
         "scylla" => (34 + 1.45 * $opts{"level"}),
         "nox" => (34 + 1.5 * $opts{"level"}),
         "kukulkan" => (34 + 1.45 * $opts{"level"}),
         "chronos" => (35 + 1.5 * $opts{"level"}),
 
+        "amaterasu" => (39 + 2 * $opts{"level"}),
         "artemis" => (35 + 2.05 * $opts{"level"}),
         "awilix" => (38 + 2.16 * $opts{"level"}),
         "medusa" => (38 + 2.6 * $opts{"level"}),
@@ -194,6 +211,7 @@ my %base_stats = (
         "kukulkan" => (265 + 45 * $opts{"level"}),
         "chronos" => (240 + 42 * $opts{"level"}),
 
+        "amaterasu" => (220 + 35 * $opts{"level"}),
         "artemis" => (205 + 34 * $opts{"level"}),
         "awilix" => (220 + 38 * $opts{"level"}),
         "medusa" => (220 + 34 * $opts{"level"}),
@@ -220,7 +238,9 @@ my %base_stats = (
         "nox" => [ 1 ],
         "kukulkan" => [ 1 ],
         "chronos" => [ 1 ],
+        "isis" => [ 1, 1, 1.5 ],
 
+        "amaterasu" => [ 1, .5, 1 ],
         "artemis" => [ 1 ],
         "awilix" => [ 1, 0.75, 1.25 ],
         "medusa" => [ 1 ],
@@ -242,6 +262,7 @@ my %base_stats = (
     },
     "combo" => {
         "sol" => [ "stellar_burst" ],
+		"bastet" => [ "pounce", "razor_whip", "declaw" ],
     }
 );
 
@@ -258,23 +279,48 @@ my %ability_stats = (
     "cooldown" => {
         "stellar_burst" => [ 12, 12, 12, 12, 12, 12 ],
         "radiance" => [ 15, 15, 15, 15, 15, 15 ],
+
+		"pounce" => [ 12, 12, 12, 12, 12, 12 ],
+		"razor_whip" => [ 15, 15, 15, 15, 15, 15 ],
+		"declaw" => [ 10, 10, 10, 10, 10, 10 ],
     },
     "tick_damage" => {
         "stellar_burst" => [ 0, 40, 70, 100, 130, 160 ],
+
+		"pounce" => [ 0, 80, 145, 210, 275, 340 ],
+		"razor_whip" => [ 0, 30, 50, 70, 90, 110 ],
+		"declaw" => [ 0, 70, 120, 170, 220, 270 ],
     },
     "tick_scaling" => {
         "stellar_burst" => [ 0.35, 0.35, 0.35, 0.35, 0.35, 0.35 ],
+
+		"pounce" => [ 1, 1, 1, 1, 1, 1 ],
+		"razor_whip" => [ .2, .2, .2, .2, .2, .2 ],
+		"declaw" => [ 1, 1, 1, 1, 1, 1 ],
     },
     "tick_duration" => {
         "stellar_burst" => [ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ],
+
+		"pounce" => [ 0, 0, 0, 0, 0, 0 ],
+		"razor_whip" => [ 1, 1, 1, 1, 1, 1 ],
+		"declaw" => [ 0, 0, 0, 0, 0, 0 ],
     },
     "num_ticks" => {
         "stellar_burst" => [ 2, 2, 2, 2, 2, 2 ],
+
+		"pounce" => [ 1, 1, 1, 1, 1, 1 ],
+		"razor_whip" => [ 4, 4, 4, 4, 4, 4 ],
+		"declaw" => [ 1, 1, 1, 1, 1, 1 ],
     },
     "level" => {
         # character level           [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20 ],
         "stellar_burst" =>          [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
         "radiance" =>               [ 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+
+		"pounce" => 				[ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "razor_whip" =>             [ 0, 1, 1, 1, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+		"declaw" =>  				[ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+		"cat_call" =>  				[ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
     },
 ),
 
@@ -409,6 +455,12 @@ my %item_stats = (
         "gold" => 2350,
     },
 
+	"chronos_pendant" => {
+		"magical_power" => 70,
+		"cdr" => .2,
+		"gold" => 2400,
+	},
+
 	######################################################################
 	# physical items
 	######################################################################
@@ -490,6 +542,7 @@ my %gods = (
         "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "god" } },
         "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "god" } },
         "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "god" } },
+		"current_attack_chain_index" => 0,
         "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "god" } },
 
         "health" => $base_stats{ "health" }->{ $opts{ "god" } }, # max health
@@ -525,6 +578,7 @@ my %gods = (
         "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "enemy" } },
         "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "enemy" } },
         "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "enemy" } },
+		"current_attack_chain_index" => 0,
         "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "enemy" } },
 
         "health" => $base_stats{ "health" }->{ $opts{ "enemy" } }, # max health
@@ -579,7 +633,7 @@ foreach my $item (@enemy_items) {
 
 foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
 
-    print "ability = " . $ability . "\n";
+    #print "ability = " . $ability . "\n";
 
     push( $gods{ "self" }->{ "abilities" },
 
@@ -599,7 +653,7 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
 
 foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "enemy" } } } ) {
 
-    print "ability = " . $ability . "\n";
+    #print "ability = " . $ability . "\n";
 
     push( $gods{ "enemy" }->{ "abilities" },
 
@@ -634,6 +688,8 @@ my %iteration_record = (
         "hydras_procs" => 0,
         "hydras_damage" => 0,
         "telkhines_damage" => 0,
+		"malice_ticks" => 0,
+		"malice_damage" => 0,
     },
 
     "enemy" => {
@@ -644,6 +700,8 @@ my %iteration_record = (
         "hydras_procs" => 0,
         "hydras_damage" => 0,
         "telkhines_damage" => 0,
+		"malice_ticks" => 0,
+		"malice_damage" => 0,
     },
 
 );
@@ -748,6 +806,32 @@ sub get_aa_damage($) {
         $damage *= 1.25; # TODO make sure this is correct...
     }
     return $damage;
+}
+
+sub get_aa_pre_time($) {
+    return 100; # TODO find correct value
+}
+
+sub get_aa_post_time($) {
+    my $aa_post_time = 1000 / get_eff_attack_rate( shift );
+    $aa_post_time -= 100; # take off the pre time
+    return $aa_post_time;
+}
+
+sub get_ability_pre_time($ $) {
+    return 100; # TODO find correct value
+}
+
+sub get_ability_post_time($ $) {
+    return 100; # TODO find correct value
+}
+
+sub get_eff_attack_rate($) {
+    my $god = shift;
+    my $base_attack_speed = $gods{$god}->{"base_attack_speed"};
+    my $attack_speed_modifier = $gods{$god}->{"attack_speed_modifier"};
+    return ($base_attack_speed * $attack_speed_modifier);
+    # TODO this ignores buffs
 }
 
 #################################################################################
