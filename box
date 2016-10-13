@@ -529,6 +529,15 @@ my %item_stats = (
 # setup these stats so that we can do a lot fewer dereferences when we need them
 # $god->{ "crit_chance" } is much faster than $base_stats{ "crit_chance" }->{ $opts{ "god" } }
 
+# state possibilities
+my $IDLE = 0;
+my $ABILITY_PRE = 1; # pre-animation
+my $ABILITY_DURING = 2;
+my $ABILITY_POST = 3;
+my $AA_PRE = 4;
+my $AA_DURING = 5;
+my $AA_POST = 6;
+
 my %gods = (
     "self" => {
         "type" => $base_stats{ "type" }->{ $opts{ "god" } },
@@ -564,6 +573,11 @@ my %gods = (
         "abilities" => [ ],
 
         "buffs" => { },
+
+		"state" => $IDLE,
+		"last_state_transition" => 0; # time
+		"next_state_transition" => 0; # time
+		"current_ability" => ""; # for determining pre/post durations
     },
 
     "enemy" => {
@@ -600,6 +614,11 @@ my %gods = (
         "abilities" => [ ],
 
         "buffs" => { },
+
+		"state" => $IDLE,
+		"last_state_transition" => 0; # time
+		"next_state_transition" => 0; # time
+		"current_ability" => ""; # for determining pre/post durations
     },
 );
 
@@ -833,6 +852,56 @@ sub get_eff_attack_rate($) {
     return ($base_attack_speed * $attack_speed_modifier);
     # TODO this ignores buffs
 }
+
+
+sub run_state_machine($) {
+	my $god = shift;
+	my $curr_state = $gods{$god}->{"state"};
+
+	if ($curr_state == $IDLE) {
+		# short circuit all analysis and start doing something
+		# always start with an AA, then cancel into an ability
+		$gods{$god}->{"state"} = $AA_PRE;
+		$gods{$god}->{"next_state_transition"} = get_aa_pre_time($god);
+	}
+	
+	if ($time != $gods{$god}->{"next_state_transition"}) {
+		# not time yet, but it still might be possible to transition
+
+		if ($curr_state == $AA_POST) {
+			# this is the place to start an ability, if we want to
+			# otherwise, wait through the AA_POST period and do another AA
+			# TODO
+		}
+
+	} else {
+		# time to advance to the next state
+		$gods{$god}->{"last_state_transition"} = $time;
+
+		if ($curr_state == $AA_PRE) {
+			perform_auto_attack($god);
+			$gods{$god}->{"state"} = $AA_POST;
+			$gods{$god}->{"next_state_transition"} = get_aa_post_time($god);
+		}
+		elsif ($curr_state == $ABILITY_PRE) {
+			perform_ability($god, $gods{$god}->{"current_ability"});
+			$gods{$god}->{"state"} = $ABILITY_POST;
+			$gods{$god}->{"next_state_transition"} = get_ability_post_time($god, $gods{$god}->{"current_ability"});
+		}
+		elsif ($curr_state == $AA_POST) {
+			$gods{$god}->{"state"} = $IDLE;
+			$gods{$god}->{"next_state_transition"} = 0;
+		}
+		elsif ($curr_state == $ABILITY_POST) {
+			$gods{$god}->{"state"} = $IDLE;
+			$gods{$god}->{"next_state_transition"} = 0;
+		}
+	}
+
+}
+
+
+
 
 #################################################################################
 #################################################################################
