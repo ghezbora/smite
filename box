@@ -82,9 +82,11 @@ my %base_stats = (
         "nemesis" => "physical",
         "arachne" => "physical",
         "kali" => "physical",
+        "ratatoskr" => "physical",
     },
     "physical_protection" => {
         "amaterasu" => (18 + 3 * $opts{"level"}),
+        "ratatoskr" => (12 + 3 * $opts{"level"}),
         "bastet" => (12 + 2.9 * $opts{"level"}),
         "chiron" => (12 + 2.8 * $opts{"level"}),
         "sol" => (9 + 2.6 * $opts{"level"}),
@@ -96,6 +98,7 @@ my %base_stats = (
     },
     "magical_protection" => {
         "amaterasu" => (30 + 0.9 * $opts{"level"}),
+        "ratatoskr" => (30 + 0.9 * $opts{"level"}),
         "bastet" => (30 + 0.9 * $opts{"level"}),
         "chiron" => (30 + 0.9 * $opts{"level"}),
         "freya" => (30 + 0.9 * $opts{"level"}),
@@ -108,6 +111,7 @@ my %base_stats = (
     "health" => {
         "isis" => (365 + 68 * $opts{"level"}),
         "bastet" => (415 + 80 * $opts{"level"}),
+        "ratatoskr" => (420 + 73 * $opts{"level"}),
         "chiron" => (460 + 75 * $opts{"level"}),
         "freya" => (405 + 80 * $opts{"level"}),
         "sol" => (400 + 75 * $opts{"level"}),
@@ -126,6 +130,7 @@ my %base_stats = (
         "chronos" => 1,
 
 		"amaterasu" => 1,
+		"ratatoskr" => 1,
         "artemis" => 0.95,
         "awilix" => 1,
         "medusa" => 0.95,
@@ -172,6 +177,7 @@ my %base_stats = (
         "hou_yi" => (.012 * $opts{"level"}),
         "nemesis" => (.0216 * $opts{"level"}),
         "arachne" => (.02 * $opts{"level"}),
+        "ratatoskr" => (.02 * $opts{"level"}),
         "kali" => (.0216 * $opts{"level"}),
     },
     "auto_damage" => {
@@ -184,6 +190,7 @@ my %base_stats = (
         "chronos" => (35 + 1.5 * $opts{"level"}),
 
         "amaterasu" => (39 + 2 * $opts{"level"}),
+        "ratatoskr" => (39 + 2.25 * $opts{"level"}),
         "artemis" => (35 + 2.05 * $opts{"level"}),
         "awilix" => (38 + 2.16 * $opts{"level"}),
         "medusa" => (38 + 2.6 * $opts{"level"}),
@@ -212,6 +219,7 @@ my %base_stats = (
         "chronos" => (240 + 42 * $opts{"level"}),
 
         "amaterasu" => (220 + 35 * $opts{"level"}),
+        "ratatoskr" => (240 + 41 * $opts{"level"}),
         "artemis" => (205 + 34 * $opts{"level"}),
         "awilix" => (220 + 38 * $opts{"level"}),
         "medusa" => (220 + 34 * $opts{"level"}),
@@ -241,6 +249,7 @@ my %base_stats = (
         "isis" => [ 1, 1, 1.5 ],
 
         "amaterasu" => [ 1, .5, 1 ],
+        "ratatoskr" => [ 1, .5, .5, 1.25 ],
         "artemis" => [ 1 ],
         "awilix" => [ 1, 0.75, 1.25 ],
         "medusa" => [ 1 ],
@@ -261,8 +270,23 @@ my %base_stats = (
         "kali" => [ 1, .5, .5 ],
     },
     "combo" => {
+		# undef will signify an auto attack
+		# because we won't *always* do an AA before/after each ability (like before bastet's pounce)
         "sol" => [ "stellar_burst" ],
-		"bastet" => [ "pounce", "razor_whip", "declaw" ],
+		"bastet" => [ "pounce", undef, "razor_whip", undef, "declaw" ],
+		"ratatoskr" => [ "dart", undef, "flurry", undef, "acorn_blast" ],
+		"awilix" => [ undef, undef, "feather_step" ],
+		"amaterasu" => [ undef, undef, undef, "heavenly_reflection" ],
+    },
+    "ultimate_combo" => {
+		# separate tree for combos including ultimates, create an optional flag to use these
+		# so we can easily calculate w/ and w/out
+		# undef will signify an auto attack
+		# because we won't *always* do an AA before/after each ability (like before bastet's pounce)
+		"bastet" => [ "pounce", undef, "razor_whip", undef, "cat_call", undef, "declaw" ],
+		"ratatoskr" => [ "through_the_cosmos", undef, "flurry", undef, "acorn_blast" ],
+		"awilix" => [ undef, undef, "feather_step", "moonlight_charge", undef, undef, "gravity_surge" ],
+		"amaterasu" => [ undef, undef, undef, "dazzling_offense", "heavenly_reflection" ],
     }
 );
 
@@ -283,6 +307,10 @@ my %ability_stats = (
 		"pounce" => [ 12, 12, 12, 12, 12, 12 ],
 		"razor_whip" => [ 15, 15, 15, 15, 15, 15 ],
 		"declaw" => [ 10, 10, 10, 10, 10, 10 ],
+
+		"dart" => [ 12, 12, 12, 12, 12, 12 ],
+		"flurry" => [ 14, 14, 14, 14, 14, 14 ],
+		"acorn_blast" => [ 15, 15, 15, 15, 15, 15 ],
     },
     "tick_damage" => {
         "stellar_burst" => [ 0, 40, 70, 100, 130, 160 ],
@@ -290,6 +318,10 @@ my %ability_stats = (
 		"pounce" => [ 0, 80, 145, 210, 275, 340 ],
 		"razor_whip" => [ 0, 30, 50, 70, 90, 110 ],
 		"declaw" => [ 0, 70, 120, 170, 220, 270 ],
+
+		"dart" => [ 0, 70, 105, 140, 175, 210 ],
+		"flurry" => [ 0, 25, 40, 55, 70, 85 ],
+		"acorn_blast" => [ 0, 120, 165, 210, 255, 300 ],
     },
     "tick_scaling" => {
         "stellar_burst" => [ 0.35, 0.35, 0.35, 0.35, 0.35, 0.35 ],
@@ -297,6 +329,10 @@ my %ability_stats = (
 		"pounce" => [ 1, 1, 1, 1, 1, 1 ],
 		"razor_whip" => [ .2, .2, .2, .2, .2, .2 ],
 		"declaw" => [ 1, 1, 1, 1, 1, 1 ],
+
+		"dart" => [ .7, .7, .7, .7, .7, .7 ],
+		"flurry" => [ .8, .8, .8, .8, .8, .8 ],
+		"acorn_blast" => [ .9, .9, .9, .9, .9, .9 ],
     },
     "tick_duration" => {
         "stellar_burst" => [ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ],
@@ -304,6 +340,10 @@ my %ability_stats = (
 		"pounce" => [ 0, 0, 0, 0, 0, 0 ],
 		"razor_whip" => [ 1, 1, 1, 1, 1, 1 ],
 		"declaw" => [ 0, 0, 0, 0, 0, 0 ],
+
+		"dart" => [ 0, 0, 0, 0, 0, 0 ],
+		"flurry" => [ .25, .25, .25, .25, .25, .25 ],
+		"acorn_blast" => [ 0, 0, 0, 0, 0, 0 ],
     },
     "num_ticks" => {
         "stellar_burst" => [ 2, 2, 2, 2, 2, 2 ],
@@ -311,6 +351,10 @@ my %ability_stats = (
 		"pounce" => [ 1, 1, 1, 1, 1, 1 ],
 		"razor_whip" => [ 4, 4, 4, 4, 4, 4 ],
 		"declaw" => [ 1, 1, 1, 1, 1, 1 ],
+
+		"dart" => [ 1, 1, 1, 1, 1, 1 ],
+		"flurry" => [ 4, 4, 4, 4, 4, 4 ],
+		"acorn_blast" => [ 1, 1, 1, 1, 1, 1 ],
     },
     "level" => {
         # character level           [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20 ],
@@ -321,6 +365,11 @@ my %ability_stats = (
         "razor_whip" =>             [ 0, 1, 1, 1, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
 		"declaw" =>  				[ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
 		"cat_call" =>  				[ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
+
+		"dart" => 					[ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "flurry" =>             	[ 0, 1, 1, 1, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+		"acorn_blast" =>  			[ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
+		"through_the_cosmos" =>		[ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
     },
 ),
 
@@ -408,6 +457,7 @@ my %debuffs = (
         "frostbound" => 1,
         "witchblade" => 1,
         "runic_shield" => 1,
+		"flurry" => 4,
     },
     "duration" => {
         "divine_judgment" => 5000, # NB debuff lasts 5 seconds, buff lasts 8
@@ -422,6 +472,7 @@ my %debuffs = (
         "frostbound" => 1250,
         "witchblade" => 0, # TODO make sure these can't stack
         "runic_shield" => 0,
+		"flurry" => 3, # TODO i have no idea what the duration is on this
     },
 );
 
@@ -504,6 +555,18 @@ my %item_stats = (
         "gold" => 2440,
     },
 
+	"brawlers" => {
+		"physical_power" => 40,
+		"flat_pen" => 20,
+		"gold" => 2400,
+	},
+
+	"crusher" => {
+		"physical_power" => 40,
+		"flat_pen" => 20,
+		"gold" => 2300,
+	},
+
 	######################################################################
 	# common items
 	######################################################################
@@ -517,12 +580,26 @@ my %item_stats = (
         "physical_prot" => 60,
         "health" => 200,
         "gold" => 2100,
+    },
+
+    "bov" => {
+        "physical_prot" => 75,
+        "mana" => 300,
+		"cdr" => .2,
+        "gold" => 2300,
     }
 );
 
+#################################################################################
+#################################################################################
+#################################################################################
+#                             RUN SPECIFIC DATA
+#################################################################################
+#################################################################################
+#################################################################################
 
 #################################################################################
-# setup god stats for THIS RUN
+# setup god stats
 #################################################################################
 
 
@@ -530,13 +607,13 @@ my %item_stats = (
 # $god->{ "crit_chance" } is much faster than $base_stats{ "crit_chance" }->{ $opts{ "god" } }
 
 # state possibilities
-my $IDLE = 0;
-my $ABILITY_PRE = 1; # pre-animation
-my $ABILITY_DURING = 2;
-my $ABILITY_POST = 3;
-my $AA_PRE = 4;
-my $AA_DURING = 5;
-my $AA_POST = 6;
+my $IDLE = "idle";
+my $ABILITY_PRE = "ability_pre"; # pre-animation
+my $ABILITY_DURING = "ability_during";
+my $ABILITY_POST = "ability_post";
+my $AA_PRE = "aa_pre";
+my $AA_DURING = "aa_during";
+my $AA_POST = "aa_post";
 
 my %gods = (
     "self" => {
@@ -570,14 +647,16 @@ my %gods = (
 
         "gold" => 0,
 
-        "abilities" => [ ],
+        "abilities" => [ ], # full ability stats, with correct amounts for level
+
+		"combo" => $base_stats{ "combo" }->{ $opts{"god" } }, # sequential combo order, just ability names or undef for AA
+		"combo_idx" => 0, # idx into combo
 
         "buffs" => { },
 
 		"state" => $IDLE,
-		"last_state_transition" => 0; # time
-		"next_state_transition" => 0; # time
-		"current_ability" => ""; # for determining pre/post durations
+		"last_state_transition" => 0, # time
+		"next_state_transition" => 0, # time
     },
 
     "enemy" => {
@@ -611,22 +690,28 @@ my %gods = (
 
         "gold" => 0,
 
-        "abilities" => [ ],
+        "abilities" => [ ], # full ability stats, with correct amounts for level
+
+		"combo" => $base_stats{ "combo" }->{ $opts{"enemy" } }, # sequential combo order, just ability names or undef for AA
+		"combo_idx" => 0, # idx into combo
 
         "buffs" => { },
 
 		"state" => $IDLE,
-		"last_state_transition" => 0; # time
-		"next_state_transition" => 0; # time
-		"current_ability" => ""; # for determining pre/post durations
+		"last_state_transition" => 0, # time
+		"next_state_transition" => 0, # time
     },
 );
 
 
+if ($opts{"verbosity"} >= $VERBOSITY_EPIC) {
+	print Dumper(%gods);
+	print "\n\n\n\n";
+}
 
 
 #################################################################################
-# apply items for THIS RUN
+# apply items
 #################################################################################
 
 my @items = split( /\s/, $opts{ "items" } );
@@ -646,13 +731,14 @@ foreach my $item (@enemy_items) {
 }
 
 #################################################################################
-# setup abilities for THIS RUN
+# setup abilities
 #################################################################################
 
 
 foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
 
     #print "ability = " . $ability . "\n";
+	if (not defined $ability) { next; }
 
     push( $gods{ "self" }->{ "abilities" },
 
@@ -673,6 +759,7 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
 foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "enemy" } } } ) {
 
     #print "ability = " . $ability . "\n";
+	if (not defined $ability) { next; }
 
     push( $gods{ "enemy" }->{ "abilities" },
 
@@ -738,7 +825,7 @@ my %global_record = (
 # simulation data
 #################################################################################
 
-my $max_iterations = 1; # change this if RNG is involved
+my $max_iterations = 1; # TODO change this if RNG is involved
 my $iteration = 0;
 my $time = 0;
 
@@ -749,6 +836,14 @@ my $time = 0;
 #################################################################################
 #################################################################################
 #################################################################################
+
+sub boxlog($ $) {
+	my $verbosity = shift;
+	my $message = shift;
+	if($verbosity <= $opts{"verbosity"} ) {
+		print $message . "\n";
+	}
+}
 
 sub both_up() {
     if ($gods{"self"}->{"current_health"} > 0 and $gods{"enemy"}->{"current_health"} > 0) {
@@ -824,6 +919,9 @@ sub get_aa_damage($) {
     if (defined $gods{$god}->{"buffs"}->{"heat"} and $gods{$god}->{"buffs"}->{"heat"}->{"stacks"} == 25) {
         $damage *= 1.25; # TODO make sure this is correct...
     }
+	# got base damage, now multiply it by attack chain
+	boxlog($VERBOSITY_EPIC, "curr attack chain is " . $gods{$god}->{ "current_attack_chain_index" } . " for a modifier of " . $gods{$god}->{ "attack_chain_progression" }->[ $gods{$god}->{ "current_attack_chain_index" } ] );
+	$damage *= $gods{$god}->{ "attack_chain_progression" }->[ $gods{$god}->{ "current_attack_chain_index" } ];
     return $damage;
 }
 
@@ -832,8 +930,13 @@ sub get_aa_pre_time($) {
 }
 
 sub get_aa_post_time($) {
-    my $aa_post_time = 1000 / get_eff_attack_rate( shift );
+	my $god = shift;
+    my $aa_post_time = int(1000 / get_eff_attack_rate( $god ));
+	boxlog($VERBOSITY_EPIC, "AA time calculated at " . $aa_post_time);
+	$aa_post_time *= $gods{$god}->{ "attack_chain_progression" }->[ $gods{$god}->{ "current_attack_chain_index" } ];
     $aa_post_time -= 100; # take off the pre time
+	$aa_post_time = int($aa_post_time);
+	boxlog($VERBOSITY_EPIC, "AA post time (with attack chain) calculated at " . $aa_post_time);
     return $aa_post_time;
 }
 
@@ -849,50 +952,115 @@ sub get_eff_attack_rate($) {
     my $god = shift;
     my $base_attack_speed = $gods{$god}->{"base_attack_speed"};
     my $attack_speed_modifier = $gods{$god}->{"attack_speed_modifier"};
-    return ($base_attack_speed * $attack_speed_modifier);
+    return ($base_attack_speed * (1+$attack_speed_modifier));
     # TODO this ignores buffs
+}
+
+
+
+sub perform_auto_attack($) {
+	my $god = shift;
+    boxlog($VERBOSITY_EXTRA, "god $god doing AA at time $time");
+	my $damage = get_aa_damage($god) + (get_aa_scaling($god) * get_eff_power($god));
+	if ($god eq "self") {
+		$gods{"enemy"}->{"current_health"} -= $damage;
+	} else {
+		$gods{"self"}->{"current_health"} -= $damage;
+	}
+}
+
+sub perform_ability($ $) {
+	my $god = shift;
+	my $ability = shift;
+
+    boxlog($VERBOSITY_EXTRA, "god $god doing ability $ability at time $time");
+
+
+	# finish by resetting attack chain
+	# TODO not all abilities do reset the attack chain
+	$gods{$god}->{ "current_attack_chain_index" } = 0;
 }
 
 
 sub run_state_machine($) {
 	my $god = shift;
 	my $curr_state = $gods{$god}->{"state"};
+	my $curr_combo = $gods{$god}->{"combo"}->[ $gods{$god}->{"combo_idx"} ];
 
-	if ($curr_state == $IDLE) {
-		# short circuit all analysis and start doing something
-		# always start with an AA, then cancel into an ability
-		$gods{$god}->{"state"} = $AA_PRE;
-		$gods{$god}->{"next_state_transition"} = get_aa_pre_time($god);
+	boxlog($VERBOSITY_LEGENDARY, "god $god in state $curr_state at time $time" );
+	if (defined $curr_combo) {
+		boxlog($VERBOSITY_LEGENDARY, "god $god combo_idx " . $gods{$god}->{"combo_idx"} . " current combo " . $gods{$god}->{"combo"}->[ $gods{$god}->{"combo_idx"} ] );
+	} else {
+		boxlog($VERBOSITY_LEGENDARY, "god $god combo_idx " . $gods{$god}->{"combo_idx"} . " current combo undef" );
+	}
+
+	if ($curr_state eq $IDLE) {
+		# start the next item in our combo
+		if (not defined $curr_combo) {
+			# next item in combo is an AA
+			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to aa_pre at time $time");
+			$gods{$god}->{"state"} = $AA_PRE;
+			$gods{$god}->{"next_state_transition"} = $time + get_aa_pre_time($god);
+			$gods{$god}->{"combo_idx"}++;
+		}
+		else 
+		{
+			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to ability_pre at time $time");
+			$gods{$god}->{"state"} = $ABILITY_PRE;
+			$gods{$god}->{"next_state_transition"} = $time + get_ability_pre_time($god, $curr_combo);
+			$gods{$god}->{"combo_idx"}++;
+		}
 	}
 	
-	if ($time != $gods{$god}->{"next_state_transition"}) {
+	if ($time < $gods{$god}->{"next_state_transition"}) {
 		# not time yet, but it still might be possible to transition
 
-		if ($curr_state == $AA_POST) {
-			# this is the place to start an ability, if we want to
+		if ($curr_state eq $AA_POST) {
+			# this is the place to start an ability, if we want to.
 			# otherwise, wait through the AA_POST period and do another AA
 			# TODO
+			if (defined $curr_combo) {
+				boxlog($VERBOSITY_EPIC, "god $god from $curr_state to ability_pre at time $time");
+				$gods{$god}->{"state"} = $ABILITY_PRE;
+				$gods{$god}->{"next_state_transition"} = $time + get_ability_pre_time($god, $curr_combo);
+				$gods{$god}->{"combo_idx"}++;
+			}
 		}
 
 	} else {
 		# time to advance to the next state
 		$gods{$god}->{"last_state_transition"} = $time;
 
-		if ($curr_state == $AA_PRE) {
+		if ($curr_state eq $AA_PRE) {
 			perform_auto_attack($god);
+			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to aa_post at time $time");
 			$gods{$god}->{"state"} = $AA_POST;
-			$gods{$god}->{"next_state_transition"} = get_aa_post_time($god);
+			$gods{$god}->{"next_state_transition"} = $time + get_aa_post_time($god);
+
+			# advance attack chain
+			$gods{$god}->{ "current_attack_chain_index" }++;
+			boxlog($VERBOSITY_EPIC, "god $god performing AA, attack chain now " .
+					$gods{$god}->{ "current_attack_chain_index" } . " out of " .
+					scalar( @{ $gods{$god}->{"attack_chain_progression"} }) );
+			if ($gods{$god}->{ "current_attack_chain_index" } >=
+					scalar( @{ $gods{$god}->{"attack_chain_progression"} }) ){
+				boxlog($VERBOSITY_EPIC, "resetting attack chain" );
+				$gods{$god}->{ "current_attack_chain_index" } = 0;
+			}
 		}
-		elsif ($curr_state == $ABILITY_PRE) {
+		elsif ($curr_state eq $ABILITY_PRE) {
 			perform_ability($god, $gods{$god}->{"current_ability"});
+			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to ability_post at time $time");
 			$gods{$god}->{"state"} = $ABILITY_POST;
-			$gods{$god}->{"next_state_transition"} = get_ability_post_time($god, $gods{$god}->{"current_ability"});
+			$gods{$god}->{"next_state_transition"} = $time + get_ability_post_time($god, $gods{$god}->{"current_ability"});
 		}
-		elsif ($curr_state == $AA_POST) {
+		elsif ($curr_state eq $AA_POST) {
+			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to idle at time $time");
 			$gods{$god}->{"state"} = $IDLE;
 			$gods{$god}->{"next_state_transition"} = 0;
 		}
-		elsif ($curr_state == $ABILITY_POST) {
+		elsif ($curr_state eq $ABILITY_POST) {
+			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to idle at time $time");
 			$gods{$god}->{"state"} = $IDLE;
 			$gods{$god}->{"next_state_transition"} = 0;
 		}
@@ -928,9 +1096,11 @@ while ( $iteration < $max_iterations ) {
 
     while ( both_up() ) {
 
-        add_buff_stack( "self", "heartseeker" );
-        refresh_buff_time( "self", "heartseeker" );
-        $gods{"enemy"}->{"current_health"} -= get_aa_damage("self");
+        #add_buff_stack( "self", "heartseeker" );
+        #refresh_buff_time( "self", "heartseeker" );
+        #$gods{"enemy"}->{"current_health"} -= get_aa_damage("self");
+
+		run_state_machine("self");
 
         $time++;
 
@@ -944,11 +1114,11 @@ while ( $iteration < $max_iterations ) {
 
 
 
-print Dumper(%base_stats);
-print "\n\n\n\n";
-print Dumper(%ability_stats);
-print "\n\n\n\n";
-print Dumper(%gods);
-print "\n\n\n\n";
-print "AA damage " . get_aa_damage("self") . "\n";
+#print Dumper(%base_stats);
+#print "\n\n\n\n";
+#print Dumper(%ability_stats);
+#print "\n\n\n\n";
+#print Dumper(%gods);
+#print "\n\n\n\n";
+#print "AA damage " . get_aa_damage("self") . "\n";
 
