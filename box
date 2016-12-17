@@ -704,10 +704,10 @@ my %gods = (
 );
 
 
-if ($opts{"verbosity"} >= $VERBOSITY_EPIC) {
-	print Dumper(%gods);
-	print "\n\n\n\n";
-}
+#if ($opts{"verbosity"} >= $VERBOSITY_EPIC) {
+#	print Dumper(%gods);
+#	print "\n\n\n\n";
+#}
 
 
 #################################################################################
@@ -978,6 +978,7 @@ sub perform_ability($ $) {
 
 	# finish by resetting attack chain
 	# TODO not all abilities do reset the attack chain
+	boxlog($VERBOSITY_EPIC, "resetting attack chain because we used an ability" );
 	$gods{$god}->{ "current_attack_chain_index" } = 0;
 }
 
@@ -1001,14 +1002,14 @@ sub run_state_machine($) {
 			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to aa_pre at time $time");
 			$gods{$god}->{"state"} = $AA_PRE;
 			$gods{$god}->{"next_state_transition"} = $time + get_aa_pre_time($god);
-			$gods{$god}->{"combo_idx"}++;
+			#$gods{$god}->{"combo_idx"}++;
 		}
 		else 
 		{
 			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to ability_pre at time $time");
 			$gods{$god}->{"state"} = $ABILITY_PRE;
 			$gods{$god}->{"next_state_transition"} = $time + get_ability_pre_time($god, $curr_combo);
-			$gods{$god}->{"combo_idx"}++;
+			#$gods{$god}->{"combo_idx"}++;
 		}
 	}
 	
@@ -1044,25 +1045,27 @@ sub run_state_machine($) {
 					scalar( @{ $gods{$god}->{"attack_chain_progression"} }) );
 			if ($gods{$god}->{ "current_attack_chain_index" } >=
 					scalar( @{ $gods{$god}->{"attack_chain_progression"} }) ){
-				boxlog($VERBOSITY_EPIC, "resetting attack chain" );
+				boxlog($VERBOSITY_EPIC, "resetting attack chain because we reached its end" );
 				$gods{$god}->{ "current_attack_chain_index" } = 0;
 			}
 		}
 		elsif ($curr_state eq $ABILITY_PRE) {
-			perform_ability($god, $gods{$god}->{"current_ability"});
+			perform_ability($god, $curr_combo);
 			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to ability_post at time $time");
 			$gods{$god}->{"state"} = $ABILITY_POST;
-			$gods{$god}->{"next_state_transition"} = $time + get_ability_post_time($god, $gods{$god}->{"current_ability"});
+			$gods{$god}->{"next_state_transition"} = $time + get_ability_post_time($god, $curr_combo);
 		}
 		elsif ($curr_state eq $AA_POST) {
 			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to idle at time $time");
 			$gods{$god}->{"state"} = $IDLE;
 			$gods{$god}->{"next_state_transition"} = 0;
+			$gods{$god}->{"combo_idx"}++;
 		}
 		elsif ($curr_state eq $ABILITY_POST) {
 			boxlog($VERBOSITY_EPIC, "god $god from $curr_state to idle at time $time");
 			$gods{$god}->{"state"} = $IDLE;
 			$gods{$god}->{"next_state_transition"} = 0;
+			$gods{$god}->{"combo_idx"}++;
 		}
 	}
 
@@ -1079,6 +1082,16 @@ sub run_state_machine($) {
 #################################################################################
 #################################################################################
 
+if ( $opts{"verbosity"} >= $VERBOSITY_EPIC ) {
+	print Dumper(\%opts);
+	print "\n\n\n\n";
+	print Dumper(\%base_stats);
+	print "\n\n\n\n";
+	print Dumper(\%ability_stats);
+	print "\n\n\n\n";
+	print Dumper(\%gods);
+	print "\n\n\n\n";
+}
 
 
 while ( $iteration < $max_iterations ) {
@@ -1113,12 +1126,5 @@ while ( $iteration < $max_iterations ) {
 
 
 
-
-#print Dumper(%base_stats);
-#print "\n\n\n\n";
-#print Dumper(%ability_stats);
-#print "\n\n\n\n";
-#print Dumper(%gods);
-#print "\n\n\n\n";
 #print "AA damage " . get_aa_damage("self") . "\n";
 
