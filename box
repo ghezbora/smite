@@ -704,11 +704,6 @@ my %gods = (
 );
 
 
-#if ($opts{"verbosity"} >= $VERBOSITY_EPIC) {
-#	print Dumper(%gods);
-#	print "\n\n\n\n";
-#}
-
 
 #################################################################################
 # apply items
@@ -737,7 +732,6 @@ foreach my $item (@enemy_items) {
 
 foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
 
-    #print "ability = " . $ability . "\n";
 	if (not defined $ability) { next; }
 
     push( $gods{ "self" }->{ "abilities" },
@@ -758,7 +752,6 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
 
 foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "enemy" } } } ) {
 
-    #print "ability = " . $ability . "\n";
 	if (not defined $ability) { next; }
 
     push( $gods{ "enemy" }->{ "abilities" },
@@ -934,7 +927,7 @@ sub get_aa_post_time($) {
     my $aa_post_time = int(1000 / get_eff_attack_rate( $god ));
 	boxlog($VERBOSITY_EPIC, "AA time calculated at " . $aa_post_time);
 	$aa_post_time *= $gods{$god}->{ "attack_chain_progression" }->[ $gods{$god}->{ "current_attack_chain_index" } ];
-    $aa_post_time -= 100; # take off the pre time
+    $aa_post_time -= 100; # take off the pre time TODO find the correct pre-time
 	$aa_post_time = int($aa_post_time);
 	boxlog($VERBOSITY_EPIC, "AA post time (with attack chain) calculated at " . $aa_post_time);
     return $aa_post_time;
@@ -975,7 +968,6 @@ sub perform_ability($ $) {
 
     boxlog($VERBOSITY_EXTRA, "god $god doing ability $ability at time $time");
 
-
 	# finish by resetting attack chain
 	# TODO not all abilities do reset the attack chain
 	boxlog($VERBOSITY_EPIC, "resetting attack chain because we used an ability" );
@@ -983,6 +975,9 @@ sub perform_ability($ $) {
 }
 
 
+#################################################################################
+# MAIN STATE MACHINE SUBROUTINE
+#################################################################################
 sub run_state_machine($) {
 	my $god = shift;
 	my $curr_state = $gods{$god}->{"state"};
@@ -1017,13 +1012,13 @@ sub run_state_machine($) {
 		# not time yet, but it still might be possible to transition
 
 		if ($curr_state eq $AA_POST) {
-			# this is the place to start an ability, if we want to.
-			# otherwise, wait through the AA_POST period and do another AA
-			# TODO
-			if (defined $curr_combo) {
+			# Take a sneak peek at the next action, if it's an ability, do an AA cancel
+			my $next_combo = $gods{$god}->{"combo"}->[ $gods{$god}->{"combo_idx"} + 1 ];
+			if (defined $next_combo) {
+				boxlog($VERBOSITY_EPIC, "god $god doing an AA cancel");
 				boxlog($VERBOSITY_EPIC, "god $god from $curr_state to ability_pre at time $time");
 				$gods{$god}->{"state"} = $ABILITY_PRE;
-				$gods{$god}->{"next_state_transition"} = $time + get_ability_pre_time($god, $curr_combo);
+				$gods{$god}->{"next_state_transition"} = $time + get_ability_pre_time($god, $next_combo);
 				$gods{$god}->{"combo_idx"}++;
 			}
 		}
@@ -1114,6 +1109,9 @@ while ( $iteration < $max_iterations ) {
         #$gods{"enemy"}->{"current_health"} -= get_aa_damage("self");
 
 		run_state_machine("self");
+
+		boxlog($VERBOSITY_EPIC, "self now has health " . $gods{"self"}->{"current_health"});
+		boxlog($VERBOSITY_EPIC, "enemy now has health " . $gods{"enemy"}->{"current_health"});
 
         $time++;
 
