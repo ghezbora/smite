@@ -625,6 +625,8 @@ my %gods = (
         "magical_power" => 0,
         "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "god" } },
 
+		"flat_damage_reduction" => 0, # MoV
+
         "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "god" } },
         "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "god" } },
         "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "god" } },
@@ -642,7 +644,7 @@ my %gods = (
 
         "flat_pen" => 0,
         "percent_pen" => 0,
-        "flat_reduction" => 0,
+        "flat_reduction" => 0, # reducing enemy prot, not self damage reduction
         "percent_reduction" => 0,
 
         "gold" => 0,
@@ -668,6 +670,8 @@ my %gods = (
         "magical_power" => 0,
         "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "enemy" } },
 
+		"flat_damage_reduction" => 0, # MoV
+
         "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "enemy" } },
         "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "enemy" } },
         "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "enemy" } },
@@ -685,7 +689,7 @@ my %gods = (
 
         "flat_pen" => 0,
         "percent_pen" => 0,
-        "flat_reduction" => 0,
+        "flat_reduction" => 0, # reducing enemy prot, not self damage reduction
         "percent_reduction" => 0,
 
         "gold" => 0,
@@ -945,24 +949,61 @@ sub get_eff_attack_rate($) {
     my $god = shift;
     my $base_attack_speed = $gods{$god}->{"base_attack_speed"};
     my $attack_speed_modifier = $gods{$god}->{"attack_speed_modifier"};
-    return ($base_attack_speed * (1+$attack_speed_modifier));
+    my $eff_attack_rate = ($base_attack_speed * (1+$attack_speed_modifier));
+	boxlog($VERBOSITY_LEGENDARY, "god $god has effective attack rate $eff_attack_rate");
+	return $eff_attack_rate;
     # TODO this ignores buffs
 }
 
+sub deal_damage($ $ $) {
+	my $god = shift;
+	my $damage = shift;
+	my $damage_type = shift;
 
+	my $protections = 0;
+	if ($damage_type eq "physical") {
+		$protections = $gods{$god}->{"physical_prot"};
+	} elsif ($damage_type eq "magical" ) {
+		$protections = $gods{$god}->{"magical_prot"};
+	} else {
+		# true damage
+	}
+
+	my $eff_damage = $damage * (100 / (100 + $protections));
+	$eff_damage -= $gods{$god}->{"flat_damage_reduction"};
+	$eff_damage = int($eff_damage);
+
+	boxlog($VERBOSITY_EXTRA, "dealing $damage $damage_type damage to $god, through $protections protection, resulting in $eff_damage effective damage");
+
+}
+
+sub schedule_tick($ $ $ $) {
+	my $god = shift;
+	my $time = shift;
+	my $damage = shift;
+	my $damage_type = shift;
+}
 
 sub perform_auto_attack($) {
+	#################################################################################
+	# MAIN AA EXECUTION SUBROUTINE
+	#################################################################################
 	my $god = shift;
     boxlog($VERBOSITY_EXTRA, "god $god doing AA at time $time");
 	my $damage = get_aa_damage($god) + (get_aa_scaling($god) * get_eff_power($god));
+	my $target;
 	if ($god eq "self") {
-		$gods{"enemy"}->{"current_health"} -= $damage;
+		$target = "enemy";
 	} else {
-		$gods{"self"}->{"current_health"} -= $damage;
+		$target = "self";
 	}
+	deal_damage($target, $damage, $gods{$god}->{"type"});
 }
 
 sub perform_ability($ $) {
+	#################################################################################
+	# MAIN ABILITY EXECUTION SUBROUTINE
+	#################################################################################
 	my $god = shift;
 	my $ability = shift;
 
@@ -975,10 +1016,10 @@ sub perform_ability($ $) {
 }
 
 
-#################################################################################
-# MAIN STATE MACHINE SUBROUTINE
-#################################################################################
 sub run_state_machine($) {
+	#################################################################################
+	# MAIN STATE MACHINE SUBROUTINE
+	#################################################################################
 	my $god = shift;
 	my $curr_state = $gods{$god}->{"state"};
 	my $curr_combo = $gods{$god}->{"combo"}->[ $gods{$god}->{"combo_idx"} ];
