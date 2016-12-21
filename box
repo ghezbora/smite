@@ -1169,20 +1169,42 @@ sub get_eff_attack_rate($) {
     # TODO this ignores buffs
 }
 
+sub get_eff_prot($ $) {
+    my $god = shift;
+    my $type = shift;
+
+	my $protections = 0;
+	if ($type eq "physical") {
+		$protections = $gods{$god}->{"physical_prot"};
+	} elsif ($type eq "magical" ) {
+		$protections = $gods{$god}->{"magical_prot"};
+	} else {
+		# true damage
+	}
+    
+    my $eff_prot = $protections;
+    # TODO apply debuffs here
+    # % reduction
+    $eff_prot *= (1 - $gods{ opposite_god($god) }->{ "percent_reduction" } );
+    # flat reduction
+    $eff_prot -= $gods{ opposite_god($god) }->{ "flat_reduction" };
+    # % pen
+    $eff_prot *= (1 - $gods{ opposite_god($god) }->{ "percent_pen" } );
+    # flat pen
+    $eff_prot -= $gods{ opposite_god($god) }->{ "flat_pen" };
+
+    boxlog($VERBOSITY_EXTRA, "$god prot $protections -> $eff_prot" );
+
+    return $eff_prot;
+}
+
 sub deal_damage($ $ $ $) {
 	my $god = shift;
 	my $damage = shift;
 	my $damage_type = shift;
     my $source_name = shift;
 
-	my $protections = 0;
-	if ($damage_type eq "physical") {
-		$protections = $gods{$god}->{"physical_prot"};
-	} elsif ($damage_type eq "magical" ) {
-		$protections = $gods{$god}->{"magical_prot"};
-	} else {
-		# true damage
-	}
+	my $protections = get_eff_prot($god, $damage_type);
 
 	my $eff_damage = $damage * (100 / (100 + $protections));
     if ($eff_damage >= $gods{$god}->{"flat_damage_reduction"}) {
