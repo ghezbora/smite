@@ -1185,13 +1185,34 @@ sub get_eff_prot($ $) {
     my $eff_prot = $protections;
     # TODO apply debuffs here
     # % reduction
-    $eff_prot *= (1 - $gods{ opposite_god($god) }->{ "percent_reduction" } );
+    my $percent_reduction = 0;
+    if ($type eq "physical" ) {
+        if( defined $gods{$god}->{"buffs"}->{"executioner"}) {
+            $percent_reduction += 0.12 * $gods{$god}->{"buffs"}->{"executioner"};
+        }
+    }
+    if ($type eq "magical" ) {
+        if( defined $gods{$god}->{"buffs"}->{"grip"}) {
+            $percent_reduction += 0.12 * $gods{$god}->{"buffs"}->{"grip"};
+        }
+    }
+    $percent_reduction += $gods{ opposite_god($god) }->{ "percent_reduction" }
+    $eff_prot *= (1 - $percent_reduction);
     # flat reduction
-    $eff_prot -= $gods{ opposite_god($god) }->{ "flat_reduction" };
+    my $flat_reduction = 0;
+    if ($type eq "magical" ) {
+        if( defined $gods{$god}->{"buffs"}->{"spear"}) {
+            $percent_reduction += 10 * $gods{$god}->{"buffs"}->{"spear"};
+        }
+    }
+    $flat_reduction += $gods{ opposite_god($god) }->{ "flat_reduction" };
+    $eff_prot -= $flat_reduction;
     # % pen
     $eff_prot *= (1 - $gods{ opposite_god($god) }->{ "percent_pen" } );
     # flat pen
     $eff_prot -= $gods{ opposite_god($god) }->{ "flat_pen" };
+
+    if ($eff_prot < 0) { $eff_prot = 0; }
 
     boxlog($VERBOSITY_EXTRA, "$god prot $protections -> $eff_prot" );
 
