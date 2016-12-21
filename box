@@ -649,7 +649,7 @@ my %gods = (
 
         "gold" => 0,
 
-        "abilities" => [ ], # full ability stats, with correct amounts for level
+        "abilities" => { }, # full ability stats, with correct amounts for level
 
 		"combo" => $base_stats{ "combo" }->{ $opts{"god" } }, # sequential combo order, just ability names or undef for AA
 		"combo_idx" => 0, # idx into combo
@@ -694,7 +694,7 @@ my %gods = (
 
         "gold" => 0,
 
-        "abilities" => [ ], # full ability stats, with correct amounts for level
+        "abilities" => { }, # full ability stats, with correct amounts for level
 
 		"combo" => $base_stats{ "combo" }->{ $opts{"enemy" } }, # sequential combo order, just ability names or undef for AA
 		"combo_idx" => 0, # idx into combo
@@ -738,9 +738,7 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
 
 	if (not defined $ability) { next; }
 
-    push( $gods{ "self" }->{ "abilities" },
-
-            +{ "name" => $ability,
+    $gods{"self"}->{"abilities"}->{ $ability } = +{ 
                 "tick_duration" => $ability_stats{ "tick_duration" }->{ $ability }->[
                                  $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
                 "tick_damage" => $ability_stats{ "tick_damage" }->{ $ability }->[
@@ -751,16 +749,14 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
                                  $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
                 "cooldown" => $ability_stats{ "cooldown" }->{ $ability }->[
                                  $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
-             } );
+            };
 }
 
 foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "enemy" } } } ) {
 
 	if (not defined $ability) { next; }
 
-    push( $gods{ "enemy" }->{ "abilities" },
-
-            +{ "name" => $ability,
+    $gods{"enemy"}->{"abilities"}->{ $ability } = +{ 
                 "tick_duration" => $ability_stats{ "tick_duration" }->{ $ability }->[
                                  $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
                 "tick_damage" => $ability_stats{ "tick_damage" }->{ $ability }->[
@@ -771,7 +767,7 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "enemy" } } } ) {
                                  $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
                 "cooldown" => $ability_stats{ "cooldown" }->{ $ability }->[
                                  $ability_stats{ "level" }->{ $ability }->[ $opts{ "level" } ] ],
-             } );
+            };
 }
 
 
@@ -841,6 +837,17 @@ sub boxlog($ $) {
 	if($verbosity <= $opts{"verbosity"} ) {
 		print $message . "\n";
 	}
+}
+
+sub opposite_god($) {
+    my $god = shift;
+    my $target = "";
+	if ($god eq "self") {
+		$target = "enemy";
+	} else {
+		$target = "self";
+	}
+    return $target;
 }
 
 sub both_up() {
@@ -971,11 +978,16 @@ sub deal_damage($ $ $) {
 	}
 
 	my $eff_damage = $damage * (100 / (100 + $protections));
-	$eff_damage -= $gods{$god}->{"flat_damage_reduction"};
+    if ($eff_damage >= $gods{$god}->{"flat_damage_reduction"}) {
+        $eff_damage -= $gods{$god}->{"flat_damage_reduction"};
+    } else {
+        $eff_damage = 0;
+    }
 	$eff_damage = int($eff_damage);
 
 	boxlog($VERBOSITY_EXTRA, "dealing $damage $damage_type damage to $god, through $protections protection, resulting in $eff_damage effective damage");
 
+    $gods{$god}->{"current_health"} -= $eff_damage;
 }
 
 sub schedule_tick($ $ $ $) {
@@ -1007,6 +1019,7 @@ sub execute_ticks() {
         while($i < $numticks) {
             my $tick = $ticks{$time}->[$i];
 			boxlog($VERBOSITY_EXTRA, "executing tick of " . $tick->{"damage"} . " " . $tick->{"type"} . " damage on " . $tick->{"target"} . " at time $time");
+            deal_damage($tick->{"target"}, $tick->{"damage"}, $tick->{"type"});
             $i++;
         }
 	}
@@ -1019,13 +1032,7 @@ sub perform_auto_attack($) {
 	my $god = shift;
     boxlog($VERBOSITY_EXTRA, "god $god doing AA at time $time");
 	my $damage = get_aa_damage($god) + (get_aa_scaling($god) * get_eff_power($god));
-	my $target;
-	if ($god eq "self") {
-		$target = "enemy";
-	} else {
-		$target = "self";
-	}
-	deal_damage($target, $damage, $gods{$god}->{"type"});
+	deal_damage(opposite_god($god), $damage, $gods{$god}->{"type"});
 }
 
 sub perform_ability($ $) {
@@ -1037,7 +1044,14 @@ sub perform_ability($ $) {
 
     boxlog($VERBOSITY_EXTRA, "god $god doing ability $ability at time $time");
 
-	schedule_tick( "enemy", $time + 100, 100, "physical" );
+    my $total_tick_damage = $gods{$god}->{"abilities"}->{$ability}->{"tick_damage"};
+
+    my $i = 0;
+    while($i < $gods{$god}->{"abilities"}->{$ability}->{"num_ticks"}) {
+        schedule_tick( opposite_god($god), $time + $i * $gods{$god}->{"abilities"}->{$ability}->{"tick_duration"},
+                $total_tick_damage, $gods{$god}->{"type"} );
+        $i++;
+    }
 
 	# finish by resetting attack chain
 	# TODO not all abilities do reset the attack chain
