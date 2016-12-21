@@ -1,6 +1,13 @@
 #!/usr/bin/perl
 
 
+# GLOBAL TODO LIST
+# 
+# Nox's ult has one big tick followed by several small ticks
+# the current model only contemplates one size/duration of ticks per ability
+#
+
+
 use strict;
 use warnings;
 
@@ -95,6 +102,7 @@ my %base_stats = (
         "bellona" => (18 + 3 * $opts{"level"}),
         "hercules" => (18 + 3 * $opts{"level"}),
         "freya" => (14 + 2.8 * $opts{"level"}),
+        "nox" => (18 + 2.6 * $opts{"level"}),
     },
     "magical_protection" => {
         "amaterasu" => (30 + 0.9 * $opts{"level"}),
@@ -104,6 +112,7 @@ my %base_stats = (
         "freya" => (30 + 0.9 * $opts{"level"}),
         "sol" => 30,
         "isis" => 30,
+        "nox" => 30,
         "khepri" => (30 + 0.9 * $opts{"level"}),
         "bellona" => (30 + 0.9 * $opts{"level"}),
         "hercules" => (30 + 0.9 * $opts{"level"}),
@@ -115,6 +124,7 @@ my %base_stats = (
         "chiron" => (460 + 75 * $opts{"level"}),
         "freya" => (405 + 80 * $opts{"level"}),
         "sol" => (400 + 75 * $opts{"level"}),
+        "nox" => (365 + 75 * $opts{"level"}),
         "khepri" => (510 + 90 * $opts{"level"}),
         "bellona" => (480 + 85 * $opts{"level"} ),
         "amaterasu" => (470 + 82 * $opts{"level"} ),
@@ -277,6 +287,7 @@ my %base_stats = (
 		"ratatoskr" => [ "dart", undef, "flurry", undef, "acorn_blast" ],
 		"awilix" => [ undef, undef, "feather_step" ],
 		"amaterasu" => [ undef, undef, undef, "heavenly_reflection" ],
+        "nox" => [ "shadow_lock", "siphon_darkness" ],
     },
     "ultimate_combo" => {
 		# separate tree for combos including ultimates, create an optional flag to use these
@@ -287,6 +298,7 @@ my %base_stats = (
 		"ratatoskr" => [ "through_the_cosmos", undef, "flurry", undef, "acorn_blast" ],
 		"awilix" => [ undef, undef, "feather_step", "moonlight_charge", undef, undef, "gravity_surge" ],
 		"amaterasu" => [ undef, undef, undef, "dazzling_offense", "heavenly_reflection" ],
+        "nox" => [ "night_terror", "shadow_lock", "siphon_darkness" ],
     }
 );
 
@@ -311,6 +323,10 @@ my %ability_stats = (
 		"dart" => [ 12, 12, 12, 12, 12, 12 ],
 		"flurry" => [ 14, 14, 14, 14, 14, 14 ],
 		"acorn_blast" => [ 15, 15, 15, 15, 15, 15 ],
+
+		"shadow_lock" => [ 10, 10, 10, 10, 10, 10 ],
+		"siphon_darkness" => [ 13, 13, 13, 13, 13, 13 ],
+        "night_terror" => [ 90, 90, 90, 90, 90, 90 ],
     },
     "tick_damage" => {
         "stellar_burst" => [ 0, 40, 70, 100, 130, 160 ],
@@ -322,6 +338,10 @@ my %ability_stats = (
 		"dart" => [ 0, 70, 105, 140, 175, 210 ],
 		"flurry" => [ 0, 25, 40, 55, 70, 85 ],
 		"acorn_blast" => [ 0, 120, 165, 210, 255, 300 ],
+
+		"shadow_lock" => [ 0, 30, 40, 50, 60, 70 ],
+		"siphon_darkness" => [ 0, 90, 160, 230, 300, 370 ],
+        "night_terror" => [ 0, 20, 25, 30, 35, 40 ],
     },
     "tick_scaling" => {
         "stellar_burst" => [ 0.35, 0.35, 0.35, 0.35, 0.35, 0.35 ],
@@ -333,6 +353,10 @@ my %ability_stats = (
 		"dart" => [ .7, .7, .7, .7, .7, .7 ],
 		"flurry" => [ .2, .2, .2, .2, .2, .2 ],
 		"acorn_blast" => [ .9, .9, .9, .9, .9, .9 ],
+
+		"shadow_lock" => [ 0, .2, .2, .2, .2, .2 ],
+		"siphon_darkness" => [ 0, 1, 1, 1, 1, 1 ],
+        "night_terror" => [ 0, 0.05, 0.05, 0.05, 0.05, 0.05 ],
     },
     "tick_duration" => {
         "stellar_burst" => [ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ],
@@ -344,6 +368,10 @@ my %ability_stats = (
 		"dart" => [ 0, 0, 0, 0, 0, 0 ],
 		"flurry" => [ .25, .25, .25, .25, .25, .25 ],
 		"acorn_blast" => [ 0, 0, 0, 0, 0, 0 ],
+
+		"shadow_lock" => [ 0, .5, .5, .5, .5, .5 ],
+		"siphon_darkness" => [ 0, 2, 2, 2, 2, 2 ],
+        "night_terror" => [ 0, 1, 1, 1, 1, 1 ],
     },
     "num_ticks" => {
         "stellar_burst" => [ 2, 2, 2, 2, 2, 2 ],
@@ -355,6 +383,10 @@ my %ability_stats = (
 		"dart" => [ 1, 1, 1, 1, 1, 1 ],
 		"flurry" => [ 4, 4, 4, 4, 4, 4 ],
 		"acorn_blast" => [ 1, 1, 1, 1, 1, 1 ],
+
+		"shadow_lock" => [ 0, 4, 4, 4, 4, 4 ],
+		"siphon_darkness" => [ 0, 1, 1, 1, 1, 1 ],
+        "night_terror" => [ 0, 5, 5, 5, 5, 5 ],
     },
     "post_duration" => {
         "flurry" => [ 1, 1, 1, 1, 1, 1 ],
@@ -373,6 +405,10 @@ my %ability_stats = (
         "flurry" =>             	[ 0, 1, 1, 1, 2, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
 		"acorn_blast" =>  			[ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 4, 5, 5 ],
 		"through_the_cosmos" =>		[ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
+
+		"shadow_lock " =>			[ 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5 ],
+        "siphon_darkness" =>        [ 0, 1, 1, 2, 2, 2, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ],
+		"night_terror" =>   		[ 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5 ],
     },
 ),
 
@@ -447,11 +483,11 @@ my %buff_stats = (
 );
 
 
-my %debuffs = (
+my %debuff_stats = (
     "max_stacks" => {
         "divine_judgment" => 1,
-        "executioner" => 4,
-        "demonic_grip" => 4,
+        "executioner" => 3,
+        "demonic_grip" => 3,
         "spear" => 3,
         "stone_cutting_sword" => 3,
         "ichaival" => 3,
@@ -833,12 +869,15 @@ my %gods = (
 
         "gold" => 0,
 
+        "items" => { },
+
         "abilities" => { }, # full ability stats, with correct amounts for level
 
 		"combo" => $base_stats{ "combo" }->{ $opts{"god" } }, # sequential combo order, just ability names or undef for AA
 		"combo_idx" => 0, # idx into combo
 
         "buffs" => { },
+        "debuffs" => { },
 
 		"state" => $IDLE,
 		"last_state_transition" => 0, # time
@@ -878,12 +917,15 @@ my %gods = (
 
         "gold" => 0,
 
+        "items" => { },
+
         "abilities" => { }, # full ability stats, with correct amounts for level
 
 		"combo" => $base_stats{ "combo" }->{ $opts{"enemy" } }, # sequential combo order, just ability names or undef for AA
 		"combo_idx" => 0, # idx into combo
 
         "buffs" => { },
+        "debuffs" => { },
 
 		"state" => $IDLE,
 		"last_state_transition" => 0, # time
@@ -900,6 +942,7 @@ my %gods = (
 my @items = split( /\s/, $opts{ "items" } );
 
 foreach my $item (@items) {
+    $gods{"self"}->{"items"}->{$item} = 1;
     foreach my $stat (keys $item_stats{ $item }) {
 	    $gods{ "self" }->{ $stat } += $item_stats{ $item }->{ $stat };
     }
@@ -908,6 +951,7 @@ foreach my $item (@items) {
 my @enemy_items = split( /\s/, $opts{ "enemy_items" } );
 
 foreach my $item (@enemy_items) {
+    $gods{"enemy"}->{"items"}->{$item} = 1;
     foreach my $stat (keys $item_stats{ $item }) {
 	    $gods{ "enemy" }->{ $stat } += $item_stats{ $item }->{ $stat };
     }
@@ -1053,6 +1097,19 @@ sub both_up() {
     return 0;
 }
 
+sub add_debuff_stack($ $) {
+    my $god = shift;
+    my $debuff = shift;
+    if (defined $gods{ $god }->{ "debuffs" }->{ $debuff }) {
+        $gods{ $god }->{ "debuffs" }->{ $debuff }->{"stacks"}++;
+    } else {
+        $gods{ $god }->{ "debuffs" }->{ $debuff } = +{ "stacks" => 1 };
+    }
+    if ($gods{ $god }->{ "debuffs" }->{ $debuff }->{"stacks"} > $debuff_stats{"max_stacks"}->{$debuff}) {
+        $gods{ $god }->{ "debuffs" }->{ $debuff }->{"stacks"} = $debuff_stats{"max_stacks"}->{$debuff};
+    }
+}
+
 sub add_buff_stack($ $) {
     my $god = shift;
     my $buff = shift;
@@ -1069,9 +1126,6 @@ sub add_buff_stack($ $) {
 sub rm_buff_stack($ $) {
 }
 
-sub add_debuff_stack($ $) {
-}
-
 sub rm_debuff_stack($ $) {
 }
 
@@ -1086,6 +1140,13 @@ sub refresh_buff_time($ $) {
 }
 
 sub refresh_debuff_time($ $) {
+    my $god = shift;
+    my $debuff = shift;
+    if (defined $gods{ $god }->{ "debuffs" }->{ $debuff }) {
+        $gods{ $god }->{ "debuffs" }->{ $debuff }->{"time"} = $time;
+    } else {
+        $gods{ $god }->{ "debuffs" }->{ $debuff } = +{ "time" => $time };
+    }
 }
 
 sub get_eff_power($) {
@@ -1181,36 +1242,46 @@ sub get_eff_prot($ $) {
 	} else {
 		# true damage
 	}
+
+    if($opts{"verbosity"} >= $VERBOSITY_LEGENDARY) {
+        print Dumper(\%gods);
+        print "\n\n\n\n";
+    }
     
     my $eff_prot = $protections;
+    boxlog($VERBOSITY_EPIC, "starting prot: $eff_prot");
     # TODO apply debuffs here
     # % reduction
     my $percent_reduction = 0;
     if ($type eq "physical" ) {
-        if( defined $gods{$god}->{"buffs"}->{"executioner"}) {
-            $percent_reduction += 0.12 * $gods{$god}->{"buffs"}->{"executioner"};
+        if( defined $gods{$god}->{"debuffs"}->{"executioner"}) {
+            $percent_reduction += 0.12 * $gods{$god}->{"debuffs"}->{"executioner"}->{"stacks"};
         }
     }
     if ($type eq "magical" ) {
-        if( defined $gods{$god}->{"buffs"}->{"grip"}) {
-            $percent_reduction += 0.12 * $gods{$god}->{"buffs"}->{"grip"};
+        if( defined $gods{$god}->{"debuffs"}->{"grip"}) {
+            $percent_reduction += 0.12 * $gods{$god}->{"debuffs"}->{"grip"}->{"stacks"};
         }
     }
-    $percent_reduction += $gods{ opposite_god($god) }->{ "percent_reduction" }
+    $percent_reduction += $gods{ opposite_god($god) }->{ "percent_reduction" };
     $eff_prot *= (1 - $percent_reduction);
+    boxlog($VERBOSITY_EPIC, "$percent_reduction % reduction, prot now $eff_prot");
     # flat reduction
     my $flat_reduction = 0;
     if ($type eq "magical" ) {
-        if( defined $gods{$god}->{"buffs"}->{"spear"}) {
-            $percent_reduction += 10 * $gods{$god}->{"buffs"}->{"spear"};
+        if( defined $gods{$god}->{"debuffs"}->{"spear"}) {
+            $percent_reduction += 10 * $gods{$god}->{"debuffs"}->{"spear"}->{"stacks"};
         }
     }
     $flat_reduction += $gods{ opposite_god($god) }->{ "flat_reduction" };
     $eff_prot -= $flat_reduction;
+    boxlog($VERBOSITY_EPIC, "$flat_reduction flat reduction, prot now $eff_prot");
     # % pen
     $eff_prot *= (1 - $gods{ opposite_god($god) }->{ "percent_pen" } );
+    boxlog($VERBOSITY_EPIC, "" . $gods{ opposite_god($god) }->{ "percent_pen" } . " % pen, prot now $eff_prot");
     # flat pen
     $eff_prot -= $gods{ opposite_god($god) }->{ "flat_pen" };
+    boxlog($VERBOSITY_EPIC, "" . $gods{ opposite_god($god) }->{ "flat_pen" } . " flat pen, prot now $eff_prot");
 
     if ($eff_prot < 0) { $eff_prot = 0; }
 
@@ -1277,6 +1348,17 @@ sub execute_ticks() {
 	}
 }
 
+sub apply_aa_on_hit_effects($) {
+    my $god = shift;
+
+    if( defined $gods{$god}->{"items"}->{"executioner"} ) {
+        # apply debuff
+        add_debuff_stack(opposite_god($god), "executioner");
+        refresh_debuff_time(opposite_god($god), "executioner");
+    }
+
+}
+
 sub perform_auto_attack($) {
 	#################################################################################
 	# MAIN AA EXECUTION SUBROUTINE
@@ -1285,6 +1367,8 @@ sub perform_auto_attack($) {
     boxlog($VERBOSITY_EXTRA, "god $god doing AA at time $time");
 	my $damage = get_aa_damage($god) + (get_aa_scaling($god) * get_eff_power($god));
 	deal_damage(opposite_god($god), $damage, $gods{$god}->{"type"}, "AA");
+
+    apply_aa_on_hit_effects($god);
 }
 
 sub perform_ability($ $) {
