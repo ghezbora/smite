@@ -997,30 +997,18 @@ sub schedule_tick($ $ $ $) {
 
 sub execute_ticks() {
 	if (defined $ticks{$time}) {
-		boxlog($VERBOSITY_EXTRA, "found ticks at time $time");
-		if ( $opts{"verbosity"} >= $VERBOSITY_EPIC ) {
+		if ( $opts{"verbosity"} >= $VERBOSITY_LEGENDARY ) {
 			print Dumper(\%ticks);
 			print "\n\n\n\n";
 		}
 		my @ticks_now = $ticks{$time};
-		if ( $opts{"verbosity"} >= $VERBOSITY_EPIC ) {
-			print Dumper(@ticks_now);
-			print Dumper($ticks{$time});
-			print "\n\n\n\n";
-		}
-		my %tick = \$ticks_now[0];
-		#print "tick 0 target = " . $ticks_now[0]->{ "target" };
-		#print "tick 0 damage = " . $ticks_now[0]->{ "damage" };
-		#print "tick 0 type = " . $ticks_now[0]->{ "type" };
-		foreach my $tick (@ticks_now) {
-			print $tick->{"target"};
-			my %tick = \$tick;
-			if ( $opts{"verbosity"} >= $VERBOSITY_EPIC ) {
-				print Dumper(\%tick);
-				print "\n\n\n\n";
-			}
-			boxlog($VERBOSITY_EXTRA, "executing tick of " . $tick{"damage"} . " " . $tick{"type"} . " damage on " . $tick{"target"} . " at time $time");
-		}
+        my $numticks = @ticks_now;
+        my $i = 0;
+        while($i < $numticks) {
+            my $tick = $ticks{$time}->[$i];
+			boxlog($VERBOSITY_EXTRA, "executing tick of " . $tick->{"damage"} . " " . $tick->{"type"} . " damage on " . $tick->{"target"} . " at time $time");
+            $i++;
+        }
 	}
 }
 
