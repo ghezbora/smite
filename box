@@ -1148,10 +1148,11 @@ sub get_eff_attack_rate($) {
     # TODO this ignores buffs
 }
 
-sub deal_damage($ $ $) {
+sub deal_damage($ $ $ $) {
 	my $god = shift;
 	my $damage = shift;
 	my $damage_type = shift;
+    my $source_name = shift;
 
 	my $protections = 0;
 	if ($damage_type eq "physical") {
@@ -1170,20 +1171,21 @@ sub deal_damage($ $ $) {
     }
 	$eff_damage = int($eff_damage);
 
-	boxlog($VERBOSITY_EXTRA, "dealing $damage $damage_type damage to $god, through $protections protection, resulting in $eff_damage effective damage");
+	boxlog($VERBOSITY_NORMAL, "$source_name dealing $damage $damage_type damage to $god, through $protections protection, resulting in $eff_damage effective damage");
 
     $gods{$god}->{"current_health"} -= $eff_damage;
 }
 
-sub schedule_tick($ $ $ $) {
+sub schedule_tick($ $ $ $ $) {
 	my $god = shift;
 	my $time = shift;
 	my $damage = shift;
 	my $damage_type = shift;
+    my $source_name = shift;
 
 	boxlog($VERBOSITY_EXTRA, "scheduling tick of $damage $damage_type damage at time $time onto $god");
 
-	my $tick = +{ "target" => $god, "damage" => $damage, "type" => $damage_type };
+	my $tick = +{ "target" => $god, "damage" => $damage, "type" => $damage_type, "name" => $source_name };
 
 	if (defined $ticks{ $time }) {
 		push $ticks{ $time }, $tick;
@@ -1204,7 +1206,7 @@ sub execute_ticks() {
         while($i < $numticks) {
             my $tick = $ticks{$time}->[$i];
 			boxlog($VERBOSITY_EXTRA, "executing tick of " . $tick->{"damage"} . " " . $tick->{"type"} . " damage on " . $tick->{"target"} . " at time $time");
-            deal_damage($tick->{"target"}, $tick->{"damage"}, $tick->{"type"});
+            deal_damage($tick->{"target"}, $tick->{"damage"}, $tick->{"type"}, $tick->{"name"});
             $i++;
         }
 	}
@@ -1217,7 +1219,7 @@ sub perform_auto_attack($) {
 	my $god = shift;
     boxlog($VERBOSITY_EXTRA, "god $god doing AA at time $time");
 	my $damage = get_aa_damage($god) + (get_aa_scaling($god) * get_eff_power($god));
-	deal_damage(opposite_god($god), $damage, $gods{$god}->{"type"});
+	deal_damage(opposite_god($god), $damage, $gods{$god}->{"type"}, "AA");
 }
 
 sub perform_ability($ $) {
@@ -1234,8 +1236,8 @@ sub perform_ability($ $) {
 
     my $i = 0;
     while($i < $gods{$god}->{"abilities"}->{$ability}->{"num_ticks"}) {
-        schedule_tick( opposite_god($god), $time + $i * $gods{$god}->{"abilities"}->{$ability}->{"tick_duration"},
-                $total_tick_damage, $gods{$god}->{"type"} );
+        schedule_tick( opposite_god($god), $time + $i * 1000 * $gods{$god}->{"abilities"}->{$ability}->{"tick_duration"},
+                $total_tick_damage, $gods{$god}->{"type"}, $ability );
         $i++;
     }
 
