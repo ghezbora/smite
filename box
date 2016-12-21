@@ -331,7 +331,7 @@ my %ability_stats = (
 		"declaw" => [ 1, 1, 1, 1, 1, 1 ],
 
 		"dart" => [ .7, .7, .7, .7, .7, .7 ],
-		"flurry" => [ .8, .8, .8, .8, .8, .8 ],
+		"flurry" => [ .2, .2, .2, .2, .2, .2 ],
 		"acorn_blast" => [ .9, .9, .9, .9, .9, .9 ],
     },
     "tick_duration" => {
@@ -746,7 +746,7 @@ my %item_stats = (
         "mana" => 300,
 		"cdr" => .2,
         "gold" => 2300,
-    }
+    },
 
     "urchin" => {
     },
@@ -1078,8 +1078,10 @@ sub get_eff_power($) {
     my $type = $gods{$god}->{"type"};
     #TODO
     if ($type eq "magical") {
+        boxlog($VERBOSITY_EPIC, "$god effective power is " . $gods{$god}->{"magical_power"});
         return $gods{$god}->{"magical_power"};
     } else {
+        boxlog($VERBOSITY_EPIC, "$god effective power is " . $gods{$god}->{"physical_power"});
         return $gods{$god}->{"physical_power"};
     }
 }
@@ -1095,6 +1097,7 @@ sub get_aa_scaling($) {
                 and $gods{$god}->{"buffs"}->{"accelerate"}->{"stacks"} > 0) {
         $scaling += 0.4; # TODO make sure this is correct...
     }
+    boxlog($VERBOSITY_EPIC, "$god aa scaling is " . $scaling);
 }
 
 sub get_aa_damage($) {
@@ -1107,6 +1110,7 @@ sub get_aa_damage($) {
     }
 	# got base damage, now multiply it by attack chain
 	boxlog($VERBOSITY_EPIC, "curr attack chain is " . $gods{$god}->{ "current_attack_chain_index" } . " for a modifier of " . $gods{$god}->{ "attack_chain_progression" }->[ $gods{$god}->{ "current_attack_chain_index" } ] );
+    boxlog($VERBOSITY_EPIC, "base damage (pre-attack-chain) is $damage" );
 	$damage *= $gods{$god}->{ "attack_chain_progression" }->[ $gods{$god}->{ "current_attack_chain_index" } ];
     return $damage;
 }
@@ -1226,6 +1230,7 @@ sub perform_ability($ $) {
     boxlog($VERBOSITY_EXTRA, "god $god doing ability $ability at time $time");
 
     my $total_tick_damage = $gods{$god}->{"abilities"}->{$ability}->{"tick_damage"};
+    $total_tick_damage += $gods{$god}->{"abilities"}->{$ability}->{"tick_scaling"} * get_eff_power($god);
 
     my $i = 0;
     while($i < $gods{$god}->{"abilities"}->{$ability}->{"num_ticks"}) {
