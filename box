@@ -1192,7 +1192,8 @@ sub deal_damage($ $ $ $) {
     }
 	$eff_damage = int($eff_damage);
 
-	boxlog($VERBOSITY_NORMAL, "$source_name dealing $damage $damage_type damage to $god at time $time, through $protections protection, resulting in $eff_damage effective damage");
+    my $output = sprintf("%20s dealing %4s %8s damage to %5s at time %5s, through %3s protections, resulting in %4s effective damage", $source_name, $damage, $damage_type, $god, $time, $protections, $eff_damage);
+    boxlog($VERBOSITY_NORMAL, $output);
 
     $gods{$god}->{"current_health"} -= $eff_damage;
 }
