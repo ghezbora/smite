@@ -512,6 +512,88 @@ my %item_stats = (
 		"gold" => 2400,
 	},
 
+    "rod_of_tahuti" => {
+        "power" => 125,
+        "gold" => 3320,
+    },
+
+    "polynomicon" => {
+        "magical_power" => 75,
+        "mana" => 300,
+        "lifesteal" => .1,
+        "gold" => 2300,
+    },
+
+    "pythagorems" => {
+        "magical_power" => 90,
+        "lifesteal" => .3,
+        "cdr" => .1,
+        "gold" => 2400,
+    },
+
+    "bancrofts" => {
+        "magical_power" => 100,
+        "lifesteal" => .12,
+        "gold" => 2400,
+    },
+
+    "telkhines" => {
+        "magical_power" => 45,
+        "attack_speed_modifier" => .3,
+        "gold" => 2125,
+    },
+
+    "grip" => {
+        "magical_power" => 60,
+        "attack_speed_modifier" => .25,
+        "gold" => 2280,
+    },
+
+    "divine_ruin" => {
+        "magical_power" => 65,
+        "mana" => 150,
+        "lifesteal" => .15,
+        "gold" => 1820,
+    },
+
+    "dynasty_plate_helm" => {
+        "magical_power" => 45,
+        "physical_prot" => 30,
+        "flat_pen" => 15,
+        "gold" => 1700,
+    },
+
+    "celestial_legion_helm" => {
+        "magical_power" => 60,
+        "physical_prot" => 80,
+        "gold" => 2400,
+    },
+
+    "shard" => {
+        "magical_power" => 60,
+        "percent_pen" => 33,
+        "gold" => 2050,
+    },
+
+    "spear_of_the_magus" => {
+        "magical_power" => 50,
+        "flat_pen" => 15,
+        "gold" => 2150,
+    },
+
+    "spear_of_desolation" => {
+        "magical_power" => 120,
+        "flat_pen" => 20,
+        "gold" => 3800,
+    },
+
+    "void_stone" => {
+        "magical_power" => 40,
+        "magical_prot" => 60,
+        "flat_reduction" => 20,
+        "gold" => 2200,
+    },
+
 	######################################################################
 	# physical items
 	######################################################################
@@ -567,6 +649,83 @@ my %item_stats = (
 		"gold" => 2300,
 	},
 
+    "ancile" => {
+        "physical_power" => 25,
+        "magical_prot" => 60,
+        "cdr" => .1,
+        "gold" => 2000,
+    },
+
+    "shield_of_regrowth" => {
+        "physical_power" => 30,
+        "physical_prot" => 30,
+        "cdr" => .1,
+        "gold" => 1800,
+    },
+
+    "hydras" => {
+        "cdr" => .1,
+        "physical_power" => 40,
+    },
+
+    "ichaival" => {
+        "attack_speed_modifier" => .3,
+        "flat_pen" => 10,
+        "gold" => 1700,
+    },
+
+    "executioner" => {
+        "attack_speed_modifier" => .25,
+        "physical_power" => 30,
+        "gold" => 2250,
+    },
+
+    "qins" => {
+        "physical_power" => 40,
+        "attack_speed_modifier" => .15,
+        "gold" => 2700,
+    },
+
+    "wind_demon" => {
+        "physical_power" => 40,
+        "crit_chance" => .2,
+        "gold" => 2600,
+    },
+
+    "deathbringer" => {
+        "physical_power" => 50,
+        "crit_chance" => .2,
+        "gold" => 3200,
+    },
+
+    "rage" => {
+        "physical_power" => 30,
+        "crit_chance" => .2,
+        "gold" => 2400,
+    },
+
+    "malice" => {
+        "physical_power" => 50,
+        "crit_chance" => .2,
+        "gold" => 3000,
+    },
+
+    "stone_cutting_sword" => {
+        "physical_power" => 50,
+        "gold" => 2600,
+    },
+
+    "heartseeker" => {
+        "physical_power" => 25,
+        "gold" => 1800,
+    },
+
+    "transcendence" => {
+        "physical_power" => 35,
+        "mana" => 300,
+        "gold" => 2600,
+    },
+
 	######################################################################
 	# common items
 	######################################################################
@@ -588,6 +747,28 @@ my %item_stats = (
 		"cdr" => .2,
         "gold" => 2300,
     }
+
+    "urchin" => {
+    },
+
+    "genjis_guard" => {
+    },
+
+    "spirit_robe" => {
+    },
+
+    "magis" => {
+    },
+
+    "mantle_of_discord" => {
+    },
+
+    "witchblade" => {
+    },
+
+    "fatalis" => {
+    },
+
 );
 
 #################################################################################
