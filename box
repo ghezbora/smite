@@ -287,7 +287,7 @@ my %base_stats = (
 		"ratatoskr" => [ "dart", undef, "flurry", undef, "acorn_blast" ],
 		"awilix" => [ undef, undef, "feather_step" ],
 		"amaterasu" => [ undef, undef, undef, "heavenly_reflection" ],
-        "nox" => [ "shadow_lock", "siphon_darkness" ],
+        "nox" => [ "siphon_darkness", "shadow_lock" ],
     },
     "ultimate_combo" => {
 		# separate tree for combos including ultimates, create an optional flag to use these
@@ -298,7 +298,7 @@ my %base_stats = (
 		"ratatoskr" => [ "through_the_cosmos", undef, "flurry", undef, "acorn_blast" ],
 		"awilix" => [ undef, undef, "feather_step", "moonlight_charge", undef, undef, "gravity_surge" ],
 		"amaterasu" => [ undef, undef, undef, "dazzling_offense", "heavenly_reflection" ],
-        "nox" => [ "night_terror", "shadow_lock", "siphon_darkness" ],
+        "nox" => [ "night_terror", "siphon_darkness", "shadow_lock" ],
     }
 );
 
@@ -1393,7 +1393,7 @@ sub perform_ability($ $) {
 
     my $i = 0;
     while($i < $gods{$god}->{"abilities"}->{$ability}->{"num_ticks"}) {
-        schedule_tick( opposite_god($god), $time + $i * 1000 * $gods{$god}->{"abilities"}->{$ability}->{"tick_duration"},
+        schedule_tick( opposite_god($god), $time + (($i+1) * 1000) * $gods{$god}->{"abilities"}->{$ability}->{"tick_duration"},
                 $total_tick_damage, $gods{$god}->{"type"}, $ability );
         $i++;
     }
