@@ -1017,6 +1017,9 @@ foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "enemy" } } } ) {
 # recordkeeping
 #################################################################################
 
+my @output;
+
+
 my %iteration_record = (
     
     "time" => 0,
@@ -1285,6 +1288,8 @@ sub get_eff_prot($ $) {
     $eff_prot -= $gods{ opposite_god($god) }->{ "flat_pen" };
     boxlog($VERBOSITY_EPIC, "" . $gods{ opposite_god($god) }->{ "flat_pen" } . " flat pen, prot now $eff_prot");
 
+    $eff_prot = int($eff_prot);
+
     if ($eff_prot < 0) { $eff_prot = 0; }
 
     boxlog($VERBOSITY_EXTRA, "$god prot $protections -> $eff_prot" );
@@ -1309,7 +1314,8 @@ sub deal_damage($ $ $ $) {
 	$eff_damage = int($eff_damage);
 
     my $output = sprintf("%20s dealing %4s %8s damage to %5s at time %5s, through %3s protections, resulting in %4s effective damage", $source_name, $damage, $damage_type, $god, $time, $protections, $eff_damage);
-    boxlog($VERBOSITY_NORMAL, $output);
+    #boxlog($VERBOSITY_NORMAL, $output);
+    push @output, +{ "source" => $source_name, "damage" => $damage, "type" => $damage_type, "target" => $god, "time" => $time, "prot" => $protections, "eff_damage" => $eff_damage };
 
     $gods{$god}->{"current_health"} -= $eff_damage;
 }
@@ -1550,5 +1556,35 @@ while ( $iteration < $max_iterations ) {
 
 
 
-#print "AA damage " . get_aa_damage("self") . "\n";
+#################################################################################
+# OUTPUT
+#################################################################################
+
+#print Dumper(\@output);
+
+printf("%20s %4s %8s %5s %5s %4s %7s\n",
+        "Source",
+        "Dmg",
+        "Type",
+        "Tgt",
+        "Time",
+        "Prot",
+        "Eff Dmg");
+
+my $i = 0;
+my $output_len = @output;
+while ($i < $output_len) {
+    my $dmg_event = $output[$i];
+    printf("%20s %4s %8s %5s %5s %4s %7s\n",
+            $dmg_event->{"source"},
+            $dmg_event->{"damage"},
+            $dmg_event->{"type"},
+            $dmg_event->{"target"},
+            $dmg_event->{"time"},
+            $dmg_event->{"prot"},
+            $dmg_event->{"eff_damage"} );
+    $i++;
+}
+
+
 
