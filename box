@@ -31,7 +31,7 @@ my $VERBOSITY_LEGENDARY = 9;
 $opts{ "verbosity" } = $VERBOSITY_NORMAL;
 $opts{ "level" } = 20;
 
-GetOptions( 'god=s' => \$opts{ "god" },
+GetOptions( 'self=s' => \$opts{ "self" },
             'enemy=s' => \$opts{"enemy"},
             'items=s' => \$opts{"items"},
             'enemy_items=s' => \$opts{"enemy_items"},
@@ -39,8 +39,8 @@ GetOptions( 'god=s' => \$opts{ "god" },
             'iterations=i' => \$opts{"iterations"},
             'level=i' => \$opts{"level"} );
 
-if ( not defined $opts{ "god" } or not defined $opts{ "items" } ) {
-    print "god and items are required options\n";
+if ( not defined $opts{ "self" } or not defined $opts{ "items" } ) {
+    print "self and items are required options\n";
     exit;
 }
 if ( not defined $opts{ "enemy" } or not defined $opts{ "enemy_items" } ) {
@@ -359,7 +359,7 @@ my %ability_stats = (
         "night_terror" => [ 0, 0.05, 0.05, 0.05, 0.05, 0.05 ],
     },
     "tick_duration" => {
-        "stellar_burst" => [ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 ],
+        "stellar_burst" => [ 0.2, 0.2, 0.2, 0.2, 0.2, 0.2 ],
 
 		"pounce" => [ 0, 0, 0, 0, 0, 0 ],
 		"razor_whip" => [ 1, 1, 1, 1, 1, 1 ],
@@ -389,6 +389,8 @@ my %ability_stats = (
         "night_terror" => [ 0, 5, 5, 5, 5, 5 ],
     },
     "post_duration" => {
+        "stellar_burst" => [ .5, .5, .5, .5, .5, .5 ],
+
         "flurry" => [ 1, 1, 1, 1, 1, 1 ],
 
         "shadow_lock" => [ 2, 2, 2, 2, 2, 2 ],
@@ -421,6 +423,7 @@ my %ability_stats = (
 
 my %buff_stats = (
     "max_stacks" => {
+        "heat" => 100,
         "divine_judgment" => 1, # buff and debuff
         "cocoon" => 3,
         "incense" => 1,
@@ -454,6 +457,7 @@ my %buff_stats = (
         "soul_reaver" => 40000,
     },
     "duration" => {
+        "heat" => 2000, # TODO ???
         "divine_judgment" => 8000, # NB buff lasts 8, debuff lasts 5
         "cocoon" => 0,
         "incense" => 8000, # TODO duration scales 4...8
@@ -487,10 +491,12 @@ my %buff_stats = (
 
 my %debuff_stats = (
     "max_stacks" => {
+        "brawlers" => 1,
+        "divine_ruin" => 1,
         "divine_judgment" => 1,
         "executioner" => 3,
         "demonic_grip" => 3,
-        "spear" => 3,
+        "spear_of_the_magus" => 3,
         "stone_cutting_sword" => 3,
         "ichaival" => 3,
         "open_wound" => 1,
@@ -501,11 +507,13 @@ my %debuff_stats = (
 		"flurry" => 4,
     },
     "duration" => {
+        "brawlers" => 5000, # TODO ???
+        "divine_ruin" => 5000, # TODO ???
         "divine_judgment" => 5000, # NB debuff lasts 5 seconds, buff lasts 8
         "midgardian" => 3000,
         "executioner" => 3000,
         "demonic_grip" => 3000,
-        "spear" => 5000,
+        "spear_of_the_magus" => 5000,
         "open_wound" => 0,
         "serqet_poisons" => 20000,
         "ichaival" => 3000,
@@ -513,7 +521,7 @@ my %debuff_stats = (
         "frostbound" => 1250,
         "witchblade" => 0, # TODO make sure these can't stack
         "runic_shield" => 0,
-		"flurry" => 3, # TODO i have no idea what the duration is on this
+		"flurry" => 3000, # TODO i have no idea what the duration is on this
     },
 );
 
@@ -584,7 +592,7 @@ my %item_stats = (
         "gold" => 2125,
     },
 
-    "grip" => {
+    "demonic_grip" => {
         "magical_power" => 60,
         "attack_speed_modifier" => .25,
         "gold" => 2280,
@@ -839,25 +847,25 @@ my $AA_POST = "aa_post";
 
 my %gods = (
     "self" => {
-        "type" => $base_stats{ "type" }->{ $opts{ "god" } },
+        "type" => $base_stats{ "type" }->{ $opts{ "self" } },
 
         "physical_power" => 0,
-        "physical_prot" => $base_stats{ "physical_protection" }->{ $opts{ "god" } },
+        "physical_prot" => $base_stats{ "physical_protection" }->{ $opts{ "self" } },
 
         "magical_power" => 0,
-        "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "god" } },
+        "magical_prot" => $base_stats{ "magical_protection" }->{ $opts{ "self" } },
 
 		"flat_damage_reduction" => 0, # MoV
 
-        "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "god" } },
-        "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "god" } },
-        "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "god" } },
+        "base_attack_speed" => $base_stats{ "base_attack_speed" }->{ $opts{ "self" } },
+        "attack_speed_modifier" => $base_stats{ "attack_speed_modifier" }->{ $opts{ "self" } },
+        "attack_chain_progression" => $base_stats{ "attack_chain_progression" }->{ $opts{ "self" } },
 		"current_attack_chain_index" => 0,
-        "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "god" } },
+        "aa_damage" => $base_stats{ "auto_damage" }->{ $opts{ "self" } },
 
-        "health" => $base_stats{ "health" }->{ $opts{ "god" } }, # max health
-        "current_health" => $base_stats{ "health" }->{ $opts{ "god" } },
-        "mana" => $base_stats{ "mana" }->{ $opts{ "god" } },
+        "health" => $base_stats{ "health" }->{ $opts{ "self" } }, # max health
+        "current_health" => $base_stats{ "health" }->{ $opts{ "self" } },
+        "mana" => $base_stats{ "mana" }->{ $opts{ "self" } },
 
         "cdr" => 0,
 
@@ -875,7 +883,7 @@ my %gods = (
 
         "abilities" => { }, # full ability stats, with correct amounts for level
 
-		"combo" => $base_stats{ "combo" }->{ $opts{"god" } }, # sequential combo order, just ability names or undef for AA
+		"combo" => $base_stats{ "combo" }->{ $opts{"self" } }, # sequential combo order, just ability names or undef for AA
 		"combo_idx" => 0, # idx into combo
 
         "buffs" => { },
@@ -964,7 +972,7 @@ foreach my $item (@enemy_items) {
 #################################################################################
 
 
-foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "god" } } } ) {
+foreach my $ability ( @{ $base_stats{ "combo" }->{ $opts{ "self" } } } ) {
 
 	if (not defined $ability) { next; }
 
@@ -1158,13 +1166,25 @@ sub get_eff_power($) {
     my $god = shift;
     my $type = $gods{$god}->{"type"};
     #TODO
+
+    my $power = 0;
+
     if ($type eq "magical") {
         boxlog($VERBOSITY_EPIC, "$god effective power is " . $gods{$god}->{"magical_power"});
-        return $gods{$god}->{"magical_power"};
+        $power = $gods{$god}->{"magical_power"};
     } else {
         boxlog($VERBOSITY_EPIC, "$god effective power is " . $gods{$god}->{"physical_power"});
-        return $gods{$god}->{"physical_power"};
+        $power = $gods{$god}->{"physical_power"};
     }
+
+    if (defined $gods{$god}->{"buffs"}->{"heat"}) {
+        boxlog($VERBOSITY_EPIC, "applying heat stacks, power before = $power, stacks = " . $gods{$god}->{"buffs"}->{"heat"}->{"stacks"});
+        $power *= 1 + (0.01 * int($gods{$god}->{"buffs"}->{"heat"}->{"stacks"} / 4));
+        boxlog($VERBOSITY_EPIC, "power after = $power");
+    }
+
+    return $power;
+
 }
 
 sub get_aa_scaling($) {
@@ -1179,6 +1199,7 @@ sub get_aa_scaling($) {
         $scaling += 0.4; # TODO make sure this is correct...
     }
     boxlog($VERBOSITY_EPIC, "$god aa scaling is " . $scaling);
+    return $scaling;
 }
 
 sub get_aa_damage($) {
@@ -1186,7 +1207,7 @@ sub get_aa_damage($) {
     my $damage = $gods{$god}->{"aa_damage"};
     $damage += get_eff_power($god) * get_aa_scaling($god);
 
-    if (defined $gods{$god}->{"buffs"}->{"heat"} and $gods{$god}->{"buffs"}->{"heat"}->{"stacks"} == 25) {
+    if (defined $gods{$god}->{"buffs"}->{"heat"} and $gods{$god}->{"buffs"}->{"heat"}->{"stacks"} == 100) {
         $damage *= 1.25; # TODO make sure this is correct...
     }
 	# got base damage, now multiply it by attack chain
@@ -1255,7 +1276,6 @@ sub get_eff_prot($ $) {
     
     my $eff_prot = $protections;
     boxlog($VERBOSITY_EPIC, "starting prot: $eff_prot");
-    # TODO apply debuffs here
     # % reduction
     my $percent_reduction = 0;
     if ($type eq "physical" ) {
@@ -1264,8 +1284,8 @@ sub get_eff_prot($ $) {
         }
     }
     if ($type eq "magical" ) {
-        if( defined $gods{$god}->{"debuffs"}->{"grip"}) {
-            $percent_reduction += 0.12 * $gods{$god}->{"debuffs"}->{"grip"}->{"stacks"};
+        if( defined $gods{$god}->{"debuffs"}->{"demonic_grip"}) {
+            $percent_reduction += 0.12 * $gods{$god}->{"debuffs"}->{"demonic_grip"}->{"stacks"};
         }
     }
     $percent_reduction += $gods{ opposite_god($god) }->{ "percent_reduction" };
@@ -1274,8 +1294,13 @@ sub get_eff_prot($ $) {
     # flat reduction
     my $flat_reduction = 0;
     if ($type eq "magical" ) {
-        if( defined $gods{$god}->{"debuffs"}->{"spear"}) {
-            $percent_reduction += 10 * $gods{$god}->{"debuffs"}->{"spear"}->{"stacks"};
+        if( defined $gods{$god}->{"debuffs"}->{"spear_of_the_magus"}) {
+            $flat_reduction += 10 * $gods{$god}->{"debuffs"}->{"spear_of_the_magus"}->{"stacks"};
+        }
+    }
+    if ($type eq "physical" ) {
+        if( defined $gods{$god}->{"debuffs"}->{"stone_cutting_sword"}) {
+            $flat_reduction += 10 * $gods{$god}->{"debuffs"}->{"stone_cutting_sword"}->{"stacks"};
         }
     }
     $flat_reduction += $gods{ opposite_god($god) }->{ "flat_reduction" };
@@ -1315,9 +1340,13 @@ sub deal_damage($ $ $ $) {
 
     my $output = sprintf("%20s dealing %4s %8s damage to %5s at time %5s, through %3s protections, resulting in %4s effective damage", $source_name, $damage, $damage_type, $god, $time, $protections, $eff_damage);
     #boxlog($VERBOSITY_NORMAL, $output);
-    push @output, +{ "source" => $source_name, "damage" => $damage, "type" => $damage_type, "target" => $god, "time" => $time, "prot" => $protections, "eff_damage" => $eff_damage };
+    push @output, +{ "source" => $source_name, "damage" => int($damage), "type" => $damage_type, "target" => $god, "time" => $time, "prot" => $protections, "eff_damage" => $eff_damage };
 
     $gods{$god}->{"current_health"} -= $eff_damage;
+
+    if($source_name ne "AA") {
+        apply_on_ability_effects($god);
+    }
 }
 
 sub schedule_tick($ $ $ $ $) {
@@ -1356,15 +1385,70 @@ sub execute_ticks() {
 	}
 }
 
+sub try_to_add_item_buff_stack($ $) {
+    my $god = shift;
+    my $buff_name = shift;
+
+    if( defined $gods{$god}->{"items"}->{$buff_name} ) {
+        add_buff_stack($god, $buff_name);
+        refresh_buff_time($god, $buff_name);
+    }
+}
+
+sub try_to_add_item_debuff_stack($ $) {
+    my $god = shift;
+    my $target = opposite_god($god);
+    my $debuff_name = shift;
+
+    if( defined $gods{$god}->{"items"}->{$debuff_name} ) {
+        add_debuff_stack($target, $debuff_name);
+        refresh_debuff_time($target, $debuff_name);
+    }
+}
+
+sub try_to_add_passive_stack($ $) {
+    my $god = shift;
+    my $buff_name = shift;
+
+    if( $opts{$god} eq "artemis" and $buff_name eq "still_target" )
+    {
+        add_buff_stack($god, $buff_name);
+        refresh_buff_time($god, $buff_name);
+    } elsif ($opts{$god} eq "sol" and $buff_name eq "heat") {
+        add_buff_stack($god, $buff_name);
+        add_buff_stack($god, $buff_name);
+        add_buff_stack($god, $buff_name);
+        add_buff_stack($god, $buff_name);
+        add_buff_stack($god, $buff_name);
+        refresh_buff_time($god, $buff_name);
+    }
+
+}
+
+sub apply_on_ability_effects($) {
+    # this routine is backwards from on_aa because we call it from deal_damage
+    # so bear in mind the argument polarity
+    my $target = shift;
+    my $god = opposite_god($target);
+
+    try_to_add_item_debuff_stack($god, "spear_of_the_magus");
+    try_to_add_item_debuff_stack($god, "brawlers");
+    try_to_add_item_debuff_stack($god, "divine_ruin");
+}
+
 sub apply_aa_on_hit_effects($) {
     my $god = shift;
 
-    if( defined $gods{$god}->{"items"}->{"executioner"} ) {
-        # apply debuff
-        add_debuff_stack(opposite_god($god), "executioner");
-        refresh_debuff_time(opposite_god($god), "executioner");
-    }
+    try_to_add_passive_stack($god, "still_target");
+    try_to_add_passive_stack($god, "heat");
 
+    try_to_add_item_buff_stack($god, "ichaival");
+    try_to_add_item_buff_stack($god, "stone_cutting_sword");
+
+    try_to_add_item_debuff_stack($god, "executioner");
+    try_to_add_item_debuff_stack($god, "demonic_grip");
+    try_to_add_item_debuff_stack($god, "ichaival");
+    try_to_add_item_debuff_stack($god, "stone_cutting_sword");
 }
 
 sub perform_auto_attack($) {
@@ -1532,6 +1616,8 @@ while ( $iteration < $max_iterations ) {
     $gods{"self"}->{ "debuffs" } = +{ };
     $gods{"enemy"}->{ "debuffs" } = +{ };
 
+    @output = ();
+
     while ( both_up() ) {
 
         #add_buff_stack( "self", "heartseeker" );
@@ -1560,31 +1646,31 @@ while ( $iteration < $max_iterations ) {
 # OUTPUT
 #################################################################################
 
-#print Dumper(\@output);
 
-printf("%20s %4s %8s %5s %5s %4s %7s\n",
-        "Source",
-        "Dmg",
-        "Type",
-        "Tgt",
-        "Time",
-        "Prot",
-        "Eff Dmg");
-
-my $i = 0;
-my $output_len = @output;
-while ($i < $output_len) {
-    my $dmg_event = $output[$i];
+if($opts{"verbosity"} >= $VERBOSITY_NORMAL) {
     printf("%20s %4s %8s %5s %5s %4s %7s\n",
-            $dmg_event->{"source"},
-            $dmg_event->{"damage"},
-            $dmg_event->{"type"},
-            $dmg_event->{"target"},
-            $dmg_event->{"time"},
-            $dmg_event->{"prot"},
-            $dmg_event->{"eff_damage"} );
-    $i++;
-}
+            "Source",
+            "Dmg",
+            "Type",
+            "Tgt",
+            "Time",
+            "Prot",
+            "Eff Dmg");
 
+    my $i = 0;
+    my $output_len = @output;
+    while ($i < $output_len) {
+        my $dmg_event = $output[$i];
+        printf("%20s %4s %8s %5s %5s %4s %7s\n",
+                $dmg_event->{"source"},
+                $dmg_event->{"damage"},
+                $dmg_event->{"type"},
+                $dmg_event->{"target"},
+                $dmg_event->{"time"},
+                $dmg_event->{"prot"},
+                $dmg_event->{"eff_damage"} );
+        $i++;
+    }
+}
 
 
